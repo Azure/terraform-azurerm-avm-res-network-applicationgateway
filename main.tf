@@ -171,10 +171,8 @@ resource "azurerm_application_gateway" "application_gateway" {
     for_each = var.ssl_certificates
     content {
       name                = ssl_certificate.value.name
-      data                = ssl_certificate.value.key_vault_secret_id == null ? filebase64(ssl_certificate.value.data) : null
+      data                = ssl_certificate.value.key_vault_secret_id == null ? ssl_certificate.value.data : null
       password            = ssl_certificate.value.key_vault_secret_id == null ? ssl_certificate.value.password : null
-      # data = ssl_certificate.value.data
-      # password = ssl_certificate.value.password
       key_vault_secret_id = lookup(ssl_certificate.value, "key_vault_secret_id", null)
     }
   }
@@ -189,7 +187,7 @@ resource "azurerm_application_gateway" "application_gateway" {
      for_each =  length(var.ssl_certificates) > 0 ? [1] : []
     content {
       type         = "UserAssigned"
-      identity_ids = var.identity_ids
+      identity_ids = var.identity_ids[0].identity_ids
     }
   }
 

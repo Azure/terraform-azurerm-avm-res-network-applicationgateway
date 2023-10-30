@@ -4,6 +4,7 @@
 # .tfstate files
 *.tfstate
 *.tfstate.*
+*.terraform.lock.hcl
 
 # Crash log files
 crash.log
@@ -15,6 +16,9 @@ crash.*.log
 # to change depending on the environment.
 *.tfvars
 *.tfvars.json
+*.pfx
+*.key
+*.crt
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
