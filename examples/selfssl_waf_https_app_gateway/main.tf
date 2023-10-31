@@ -37,7 +37,7 @@ module "regions" {
 resource "random_integer" "region_index" {
   min = 0
   max = length(module.regions.regions) - 1
-  
+
 }
 
 # resource "null_resource" "generate_ssl_certificate" {
@@ -58,10 +58,8 @@ resource "random_integer" "region_index" {
 # }
 
 module "application-gateway" {
-  # source  = "mofaizal/application-gateway/azure"
-  # version = "1.0.2"
-  source = "../../"
-  depends_on           = [azurerm_bastion_host.bastion-host,azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss,azurerm_log_analytics_workspace.log_analytics_workspace,azurerm_network_interface.bastion_win_vm_nic]
+  source     = "../../"
+  depends_on = [azurerm_bastion_host.bastion-host, azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss, azurerm_log_analytics_workspace.log_analytics_workspace, azurerm_network_interface.bastion_win_vm_nic]
 
   # pre-requisites resources input required for the module
 
@@ -75,187 +73,170 @@ module "application-gateway" {
   # enable_telemetry            = 1
   # provide Application gateway name 
   app_gateway_name = module.naming.application_gateway.name_unique
- 
 
-tags = {
+
+  tags = {
     environment = "dev"
     owner       = "application_gateway"
     project     = "AVM"
   }
 
- sku = {
+  sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name     = "WAF_v2"
+    name = "WAF_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier     = "WAF_v2" 
+    tier = "WAF_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0  # Set the initial capacity to 0 for autoscaling
+    capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
-  
+
   autoscale_configuration = {
     min_capacity = 2
     max_capacity = 15
   }
 
-# frontend configuration block for the application gateway
+  # frontend configuration block for the application gateway
   # frontend_ip_configuration_name = "app-gateway-feip"
   private_ip_address = "10.90.1.5" // IP address from backend subnet
-  
-# Backend configuration for the application gateway
+
+  # Backend configuration for the application gateway
   backend_address_pools = [
     {
-      name         = "Pool1"
+      name = "Pool1"
       #fqdns        = ["example1.com", "example2.com"]
-      ip_addresses = ["10.90.2.4", "10.90.2.5","10.90.2.6", "10.90.2.7"]
-     },
-    {
-      name         = "Pool2"
-      # fqdns        = ["contoso.com", "app1.contoso.com"]
-       ip_addresses = ["10.90.2.4", "10.90.2.5","10.90.2.6", "10.90.2.7"]
+      ip_addresses = ["10.90.2.4", "10.90.2.5", "10.90.2.6", "10.90.2.7"]
     },
-       {
-      name         = "Pool3-https"
+    {
+      name = "Pool2"
+      # fqdns        = ["contoso.com", "app1.contoso.com"]
+      ip_addresses = ["10.90.2.4", "10.90.2.5", "10.90.2.6", "10.90.2.7"]
+    },
+    {
+      name = "Pool3-https"
       #fqdns        = ["example1.com", "example2.com"]
-         ip_addresses = ["10.90.2.4", "10.90.2.5","10.90.2.6", "10.90.2.7"]
-     },
+      ip_addresses = ["10.90.2.4", "10.90.2.5", "10.90.2.6", "10.90.2.7"]
+    },
     # Add more pools as needed
   ]
 
-  # backend_address_pools = [
-  #   for instance in azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss : {
-  #     name         = "Pool${instance.instance_id}"
-  #     ip_addresses = [instance.network_interface_ids[0].private_ip_address]
-  #   }
-  # ]
-
-# Http Listerners configuration for the application gateway
+   # Http Listerners configuration for the application gateway
   http_listeners = [
     {
-      name               = "http-listener-80"
-      frontend_port_name = null
-      protocol           = "Http"
+      name                   = "http-listener-80"
+      frontend_port_name     = null
+      protocol               = "Http"
       frontend_ip_assocation = "public"
-     },
-      {
-      name               = "http-listener2-81"
-      frontend_port_name = null
-      protocol           = "Http"
+    },
+    {
+      name                   = "http-listener2-81"
+      frontend_port_name     = null
+      protocol               = "Http"
       frontend_ip_assocation = "both"
-     },
-{
-      name               = "http-listener-443"
-      frontend_port_name = "frontend-port-443"
-      protocol           = "Https"
+    },
+    {
+      name                   = "http-listener-443"
+      frontend_port_name     = "frontend-port-443"
+      protocol               = "Https"
       frontend_ip_assocation = "public"
-      ssl_certificate_name = "app-gateway-cert"
+      ssl_certificate_name   = "app-gateway-cert"
     }
 
     # Add more http listeners as needed
   ]
 
-# Backend http settings configuration for the application gateway
+  # Backend http settings configuration for the application gateway
 
-backend_http_settings = [
+  backend_http_settings = [
     {
-      name     = "port1-80"
-      port     = 80
-      protocol = "Http"
+      name                  = "port1-80"
+      port                  = 80
+      protocol              = "Http"
       cookie_based_affinity = "Disabled"
-     },
-       {
-      name     = "port2-81" 
-      port     = 81
-      protocol = "Http"
-      cookie_based_affinity = "Disabled"
-     },
+    },
     {
-      name     = "http-settings-443"
-      port     = 443
-      protocol = "Https"
+      name                  = "port2-81"
+      port                  = 81
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+    },
+    {
+      name                  = "http-settings-443"
+      port                  = 443
+      protocol              = "Https"
       cookie_based_affinity = "Disabled"
       # Define other attributes as needed
     }
     # Add more http settings as needed
   ]
 
-# Routing rules configuration for the backend pool
-request_routing_rules = [
+  # Routing rules configuration for the backend pool
+  request_routing_rules = [
     {
-      name               = "Rule1"
-      rule_type          = "Basic"
-      http_listener_name = null 
-      backend_address_pool_name = null 
-      priority           = 9
-     } ,
-     {
-      name               = "Rule2"
-      rule_type          = "Basic" //"PathBasedRouting"
-      http_listener_name      = null 
+      name                      = "Rule1"
+      rule_type                 = "Basic"
+      http_listener_name        = null
       backend_address_pool_name = null
-      priority           = 10
+      priority                  = 9
     },
     {
-      name               = "Rule3-443"
-      rule_type          = "Basic" //"PathBasedRouting"
-      http_listener_name      = null //var.http_listeners[1].name
-      backend_address_pool_name = null //var.backend_address_pools[1].name
-      priority           = 11
+      name                      = "Rule2"
+      rule_type                 = "Basic" //"PathBasedRouting"
+      http_listener_name        = null
+      backend_address_pool_name = null
+      priority                  = 10
+    },
+    {
+      name                        = "Rule3-443"
+      rule_type                   = "Basic" //"PathBasedRouting"
+      http_listener_name          = null    //var.http_listeners[1].name
+      backend_address_pool_name   = null    //var.backend_address_pools[1].name
+      priority                    = 11
       redirect_configuration_name = "app1-redirect-config"
     },
     # Add more rules as needed
   ]
 
-  
-# SSL Certificate Block
+
+  # SSL Certificate Block
   ssl_certificates = [{
     name     = "app-gateway-cert"
-    data = filebase64("./ssl_cert_generate/certificate.pfx")
+    data     = filebase64("./ssl_cert_generate/certificate.pfx")
     password = "terraform-avm"
-   //  key_vault_secret_id = "https://kv-agw-qe0p.vault.azure.net/secrets/app-gateway-cert/d6e7bc5d2ee74066b321c6adcf2af076"
   }]
 
 
-# HTTP to HTTPS Redirection Configuration for
+  # HTTP to HTTPS Redirection Configuration for
 
- redirection_configurations = [
+  redirection_configurations = [
     {
-      name = "app1-redirect-config"
-      redirect_type = "Permanent"
-      target_url = "https://contoso.com/"
-         include_path = true
-    include_query_string = true
+      name                 = "app1-redirect-config"
+      redirect_type        = "Permanent"
+      target_url           = "https://contoso.com/"
+      include_path         = true
+      include_query_string = true
     }
     # Add more redirection configurations as needed
   ]
 
-  # waf_policy_name             = "waf-policy" # Name of the exisitng WAF policy
- enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
+  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
 
-waf_configuration = [
+  waf_configuration = [
     {
-        enabled               = true
-        firewall_mode         = "Prevention"
-        rule_set_type         = "OWASP"
-        rule_set_version      = "3.1"
+      enabled          = true
+      firewall_mode    = "Prevention"
+      rule_set_type    = "OWASP"
+      rule_set_version = "3.1"
     }
-]
+  ]
 
-  # redirect_configuration_name    = "app-gateway-rdrcfg"
-
-# Optional Input
-  # enable_http2                = true
-  # app_gateway_sku_capacity    = 1 # Capacity of the application gateway
-  zone_redundant              = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+  # Optional Input
  
- identity_ids = [{
-  identity_ids = [
-    azurerm_user_assigned_identity.appag_umid.id
-  ]}]
+  zone_redundant = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
-  # identity_ids = ["${azurerm_user_assigned_identity.user_assigned_identity.id}"]
+  identity_ids = [{
+    identity_ids = [
+      azurerm_user_assigned_identity.appag_umid.id
+  ] }]
 
-  # This is required only when you create pre-requisites resources using above scripts else disable it and use the existing resources
-  #depends_on = [azurerm_virtual_network.vnet, azurerm_subnet.frontend, azurerm_subnet.backend, azurerm_resource_group.rg-group]
-
-}
+ }
 
