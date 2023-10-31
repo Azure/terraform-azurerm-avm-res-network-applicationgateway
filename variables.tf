@@ -82,7 +82,7 @@ variable "public_ip_name" {
 variable "log_analytics_workspace_id" {
   type        = string
   description = "The Log Analytics Workspace ID"
-    validation {
+  validation {
     condition     = length(var.log_analytics_workspace_id) > 0
     error_message = "The Log Analytics Workspace ID is required to configure the diagnostic settings."
   }
@@ -96,7 +96,7 @@ variable "public_ip_sku_tier" {
     condition     = var.public_ip_sku_tier == "Basic" || var.public_ip_sku_tier == "Standard"
     error_message = "The variable must be either Basic, Standard"
   }
-default = "Standard"
+  default = "Standard"
 }
 
 # Variable declaration for the  public  ip allocation method
@@ -108,7 +108,7 @@ variable "public_ip_allocation_method" {
     condition     = var.public_ip_allocation_method == "Dynamic" || var.public_ip_allocation_method == "Static"
     error_message = "The variable must be either Dynamic or Static"
   }
-default = "Static"
+  default = "Static"
 }
 
 
@@ -183,13 +183,13 @@ variable "backend_http_settings" {
 variable "http_listeners" {
   description = "List of HTTP listeners"
   type = list(object({
-    name               = string
-    frontend_port_name = string
-    protocol           = string
-    firewall_policy_id   = optional(string)
+    name                   = string
+    frontend_port_name     = string
+    protocol               = string
+    firewall_policy_id     = optional(string)
     frontend_ip_assocation = string
-    host_name            = optional(string)
-    host_names           = optional(list(string))
+    host_name              = optional(string)
+    host_names             = optional(list(string))
     # require_sni          = optional(bool)
     ssl_certificate_name = optional(string)
     ssl_profile_name     = optional(string)
@@ -211,15 +211,15 @@ variable "app_gateway_waf_policy_name" {
 # Define a list of probe configurations
 variable "probe_configurations" {
   description = "List of probe configurations."
-  type        = list(object({
-    name                = string
-    host                = optional(string)
-    interval            = number
-    timeout             = number
-    unhealthy_threshold = number
-    protocol            = string
-    port                = optional(number)
-    path                = string
+  type = list(object({
+    name                                      = string
+    host                                      = optional(string)
+    interval                                  = number
+    timeout                                   = number
+    unhealthy_threshold                       = number
+    protocol                                  = string
+    port                                      = optional(number)
+    path                                      = string
     pick_host_name_from_backend_http_settings = optional(bool)
     minimum_servers                           = optional(number)
     match = optional(object({
@@ -227,44 +227,44 @@ variable "probe_configurations" {
       status_code = optional(list(string))
     }))
   }))
-   default = []
+  default = []
 }
 
 
 # Define a list of URL path map configurations
 variable "url_path_map_configurations" {
   description = "List of URL path map configurations."
-  type        = list(object({
-    name = string
+  type = list(object({
+    name                                = string
     default_redirect_configuration_name = optional(string)
     default_rewrite_rule_set_name       = optional(string)
     default_backend_http_settings_name  = optional(string)
     default_backend_address_pool_name   = optional(string)
     path_rules = list(object({
-      name = string
-      paths = list(string)
-      backend_address_pool_name =  optional(string)
-      backend_http_settings_name = optional(string)
+      name                        = string
+      paths                       = list(string)
+      backend_address_pool_name   = optional(string)
+      backend_http_settings_name  = optional(string)
       redirect_configuration_name = optional(string)
       rewrite_rule_set_name       = optional(string)
       firewall_policy_id          = optional(string)
     }))
   }))
-    default = []
+  default = []
 }
 
 # Define a list of redirection configuration
 variable "redirection_configurations" {
   description = "List of redirection configurations."
-  type        = list(object({
-    name         = string
-    redirect_type = string
-    target_url   = string
-    include_path = optional(bool)
-    include_query_string = optional(bool) 
- 
+  type = list(object({
+    name                 = string
+    redirect_type        = string
+    target_url           = string
+    include_path         = optional(bool)
+    include_query_string = optional(bool)
+
   }))
-     default     = []
+  default = []
 }
 
 variable "ssl_certificates" {
@@ -369,17 +369,17 @@ variable "trusted_root_certificates" {
 #   type = string
 #   default = "public"
 #  }
- 
+
 
 # Variable declaration for the request routing rules
 variable "request_routing_rules" {
   description = "List of request routing rules"
   type = list(object({
-    name                      = string
-    rule_type                 = string
-    http_listener_name        = string
-    backend_address_pool_name = optional(string)
-    priority                  = optional(number)
+    name                        = string
+    rule_type                   = string
+    http_listener_name          = string
+    backend_address_pool_name   = optional(string)
+    priority                    = optional(number)
     url_path_map_name           = optional(string)
     backend_http_settings_name  = optional(string)
     redirect_configuration_name = optional(string)
@@ -390,7 +390,7 @@ variable "request_routing_rules" {
 
 variable "private_ip_address" {
   description = "Private IP Address to assign to the Application Gateway Load Balancer."
-  type = string
+  type        = string
   default     = null
 }
 
@@ -413,14 +413,14 @@ variable "waf_enable" {
 
 variable "waf_configuration" {
   description = "Web Application Firewall (WAF) configuration."
-  type        = list(object({
-    enabled               = bool
-    firewall_mode         = string
-    rule_set_type         = string
-    rule_set_version      = string
+  type = list(object({
+    enabled          = bool
+    firewall_mode    = string
+    rule_set_type    = string
+    rule_set_version = string
     # disabled_rule_groups = list(string)
   }))
-  default     = null
+  default = null
 }
 
 # variable "waf_policy_name" {
@@ -429,7 +429,7 @@ variable "waf_configuration" {
 # }
 
 variable "enable_classic_rule" {
-  type = bool
+  type        = bool
   description = "Enable or disable the classic WAF rule"
-  default = false
+  default     = false
 }
