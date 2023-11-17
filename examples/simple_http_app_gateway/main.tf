@@ -81,7 +81,7 @@ module "application-gateway" {
 
   # frontend configuration block for the application gateway
   # frontend_ip_configuration_name = "app-gateway-feip"
-  private_ip_address = "10.90.1.5" // IP address from backend subnet
+  private_ip_address = "100.64.1.5" // IP address from backend subnet
 
   # Backend configuration for the application gateway
   backend_address_pools = [

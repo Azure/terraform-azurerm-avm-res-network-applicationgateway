@@ -13,7 +13,7 @@ resource "azurerm_virtual_network" "vnet" {
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg-group.name
   location            = azurerm_resource_group.rg-group.location
-  address_space       = ["10.90.0.0/16"] # address space for VNET 
+  address_space       = ["100.64.0.0/16"] # address space for VNET 
   depends_on          = [azurerm_resource_group.rg-group]
 }
 
@@ -21,7 +21,7 @@ resource "azurerm_subnet" "frontend" {
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
+  address_prefixes     = ["100.64.0.0/24"] #[local.subnet_range[0]]
   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
@@ -29,7 +29,7 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.1.0/24"]
+  address_prefixes     = ["100.64.1.0/24"]
   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
@@ -38,7 +38,7 @@ resource "azurerm_subnet" "workload" {
   name                 = "workload"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.2.0/24"]
+  address_prefixes     = ["100.64.2.0/24"]
   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
@@ -47,7 +47,7 @@ resource "azurerm_subnet" "private-ip-test" {
   name                 = "private-ip-test"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.3.0/24"]
+  address_prefixes     = ["100.64.3.0/24"]
   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 # Required bastion host subnet to test private IP endpoint
@@ -55,7 +55,7 @@ resource "azurerm_subnet" "bastion" {
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.4.0/24"] # Adjust the IP address prefix as needed
+  address_prefixes     = ["100.64.4.0/24"] # Adjust the IP address prefix as needed
   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
