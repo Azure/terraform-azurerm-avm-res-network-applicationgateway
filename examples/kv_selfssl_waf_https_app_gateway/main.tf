@@ -59,7 +59,7 @@ resource "random_integer" "region_index" {
 
 module "application-gateway" {
   source     = "../../"
-  depends_on = [azurerm_bastion_host.bastion-host, azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss, azurerm_log_analytics_workspace.log_analytics_workspace, azurerm_network_interface.bastion_win_vm_nic, azurerm_key_vault.keyvault]
+  depends_on = [azurerm_log_analytics_workspace.log_analytics_workspace, azurerm_key_vault.keyvault]
 
   # pre-requisites resources input required for the module
 
