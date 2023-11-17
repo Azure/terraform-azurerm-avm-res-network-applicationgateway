@@ -70,7 +70,7 @@ module "application-gateway" {
   subnet_name_frontend       = azurerm_subnet.frontend.name
   subnet_name_backend        = azurerm_subnet.backend.name
   log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  # enable_telemetry            = 1
+  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   app_gateway_name = module.naming.application_gateway.name_unique
