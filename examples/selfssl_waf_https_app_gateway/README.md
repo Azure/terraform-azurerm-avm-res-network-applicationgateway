@@ -46,23 +46,6 @@ resource "random_integer" "region_index" {
 
 }
 
-# resource "null_resource" "generate_ssl_certificate" {
-#   triggers = {
-#     script_content = sha1(file("generate_ssl_certificate.sh"))
-#   }
-
-#   provisioner "local-exec" {
-#     command = "bash generate_ssl_certificate.sh"
-#   }
-
-#   # This `depends_on` block ensures the script runs after specific resources.
-#   depends_on = [azurerm_virtual_network.vnet, azurerm_subnet.workload]
-
-#   # This local-exec provisioner will only run once during initialization.
-#   # It's only needed to ensure the script runs initially, so it doesn't need
-#   # to run every time you apply changes.
-# }
-
 module "application-gateway" {
   source     = "../../"
   depends_on = [azurerm_log_analytics_workspace.log_analytics_workspace]

@@ -60,7 +60,7 @@ variable "subnet_name_backend" {
   }
 }
 
-
+# Variable declaration for the  application gateway name
 variable "app_gateway_name" {
   type        = string
   description = "The name of the application gateway."
@@ -70,6 +70,8 @@ variable "app_gateway_name" {
   }
 }
 
+# Variable declaration for the  public ip name
+
 variable "public_ip_name" {
   type        = string
   description = "The name of the application gateway."
@@ -78,6 +80,8 @@ variable "public_ip_name" {
     error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
   }
 }
+
+# Variable declaration for the Log Analytics Workspace ID
 
 variable "log_analytics_workspace_id" {
   type        = string
@@ -111,7 +115,7 @@ variable "public_ip_allocation_method" {
   default = "Static"
 }
 
-
+# Variable declaration for the application gateway sku and tier
 variable "sku" {
   description = "The application gateway sku and tier."
   type = object({
@@ -130,6 +134,7 @@ variable "sku" {
   }
 }
 
+# variable for V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
 
 variable "autoscale_configuration" {
   description = "V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU"
@@ -190,7 +195,6 @@ variable "http_listeners" {
     frontend_ip_assocation = string
     host_name              = optional(string)
     host_names             = optional(list(string))
-    # require_sni          = optional(bool)
     ssl_certificate_name = optional(string)
     ssl_profile_name     = optional(string)
     custom_error_configuration = optional(list(object({
@@ -294,12 +298,6 @@ variable "identity_ids" {
   description = "Specifies a list with a single user managed identity id to be assigned to the Application Gateway"
   default     = null
 }
-
-# variable "identity_ids" {
-#   type    = set(string)
-#   description = "A set of User Assigned Identity IDs."
-#   default = null
-# }
 
 variable "authentication_certificates" {
   description = "Authentication certificates to allow the backend with Azure Application Gateway"
