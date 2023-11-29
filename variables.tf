@@ -3,7 +3,7 @@ variable "enable_telemetry" {
   default     = true
   description = <<DESCRIPTION
 This variable controls whether or not telemetry is enabled for the module.
-For more information see https://aka.ms/avm/telemetry.
+For more information see https://aka.ms/avm/telemetryinfo.
 If it is set to false, then no telemetry will be collected.
 DESCRIPTION
 }
@@ -23,47 +23,48 @@ variable "resource_group_name" {
 # Variable declaration for the  resource location
 variable "location" {
   type        = string
-  description = "The Azure regional location where the resources will be deployed."
+  default     = null
+  description = "The Azure region where the resources will be deployed. If you do not specify a location, the resource group location will be used."
   validation {
-    condition     = length(var.location) > 0
-    error_message = "The azure region must not be empty."
+    condition     = var.location == null || length(var.location) > 0
+    error_message = "The Azure region must not be empty."
   }
 }
 
 # Variable declaration for the  resource location
-variable "vnet_name" {
-
-  description = "The VNET where the applicaiton gateway resources will be deployed."
-  validation {
-    condition     = length(var.vnet_name) > 0
-    error_message = "The VNET name must not be empty."
-  }
-}
-
-# Variable declaration for the  resource location
-variable "subnet_name_frontend" {
+variable "virtual_network_resource_id" {
   type        = string
-  description = "The frontend subnet where the applicaiton gateway IP address resources will be deployed."
+  description = "The resource id of the virtual network where the Application Gateway resources will be deployed."
   validation {
-    condition     = length(var.subnet_name_frontend) > 0
-    error_message = "The frontend subnet name must not be empty."
+    condition     = can(regex("(?i:^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Network/virtualNetworks/[^/]+$)", var.frontend_subnet_resource_id))
+    error_message = "The virtual network resource id must ve a valid Azure resource id."
   }
 }
 
 # Variable declaration for the  resource location
-variable "subnet_name_backend" {
+variable "frontend_subnet_resource_id" {
   type        = string
-  description = "The backend subnet where the applicaiton gateway resources configuration will be deployed."
+  description = "The resource id of the frontend subnet where the Application Gateway IP address resources will be deployed."
   validation {
-    condition     = length(var.subnet_name_backend) > 0
-    error_message = "The backend subnet name must not be empty."
+    error_message = "The frontend subnet resource id must ve a valid Azure resource id."
+    condition     = can(regex("(?i:^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Network/virtualNetworks/[^/]+/subnets/[^/]+$)", var.frontend_subnet_resource_id))
+  }
+}
+
+# Variable declaration for the  resource location
+variable "backend_subnet_resource_id" {
+  type        = string
+  description = "The backend subnet where the Application Gateway resources configuration will be deployed."
+  validation {
+    error_message = "The backend subnet resource id must ve a valid Azure resource id."
+    condition     = can(regex("(?i:^/subscriptions/[^/]+/resourceGroups/[^/]+/providers/Microsoft.Network/virtualNetworks/[^/]+/subnets/[^/]+$)", var.frontend_subnet_resource_id))
   }
 }
 
 # Variable declaration for the  application gateway name
-variable "app_gateway_name" {
+variable "name" {
   type        = string
-  description = "The name of the application gateway."
+  description = "The name of the Application Gateway."
   validation {
     condition     = can(regex("^[a-z0-9-]{3,24}$", var.app_gateway_name))
     error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
@@ -74,7 +75,8 @@ variable "app_gateway_name" {
 
 variable "public_ip_name" {
   type        = string
-  description = "The name of the application gateway."
+  description = "The name of the public IP address."
+  default     = null
   validation {
     condition     = can(regex("^[a-z0-9-]{3,24}$", var.public_ip_name))
     error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
@@ -95,10 +97,10 @@ variable "log_analytics_workspace_id" {
 # Variable declaration for the  public  ip sku
 variable "public_ip_sku_tier" {
   type        = string
-  description = "The Azure public ip sku Basic / Standard"
+  description = "The Azure public ip sku. Either Basic or Standard"
   validation {
-    condition     = var.public_ip_sku_tier == "Basic" || var.public_ip_sku_tier == "Standard"
-    error_message = "The variable must be either Basic, Standard"
+    condition     = contains(["Basic", "Standard"], var.public_ip_sku_tier)
+    error_message = "The value must be either Basic, Standard"
   }
   default = "Standard"
 }
@@ -117,11 +119,11 @@ variable "public_ip_allocation_method" {
 
 # Variable declaration for the application gateway sku and tier
 variable "sku" {
-  description = "The application gateway sku and tier."
+  description = "The Application Gateway sku and tier."
   type = object({
-    name     = string           // Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string           // Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number) // V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+    name     = string                 // Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string                 // Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number, null) // V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
   })
   validation {
     condition     = can(regex("^(Standard_v2|WAF_v2)$", var.sku.name))
@@ -146,22 +148,22 @@ variable "autoscale_configuration" {
 }
 
 
-# HTTP/2 protocol support is available to clients that connect to application gateway listeners only. 
+# HTTP/2 protocol support is available to clients that connect to application gateway listeners only.
 # The communication to backend server pools is over HTTP/1.1. By default, HTTP/2 support is disabled.
 
-variable "http2_enable" {
+variable "http2_enabled" {
   type        = bool
-  description = "The Azure application gateway HTTP/2 protocol support"
+  description = "Enable or disable HTTP/2 protocol support. Default is `true`."
   default     = true
 }
 
-variable "zone_redundant" {
+variable "zones" {
   type        = list(string)
-  description = "The Azure application gateway zone redundancy"
-  default     = [] #["1", "2", "3"]
+  description = "The Azure application gateway deployment zones. Only supported on v2 SKUs. Default is zone redundant."
+  default     = [1, 2, 3]
 }
 
-# Variable declaration for the backend address pool name 
+# Variable declaration for the backend address pool name
 variable "backend_address_pools" {
   description = "List of backend address pools"
   type = list(object({
@@ -195,8 +197,8 @@ variable "http_listeners" {
     frontend_ip_assocation = string
     host_name              = optional(string)
     host_names             = optional(list(string))
-    ssl_certificate_name = optional(string)
-    ssl_profile_name     = optional(string)
+    ssl_certificate_name   = optional(string)
+    ssl_profile_name       = optional(string)
     custom_error_configuration = optional(list(object({
       status_code           = string
       custom_error_page_url = string
@@ -294,7 +296,7 @@ variable "ssl_policy" {
   default = null
 }
 
-variable "identity_ids" {
+variable "user_managed_identity_ids" {
   description = "Specifies a list with a single user managed identity id to be assigned to the Application Gateway"
   default     = null
 }
@@ -305,7 +307,8 @@ variable "authentication_certificates" {
     name = string
     data = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "trusted_root_certificates" {
@@ -314,7 +317,8 @@ variable "trusted_root_certificates" {
     name = string
     data = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 
@@ -363,7 +367,7 @@ variable "trusted_root_certificates" {
 #    default     = []
 # }
 
-#  variable "frontend_ip_assocation" {
+#  variable "frontend_ip_association" {
 #   type = string
 #   default = "public"
 #  }
@@ -426,8 +430,8 @@ variable "waf_configuration" {
 #   description = "The name of the WAF policy."
 # }
 
-variable "enable_classic_rule" {
+variable "classic_rule_enabled" {
   type        = bool
-  description = "Enable or disable the classic WAF rule"
+  description = "Enable or disable the classic WAF rules. Default is `false`."
   default     = false
 }
