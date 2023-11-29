@@ -207,9 +207,8 @@ variable "http_listeners" {
   }))
 }
 
-variable "app_gateway_waf_policy_name" {
-  type = string
-
+variable "waf_policy_resource_id" {
+  type    = string
   default = null
 }
 
@@ -400,14 +399,10 @@ variable "private_ip_address" {
 variable "tags" {
   description = "A map of tags to apply to the Application Gateway."
   type        = map(string)
-  default = {
-    environment = "development"
-    owner       = "your-name"
-    project     = "my-project"
-  }
+  default     = {}
 }
 
-variable "waf_enable" {
+variable "waf_enabled" {
   description = "Enable or disable the Web Application Firewall"
   type        = bool
   default     = true
@@ -422,7 +417,8 @@ variable "waf_configuration" {
     rule_set_version = string
     # disabled_rule_groups = list(string)
   }))
-  default = null
+  default  = []
+  nullable = false
 }
 
 # variable "waf_policy_name" {
