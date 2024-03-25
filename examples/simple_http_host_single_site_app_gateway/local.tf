@@ -21,15 +21,3 @@ sudo echo '<!DOCTYPE html> <html> <body style="background-color:rgb(22, 134, 204
 # sudo curl -H "Metadata:true" --noproxy "*" "http://169.254.169.254/metadata/instance?api-version=2020-09-01" -o /var/www/html/app1/metadata.html
 CUSTOM_DATA
 }
-
-# locals {
-#   webvm_custom_data = <<CUSTOM_DATA
-# apt-get update
-# apt-get install -y nginx
-# echo $(hostname) | sudo tee /var/www/html/index.html
-# sudo mkdir -p /var/www/html/images
-# echo "Images: " $(hostname) | sudo tee /var/www/html/images/test.html
-# sudo mkdir -p /var/www/html/video
-# echo "Video: " $(hostname) | sudo tee /var/www/html/video/test.html
-# CUSTOM_DATA
-# }

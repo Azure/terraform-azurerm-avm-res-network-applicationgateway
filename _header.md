@@ -28,6 +28,7 @@ This scenario sets up a straightforward HTTP Application Gateway, typically for 
 **[Web Application Firewall (WAF)](examples/simple_waf_http_app_gateway/README.md)** 
 A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
 
+
 **[Self-Signed SSL (HTTPS)](examples/simple_http_app_gateway/README.md)**
 In this scenario, self-signed SSL certificates are utilized to secure traffic to HTTPS. You'll need to configure SSL certificates and redirection rules.
 

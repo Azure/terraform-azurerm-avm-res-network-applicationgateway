@@ -36,11 +36,11 @@ output "private_ip_test_subnet_name" {
 #   value       = azurerm_subnet.bastion.name
 # }
 
-# Output for Log Analytics Workspace
-output "log_analytics_workspace_name" {
-  description = "Name of the Azure Log Analytics Workspace"
-  value       = azurerm_log_analytics_workspace.log_analytics_workspace.name
-}
+# # Output for Log Analytics Workspace
+# output "log_analytics_workspace_name" {
+#   description = "Name of the Azure Log Analytics Workspace"
+#   value       = azurerm_log_analytics_workspace.log_analytics_workspace.name
+# }
 
 # Output for Windows Virtual Machine (Bastion)
 # output "bastion_virtual_machine_name" {
@@ -123,10 +123,10 @@ output "private_ip_test_subnet_id" {
 # }
 
 # Output for Log Analytics Workspace
-output "log_analytics_workspace_id" {
-  description = "ID of the Azure Log Analytics Workspace"
-  value       = azurerm_log_analytics_workspace.log_analytics_workspace.id
-}
+# output "log_analytics_workspace_id" {
+#   description = "ID of the Azure Log Analytics Workspace"
+#   value       = azurerm_log_analytics_workspace.log_analytics_workspace.id
+# }
 
 # # Output for Windows Virtual Machine (Bastion)
 # output "bastion_virtual_machine_id" {

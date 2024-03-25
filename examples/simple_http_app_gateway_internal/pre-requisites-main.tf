@@ -56,7 +56,7 @@ resource "azurerm_subnet" "private-ip-test" {
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
-# # Required bastion host subnet to test private IP endpoint
+# Required bastion host subnet to test private IP endpoint
 # resource "azurerm_subnet" "bastion" {
 #   name                 = "AzureBastionSubnet"
 #   resource_group_name  = azurerm_resource_group.rg-group.name
@@ -65,18 +65,20 @@ resource "azurerm_subnet" "private-ip-test" {
 #   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 # }
 
-resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
-  location            = azurerm_resource_group.rg-group.location
-  sku                 = "PerGB2018"
-  depends_on          = [azurerm_resource_group.rg-group]
-}
+# THIS NEED TO BE REMOVED AFTER TESTING
 
-#-----------------------------------------------------------------
+# resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
+#   name                = module.naming.log_analytics_workspace.name_unique
+#   resource_group_name = azurerm_resource_group.rg-group.name
+#   location            = azurerm_resource_group.rg-group.location
+#   sku                 = "PerGB2018"
+#   depends_on          = [azurerm_resource_group.rg-group]
+# }
+
+# -----------------------------------------------------------------
 #  Enable these to deeploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 # resource "azurerm_windows_virtual_machine" "bastion" {
 #   name                  = module.naming.windows_virtual_machine.name_unique
@@ -163,14 +165,16 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 #     primary = true
 
 #     ip_configuration {
-#       name      = "internal"
-#       primary   = true
-#       subnet_id = azurerm_subnet.workload.id
+#       name                                         = "internal"
+#       primary                                      = true
+#       subnet_id                                    = azurerm_subnet.workload.id
+#       application_gateway_backend_address_pool_ids = module.application-gateway.backend_address_pools[*].id
 #     }
 #   }
 #   custom_data = base64encode(local.webvm_custom_data)
-#   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+#   depends_on  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group, module.application-gateway]
 # }
+
 
 # # Create Network Security Group (NSG)
 # resource "azurerm_network_security_group" "ag_subnet_nsg" {

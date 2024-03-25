@@ -1,8 +1,9 @@
+
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
+# Application Gateway routing traffic from your application. 
 # Assume that your Application runing the scale set contains two virtual machine instances. 
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
-# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/configure-keyvault-ps
+# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
 
 #----------All Required Provider Section----------- 
 terraform {
@@ -73,9 +74,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -87,9 +88,9 @@ module "application-gateway" {
 
   # frontend port configuration block for the application gateway
   frontend_ports = {
-    frontend-port-443 = {
-      name = "frontend-port-443"
-      port = 443
+    frontend-port-80 = {
+      name = "frontend-port-80"
+      port = 80
     }
   }
 
@@ -97,8 +98,8 @@ module "application-gateway" {
   # Mandatory Input
   backend_address_pools = {
     appGatewayBackendPool = {
-      name = "appGatewayBackendPool"
-      # ip_addresses = ["100.64.2.6", "100.64.2.5"]
+      name         = "appGatewayBackendPool"
+      ip_addresses = ["100.64.2.6", "100.64.2.5"]
       #fqdns        = ["example1.com", "example2.com"]
     }
   }
@@ -126,23 +127,12 @@ module "application-gateway" {
   # Mandatory Input
   http_listeners = {
     appGatewayHttpListener = {
-      name                 = "appGatewayHttpListener"
-      host_name            = null
-      frontend_port_name   = "frontend-port-443"
-      ssl_certificate_name = "app-gateway-cert"
+      name               = "appGatewayHttpListener"
+      host_name          = null
+      frontend_port_name = "frontend-port-80"
     }
     # # Add more http listeners as needed
   }
-
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
 
   # Routing rules configuration for the backend pool
   # Mandatory Input
@@ -157,34 +147,9 @@ module "application-gateway" {
     }
     # Add more rules as needed
   }
-
-
-  # SSL Certificate Block
-  ssl_certificates = [{
-    name                = "app-gateway-cert"
-    key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
-  }]
-
-
-  # HTTP to HTTPS Redirection Configuration for
-
-  redirect_configuration = {
-    redirect_config_1 = {
-      name                 = "Redirect1"
-      redirect_type        = "Permanent"
-      include_path         = true
-      include_query_string = true
-      target_listener_name = "appGatewayHttpListener"
-    }
-  }
-
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
-  identity_ids = [{
-    identity_ids = [
-      azurerm_user_assigned_identity.appag_umid.id
-  ] }]
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
@@ -197,6 +162,3 @@ module "application-gateway" {
   }
 
 }
-
-
-
