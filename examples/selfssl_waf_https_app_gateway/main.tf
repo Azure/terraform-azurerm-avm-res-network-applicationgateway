@@ -1,5 +1,3 @@
-
-
 #----------Testing Use Case  -------------
 # Application Gateway + WAF Enable routing traffic from your application. 
 # Assume that your Application runing the scale set contains two virtual machine instances. 
@@ -158,14 +156,12 @@ module "application-gateway" {
     # Add more rules as needed
   }
 
-
   # SSL Certificate Block
   ssl_certificates = [{
     name     = "app-gateway-cert"
     data     = filebase64("./ssl_cert_generate/certificate.pfx")
     password = "terraform-avm"
   }]
-
 
   # HTTP to HTTPS Redirection Configuration for
 
