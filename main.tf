@@ -1,4 +1,12 @@
 # TODO: insert resources here.
+
+#----------About Terraform Module  -------------
+# Azure Application Gateway Terraform Module
+# Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications. 
+# When using Terraform to deploy Azure resources, you can make use of a Terraform module to define and configure the Azure Application Gateway. 
+#----------All Required Provider Section----------- 
+
+
 #----------Local declarations-----------
 locals {
   # frontend_ports = [
@@ -32,7 +40,6 @@ resource "azurerm_public_ip" "this" {
   zones               = var.zones
 }
 
-
 #----------Application Gateway resource creation provider block-----------
 resource "azurerm_application_gateway" "this" {
 
@@ -44,8 +51,7 @@ resource "azurerm_application_gateway" "this" {
   location            = var.location
   enable_http2        = var.http2_enable
   zones               = var.zones
-  firewall_policy_id  = var.app_gateway_waf_policy_resource_id //var.http_listeners[0].firewall_policy_id != null ? var.http_listeners[0].firewall_policy_id : null 
-
+  firewall_policy_id  = var.app_gateway_waf_policy_resource_id
 
   #----------Tag configuration for the application gateway-----------
   tags = var.tags
@@ -64,8 +70,6 @@ resource "azurerm_application_gateway" "this" {
       max_capacity = lookup(autoscale_configuration.value, "max_capacity")
     }
   }
-
-
   #----------Frontend configuration for the application gateway-----------
   gateway_ip_configuration {
     name      = local.gateway_ip_configuration_name
@@ -89,8 +93,7 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 
-
-
+  # Private frontend IP Port configuration
   dynamic "frontend_port" {
     for_each = var.frontend_ports
     content {
@@ -100,33 +103,16 @@ resource "azurerm_application_gateway" "this" {
   }
 
 
-  # frontend_port {
-  #   name = "${local.frontend_port_name}-80"
-  #   port = 80
-  # }
-
-  #  frontend_port {
-  #   name = "${local.frontend_port_name}-8080"
-  #   port = 8080
-  # }
-  # frontend_port {
-  #   name = "${local.frontend_port_name}-443"
-  #   port = 443
-  # }
-
-
   #----------Backend Address Pool Configuration for the application gateway -----------
   dynamic "backend_address_pool" {
     for_each = var.backend_address_pools
     content {
-      name = backend_address_pool.value.name
-      # Check if the value is not null before assigning it
+      name         = backend_address_pool.value.name
       fqdns        = backend_address_pool.value.fqdns != null ? backend_address_pool.value.fqdns : null
       ip_addresses = backend_address_pool.value.ip_addresses != null ? backend_address_pool.value.ip_addresses : null
 
     }
   }
-
 
   #----------Backend Http Settings Configuration for the application gateway -----------
   dynamic "backend_http_settings" {
@@ -142,17 +128,12 @@ resource "azurerm_application_gateway" "this" {
       request_timeout                     = lookup(backend_http_settings.value, "request_timeout", 30)
       host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name") : null
       pick_host_name_from_backend_address = lookup(backend_http_settings.value, "pick_host_name_from_backend_address", false)
-      # Check if the value is not null before assigning it
-      # protocol              = backend_http_settings.value.protocol != null ? backend_http_settings.value.protocol : null
-      # cookie_based_affinity = backend_http_settings.value.cookie_based_affinity != null ? backend_http_settings.value.cookie_based_affinity : null
-      #   # Define other attributes as needed
       dynamic "authentication_certificate" {
         for_each = backend_http_settings.value.authentication_certificate[*]
         content {
           name = authentication_certificate.value.name
         }
       }
-
       trusted_root_certificate_names = lookup(backend_http_settings.value, "trusted_root_certificate_names", null)
 
       dynamic "connection_draining" {
@@ -169,21 +150,17 @@ resource "azurerm_application_gateway" "this" {
   dynamic "http_listener" {
     for_each = var.http_listeners
     content {
-      name = http_listener.value.name
-      //frontend_port_name             = http_listener.value.ssl_certificate_name == null ? "${local.frontend_port_name}-80" : "${local.frontend_port_name}-443"
-      frontend_port_name = lookup(http_listener.value, "frontend_port_name", null)
-      protocol           = http_listener.value.ssl_certificate_name == null ? "Http" : "Https"
-      //frontend_ip_configuration_name = local.frontend_ip_configuration_name
+      name                           = http_listener.value.name
+      frontend_port_name             = lookup(http_listener.value, "frontend_port_name", null)
+      protocol                       = http_listener.value.ssl_certificate_name == null ? "Http" : "Https"
       frontend_ip_configuration_name = var.frontend_ip_type != null && var.private_ip_address != null ? local.frontend_ip_private_name : local.frontend_ip_configuration_name
-      # Check if the value is not null before assigning it
-      require_sni          = http_listener.value.ssl_certificate_name != null ? http_listener.value.require_sni : null
-      firewall_policy_id   = http_listener.value.firewall_policy_id != null ? http_listener.value.firewall_policy_id : null
-      ssl_certificate_name = http_listener.value.ssl_certificate_name != null ? http_listener.value.ssl_certificate_name : null
-      ssl_profile_name     = http_listener.value.ssl_profile_name != null ? http_listener.value.ssl_profile_name : null
-      host_name            = http_listener.value.host_name != null ? http_listener.value.host_name : null
-      host_names           = http_listener.value.host_names != null ? http_listener.value.host_names : null
+      require_sni                    = http_listener.value.ssl_certificate_name != null ? http_listener.value.require_sni : null
+      firewall_policy_id             = http_listener.value.firewall_policy_id != null ? http_listener.value.firewall_policy_id : null
+      ssl_certificate_name           = http_listener.value.ssl_certificate_name != null ? http_listener.value.ssl_certificate_name : null
+      ssl_profile_name               = http_listener.value.ssl_profile_name != null ? http_listener.value.ssl_profile_name : null
+      host_name                      = http_listener.value.host_name != null ? http_listener.value.host_name : null
+      host_names                     = http_listener.value.host_names != null ? http_listener.value.host_names : null
 
-      # Define other attributes as needed
       dynamic "custom_error_configuration" {
         for_each = http_listener.value.custom_error_configuration != null ? lookup(http_listener.value, "custom_error_configuration", {}) : []
         content {
@@ -227,9 +204,8 @@ resource "azurerm_application_gateway" "this" {
       url_path_map_name           = lookup(request_routing_rule.value, "url_path_map_name", null)
       redirect_configuration_name = lookup(request_routing_rule.value, "redirect_configuration_name", null)
       rewrite_rule_set_name       = lookup(request_routing_rule.value, "rewrite_rule_set_name", null)
-      // Using lookup function for conditional assignment
-      backend_address_pool_name  = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_address_pool_name", null) : null
-      backend_http_settings_name = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_http_settings_name", null) : null
+      backend_address_pool_name   = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_address_pool_name", null) : null
+      backend_http_settings_name  = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_http_settings_name", null) : null
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
@@ -395,10 +371,8 @@ resource "azurerm_application_gateway" "this" {
       rule_set_type    = var.waf_configuration[0].rule_set_type
       rule_set_version = var.waf_configuration[0].rule_set_version
     }
-
   }
   force_firewall_policy_association = true
-
 }
 
 #----------lock settings for the application gateway -----------

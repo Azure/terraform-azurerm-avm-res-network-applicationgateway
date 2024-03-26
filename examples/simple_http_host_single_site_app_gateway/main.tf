@@ -49,7 +49,7 @@ resource "random_integer" "region_index" {
 
 module "application-gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module

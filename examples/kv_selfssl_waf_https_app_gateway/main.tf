@@ -45,7 +45,6 @@ resource "random_integer" "region_index" {
 
 }
 
-
 module "application-gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
@@ -106,7 +105,6 @@ module "application-gateway" {
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
       cookie_based_affinity = "Disabled"
@@ -116,7 +114,6 @@ module "application-gateway" {
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
-
       }
     }
     # Add more http settings as needed
@@ -158,16 +155,13 @@ module "application-gateway" {
     # Add more rules as needed
   }
 
-
   # SSL Certificate Block
   ssl_certificates = [{
     name                = "app-gateway-cert"
     key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
   }]
 
-
   # HTTP to HTTPS Redirection Configuration for
-
   redirect_configuration = {
     redirect_config_1 = {
       name                 = "Redirect1"

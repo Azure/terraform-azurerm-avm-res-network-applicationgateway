@@ -42,10 +42,8 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
 
 }
-
 module "application-gateway" {
-  source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  source     = "../../"
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module
@@ -82,25 +80,8 @@ module "application-gateway" {
     max_capacity = 2
   }
 
-  # frontend configuration block for the application gateway
-  # Provide Static IP address from backend subnet
-  # Mandatory Input
-
-  # private_ip_address = "100.64.1.5"
-
-  # frontend_ip_type   = "public"
-  # private_ip_address = null
-
   # Frontend port configuration for the application gateway
   # Mandatory Input
-  # frontend_ports = {
-
-  #   frontend-port-80 = {
-  #     name = "frontend-port-80"
-  #     port = 80
-  #   }
-  #   # Add more ports as needed
-  # }
 
   frontend_ports = {
 
@@ -143,15 +124,6 @@ module "application-gateway" {
 
       }
     }
-    # appGatewayBackendHttpSettings-02 = {
-    #   name                  = "appGatewayBackendHttpSettings-02"
-    #   cookie_based_affinity = "Enabled"
-    #   path                  = "/"
-    #   request_timeout       = 30
-    #   enable_https          = false
-
-    # }
-    # Add more http settings as needed
   }
 
   # Http Listerners configuration for the application gateway
@@ -162,22 +134,16 @@ module "application-gateway" {
       name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
-      //frontend_ip_association = "public"
-
     },
     contosoListener = {
       name               = "contosoListener"
       frontend_port_name = "frontend-port-80"
       host_name          = "www.contoso.com"
-      //frontend_ip_association = "public"
-
     },
     fabrikamListener = {
       name               = "fabrikamListener"
       frontend_port_name = "frontend-port-80"
       host_names         = ["www.fabrikam.com", "www.fabrikam.org"]
-      // frontend_ip_association = "Private"
-
     }
     # # Add more http listeners as needed
   }
@@ -185,27 +151,6 @@ module "application-gateway" {
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
-    # routing-rule-1 = {
-    #   name      = "Rule1"
-    #   rule_type = "Basic"
-    #   # The http_listener_name must be same as given http_listeners block
-    #   http_listener_name = "http_listeners-for-80"
-    #   # The backend_address_pool_name  must be same as given backend_address_pool block
-    #   backend_address_pool_name = "appGatewayBackendPool"
-    #   # The backend_http_settings_name must be same as given backend_http_settings block
-    #   backend_http_settings_name = "backend_http_settings-port-80"
-    #   priority                   = 9
-    # }
-
-    # appGatewayHttpListener = {
-    #   name      = "appGatewayHttpListener"
-    #   rule_type = "Basic"
-    #   # http_listener_name         = "contosoListener"
-    #   # backend_address_pool_name  = "contosoPool"
-    #   # backend_http_settings_name = "appGatewayBackendHttpSettings"
-    #   # priority                   = 100
-    # },
-
     contosoRule = {
       name                       = "contosoRule"
       rule_type                  = "Basic"
@@ -225,37 +170,6 @@ module "application-gateway" {
     }
     # Add more rules as needed
   }
-
-  # url_path_map_configurations = {
-  #   url_path_map_default = {
-  #     name                                = "myPathMap"
-  #     default_backend_address_pool_name   = "appGatewayBackendPool"
-  #     default_backend_http_settings_name  = "appGatewayBackendHttpSettings"
-  #     default_redirect_configuration_name = null
-  #     default_rewrite_rule_set_name       = null
-  #     path_rules = {
-  #       imagePathRule = {
-  #         name                        = "imagePathRule"
-  #         paths                       = ["/images/*"]
-  #         backend_address_pool_name   = "imagesBackendPool"
-  #         backend_http_settings_name  = "appGatewayBackendHttpSettings"
-  #         redirect_configuration_name = null
-  #         rewrite_rule_set_name       = null
-  #         firewall_policy_id          = null
-  #       },
-  #       videoPathRule = {
-  #         name                        = "videoPathRule"
-  #         paths                       = ["/video/*"]
-  #         backend_address_pool_name   = "videoBackendPool"
-  #         backend_http_settings_name  = "appGatewayBackendHttpSettings"
-  #         redirect_configuration_name = null
-  #         rewrite_rule_set_name       = null
-  #         firewall_policy_id          = null
-  #       }
-  #     }
-  #   }
-  # }
-
 
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway

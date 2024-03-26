@@ -83,26 +83,6 @@ module "application-gateway" {
     max_capacity = 2
   }
 
-  # frontend configuration block for the application gateway
-  # Provide Static IP address from backend subnet
-  # Mandatory Input
-
-  # private_ip_address = "100.64.1.5"
-
-  # frontend_ip_type   = "public"
-  # private_ip_address = null
-
-  # Frontend port configuration for the application gateway
-  # Mandatory Input
-  # frontend_ports = {
-
-  #   frontend-port-80 = {
-  #     name = "frontend-port-80"
-  #     port = 80
-  #   }
-  #   # Add more ports as needed
-  # }
-
   frontend_ports = {
 
     frontend-port-80 = {
@@ -150,14 +130,6 @@ module "application-gateway" {
 
       }
     }
-    # appGatewayBackendHttpSettings-02 = {
-    #   name                  = "appGatewayBackendHttpSettings-02"
-    #   cookie_based_affinity = "Enabled"
-    #   path                  = "/"
-    #   request_timeout       = 30
-    #   enable_https          = false
-
-    # }
     # Add more http settings as needed
   }
 
@@ -183,18 +155,6 @@ module "application-gateway" {
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
-    # routing-rule-1 = {
-    #   name      = "Rule1"
-    #   rule_type = "Basic"
-    #   # The http_listener_name must be same as given http_listeners block
-    #   http_listener_name = "http_listeners-for-80"
-    #   # The backend_address_pool_name  must be same as given backend_address_pool block
-    #   backend_address_pool_name = "appGatewayBackendPool"
-    #   # The backend_http_settings_name must be same as given backend_http_settings block
-    #   backend_http_settings_name = "backend_http_settings-port-80"
-    #   priority                   = 9
-    # }
-
     routing-rule-1 = {
       name                       = "rule1"
       rule_type                  = "Basic"

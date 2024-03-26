@@ -46,8 +46,6 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
 
 }
-
-
 module "application-gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
