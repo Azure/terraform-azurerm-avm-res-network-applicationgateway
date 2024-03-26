@@ -1,10 +1,8 @@
 
-
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
-# The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
-# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
+# Application Gateway routing traffic from your application. 
+# Add a custom health probe to application gateway
+
 
 #----------All Required Provider Section----------- 
 terraform {
@@ -75,9 +73,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -135,16 +133,6 @@ module "application-gateway" {
     # # Add more http listeners as needed
   }
 
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
-
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
@@ -158,21 +146,24 @@ module "application-gateway" {
     }
     # Add more rules as needed
   }
-  # Optional Input  
-  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
-  diagnostic_settings = {
-    example_setting = {
-      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
-      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
-      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+  # probe configurations for the application gateway
+  # # Optional Input
+  probe_configurations = {
+    probe1 = {
+      name                = "Probe1"
+      host                = "127.0.0.1"
+      interval            = 30
+      timeout             = 10
+      unhealthy_threshold = 3
+      protocol            = "Http"
+      port                = 80
+      path                = "/health"
+
     }
   }
 
+  # Optional Input  
+  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+
 }
-
-
-

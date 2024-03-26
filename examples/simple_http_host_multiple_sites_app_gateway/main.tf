@@ -1,11 +1,7 @@
-
-
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
-# The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
-# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
-
+# Create an application gateway that hosts multiple web sites. 
+# 
+# The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-multiple-sites-cli
 #----------All Required Provider Section----------- 
 terraform {
   required_version = ">= 1.5"
@@ -46,11 +42,8 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
 
 }
-
-
 module "application-gateway" {
-  source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  source     = "../../"
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module
@@ -75,9 +68,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -87,22 +80,32 @@ module "application-gateway" {
     max_capacity = 2
   }
 
-  # frontend port configuration block for the application gateway
+  # Frontend port configuration for the application gateway
+  # Mandatory Input
+
   frontend_ports = {
+
     frontend-port-80 = {
       name = "frontend-port-80"
       port = 80
+    },
+    port8080 = {
+      name = "port8080"
+      port = 8080
     }
+    # Add more ports as needed
   }
 
   # Backend address pool configuration for the application gateway
   # Mandatory Input
   backend_address_pools = {
-    appGatewayBackendPool = {
-      name         = "appGatewayBackendPool"
-      ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
+    contosoPool = {
+      name = "contosoPool"
+    },
+    fabrikamPool = {
+      name = "fabrikamPool"
     }
+
   }
 
   # Backend http settings configuration for the application gateway
@@ -121,43 +124,53 @@ module "application-gateway" {
 
       }
     }
-    # Add more http settings as needed
   }
 
   # Http Listerners configuration for the application gateway
   # Mandatory Input
   http_listeners = {
+
     appGatewayHttpListener = {
       name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
+    },
+    contosoListener = {
+      name               = "contosoListener"
+      frontend_port_name = "frontend-port-80"
+      host_name          = "www.contoso.com"
+    },
+    fabrikamListener = {
+      name               = "fabrikamListener"
+      frontend_port_name = "frontend-port-80"
+      host_names         = ["www.fabrikam.com", "www.fabrikam.org"]
     }
     # # Add more http listeners as needed
   }
 
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
-
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
-    routing-rule-1 = {
-      name                       = "rule-1"
+    contosoRule = {
+      name                       = "contosoRule"
       rule_type                  = "Basic"
-      http_listener_name         = "appGatewayHttpListener"
-      backend_address_pool_name  = "appGatewayBackendPool"
+      http_listener_name         = "contosoListener"
+      backend_address_pool_name  = "contosoPool"
       backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
+    },
+    fabrikamRule = {
+      name      = "fabrikamRule"
+      rule_type = "Basic"
+
+      http_listener_name         = "fabrikamListener"
+      backend_address_pool_name  = "fabrikamPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      priority                   = 200
     }
     # Add more rules as needed
   }
+
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
@@ -166,13 +179,9 @@ module "application-gateway" {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
       workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
       log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+      log_groups                     = ["allLogs"]
+      metric_categories              = ["AllMetrics"]
     }
   }
 
 }
-
-
-

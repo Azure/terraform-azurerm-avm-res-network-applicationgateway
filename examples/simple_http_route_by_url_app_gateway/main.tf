@@ -1,10 +1,7 @@
-
-
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
-# The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
-# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
+# Application Gateway routing for different types of traffic from your application. 
+# The routing then directs the traffic to different server pools based on the URL.
+# The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-url-route-cli
 
 #----------All Required Provider Section----------- 
 terraform {
@@ -47,7 +44,6 @@ resource "random_integer" "region_index" {
 
 }
 
-
 module "application-gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
@@ -75,9 +71,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -87,22 +83,35 @@ module "application-gateway" {
     max_capacity = 2
   }
 
-  # frontend port configuration block for the application gateway
   frontend_ports = {
+
     frontend-port-80 = {
       name = "frontend-port-80"
       port = 80
+    },
+    port8080 = {
+      name = "port8080"
+      port = 8080
     }
+    # Add more ports as needed
   }
 
   # Backend address pool configuration for the application gateway
   # Mandatory Input
   backend_address_pools = {
     appGatewayBackendPool = {
-      name         = "appGatewayBackendPool"
-      ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
+      name = "appGatewayBackendPool"
+
+    },
+    imagesBackendPool = {
+      name = "imagesBackendPool"
+
+    },
+    videoBackendPool = {
+      name = "videoBackendPool"
+
     }
+
   }
 
   # Backend http settings configuration for the application gateway
@@ -131,33 +140,72 @@ module "application-gateway" {
       name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
+      //frontend_ip_association = "public"
+    },
+    backendListener = {
+      name               = "backendListener"
+      host_name          = null
+      frontend_port_name = "port8080"
+      // frontend_ip_association = "Private"
+
     }
     # # Add more http listeners as needed
   }
-
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
 
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
     routing-rule-1 = {
-      name                       = "rule-1"
+      name                       = "rule1"
       rule_type                  = "Basic"
       http_listener_name         = "appGatewayHttpListener"
       backend_address_pool_name  = "appGatewayBackendPool"
       backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
     }
+    routing-rule-2 = {
+      name                       = "rule2"
+      rule_type                  = "PathBasedRouting"
+      url_path_map_name          = "myPathMap"
+      http_listener_name         = "backendListener"
+      backend_address_pool_name  = "appGatewayBackendPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      priority                   = 200
+    }
     # Add more rules as needed
   }
+
+  url_path_map_configurations = {
+    url_path_map_default = {
+      name                                = "myPathMap"
+      default_backend_address_pool_name   = "appGatewayBackendPool"
+      default_backend_http_settings_name  = "appGatewayBackendHttpSettings"
+      default_redirect_configuration_name = null
+      default_rewrite_rule_set_name       = null
+      path_rules = {
+        imagePathRule = {
+          name                        = "imagePathRule"
+          paths                       = ["/images/*"]
+          backend_address_pool_name   = "imagesBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        },
+        videoPathRule = {
+          name                        = "videoPathRule"
+          paths                       = ["/video/*"]
+          backend_address_pool_name   = "videoBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        }
+      }
+    }
+  }
+
+
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
@@ -166,13 +214,9 @@ module "application-gateway" {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
       workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
       log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+      log_groups                     = ["allLogs"]
+      metric_categories              = ["AllMetrics"]
     }
   }
 
 }
-
-
-

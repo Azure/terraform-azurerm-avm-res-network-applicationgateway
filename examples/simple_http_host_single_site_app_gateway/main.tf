@@ -1,7 +1,6 @@
 
-
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
+# Application Gateway routing traffic from your application. 
 # Assume that your Application runing the scale set contains two virtual machine instances. 
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
@@ -50,7 +49,7 @@ resource "random_integer" "region_index" {
 
 module "application-gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module
@@ -75,9 +74,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -135,16 +134,6 @@ module "application-gateway" {
     # # Add more http listeners as needed
   }
 
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
-
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
@@ -173,6 +162,3 @@ module "application-gateway" {
   }
 
 }
-
-
-

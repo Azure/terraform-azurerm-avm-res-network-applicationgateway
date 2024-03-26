@@ -170,14 +170,14 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 #     primary = true
 
 #     ip_configuration {
-#       name      = "internal"
-#       primary   = true
-#       subnet_id = azurerm_subnet.workload.id
+#       name                                         = "internal"
+#       primary                                      = true
+#       subnet_id                                    = azurerm_subnet.workload.id
+#       application_gateway_backend_address_pool_ids = module.application-gateway.backend_address_pools[*].id
 #     }
 #   }
 #   custom_data = base64encode(local.webvm_custom_data)
-
-#   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+#   depends_on  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group, module.application-gateway]
 # }
 
 # # Create Network Security Group (NSG)
