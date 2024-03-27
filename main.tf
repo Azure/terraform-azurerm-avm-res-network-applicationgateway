@@ -241,33 +241,6 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 
-  #----------URL Path Map Configuration for the application gateway -----------
-  # #----------Optionl Configuration  -----------
-  # dynamic "url_path_map" {
-  #   for_each = var.url_path_map_configurations != null ? var.url_path_map_configurations : {}
-  #   content {
-  #     name                                = url_path_map.value.name
-  #     default_backend_address_pool_name   = url_path_map.value.default_backend_address_pool_name == null ? url_path_map.value.default_backend_address_pool_name : null
-  #     default_backend_http_settings_name  = url_path_map.value.default_backend_http_settings_name == null ? url_path_map.value.default_backend_http_settings_name : null
-  #     default_redirect_configuration_name = lookup(url_path_map.value, "default_redirect_configuration_name", null)
-  #     default_rewrite_rule_set_name       = lookup(url_path_map.value, "default_rewrite_rule_set_name", null)
-  #     dynamic "path_rule" {
-  #       # for_each = lookup(url_path_map.value, "path_rules")
-  #       //for_each = url_path_map.value.path_rules != null ? url_path_map.value.path_rules : []
-  #       for_each = var.url_path_map_configurations != null ? flatten([for k, v in var.url_path_map_configurations : v.path_rules]) : []
-  #       content {
-  #         name                        = path_rule.value.name
-  #         paths                       = flatten(path_rule.value.paths)
-  #         backend_address_pool_name   = path_rule.value.backend_address_pool_name
-  #         backend_http_settings_name  = path_rule.value.backend_http_settings_name
-  #         redirect_configuration_name = lookup(path_rule.value, "redirect_configuration_name", null)
-  #         rewrite_rule_set_name       = lookup(path_rule.value, "rewrite_rule_set_name", null)
-  #         firewall_policy_id          = lookup(path_rule.value, "firewall_policy_id", null)
-  #       }
-  #     }
-  #   }
-  # }
-
 
   dynamic "url_path_map" {
     for_each = var.url_path_map_configurations != null ? var.url_path_map_configurations : {}
@@ -295,69 +268,6 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 
-  # dynamic "rewrite_rule_set" {
-  #   for_each = var.rewrite_rule_set_configurations
-  #   content {
-  #     name = var.rewrite_rule_set.name
-
-  #     dynamic "rewrite_rule" {
-  #       for_each = lookup(var.rewrite_rule_set_configurations, "rewrite_rules", [])
-  #       content {
-  #         name          = rewrite_rule.value.name
-  #         rule_sequence = rewrite_rule.value.rule_sequence
-
-  #         dynamic "condition" {
-  #           for_each = lookup(rewrite_rule_set.value, "condition", [])
-  #           content {
-  #             variable    = condition.value.variable
-  #             pattern     = condition.value.pattern
-  #             ignore_case = condition.value.ignore_case
-  #             negate      = condition.value.negate
-  #           }
-  #         }
-
-  #         dynamic "request_header_configuration" {
-  #           for_each = lookup(rewrite_rule.value, "request_header_configuration", [])
-  #           content {
-  #             header_name  = request_header_configuration.value.header_name
-  #             header_value = request_header_configuration.value.header_value
-  #           }
-  #         }
-
-  #         dynamic "response_header_configuration" {
-  #           for_each = lookup(rewrite_rule.value, "response_header_configuration", [])
-  #           content {
-  #             header_name  = response_header_configuration.value.header_name
-  #             header_value = response_header_configuration.value.header_value
-  #           }
-  #         }
-
-  #         dynamic "url" {
-  #           for_each = lookup(rewrite_rule.value, "url", [])
-  #           content {
-  #             path         = url.value.path
-  #             query_string = url.value.query_string
-  #             reroute      = url.value.reroute
-  #           }
-  #         }
-  #       }
-  #     }
-  #   }
-  # }
-
-
-  # dynamic "custom_error_configuration" {
-  #     for_each = var.custom_error_configurations
-  #     content {
-  #       name     = custom_error_configuration.value.name
-  #       status   = custom_error_configuration.value.status
-  #       error_response {
-  #         custom_response {
-  #           response_html = custom_error_configuration.value.error_response.custom_response.response_html
-  #         }
-  #       }
-  #     }
-  #   }
 
   #----------Classic WAF Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
@@ -432,4 +342,3 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 }
 
 # Other configurations for your environment
-
