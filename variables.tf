@@ -81,17 +81,6 @@ variable "public_ip_name" {
   }
 }
 
-# Variable declaration for the Log Analytics Workspace ID
-
-# variable "log_analytics_workspace_id" {
-#   type        = string
-#   description = "The Log Analytics Workspace ID"
-#   validation {
-#     condition     = length(var.log_analytics_workspace_id) > 0
-#     error_message = "The Log Analytics Workspace ID is required to configure the diagnostic settings."
-#   }
-# }
-
 # Variable declaration for the  public  ip sku
 variable "public_ip_sku_tier" {
   type        = string
@@ -356,60 +345,6 @@ variable "trusted_root_certificates" {
 }
 
 
-# variable "rewrite_rule_set_configurations" {
-#   description = "List of rewrite rule sets including rewrite rules"
-#   type        = list(object({
-#     name          = string
-#     rewrite_rules = list(object({
-#       name                    = string
-#       rule_sequence           = number
-#       condition               = list(object({
-#         variable    = string
-#         pattern     = string
-#         ignore_case = bool
-#         negate      = bool
-#       }))
-#       request_header_configuration = list(object({
-#         header_name  = string
-#         header_value = string
-#       }))
-#       response_header_configuration = list(object({
-#         header_name  = string
-#         header_value = string
-#       }))
-#       url = list(object({
-#         path         = string
-#         query_string = string
-#         reroute      = string
-#       }))
-#     }))
-#   }))
-# default = []
-# }
-
-# variable "custom_error_configurations" {
-#   description = "List of custom error configurations."
-#   type        = list(object({
-#     name         = string
-#     status       = string
-#     error_response = object({
-#       custom_response = object({
-#         response_html = string
-#       })
-#     })
-#   }))
-#    default     = []
-# }
-
-#  variable "frontend_ip_assocation" {
-#   type = string
-#   default = "public"
-#  }
-
-
-# Variable declaration for the request routing rules
-
-
 variable "private_ip_address" {
   description = "Private IP Address to assign to the Application Gateway Load Balancer."
   type        = string
@@ -456,10 +391,6 @@ variable "waf_configuration" {
   default = null
 }
 
-# variable "waf_policy_name" {
-#   type = string
-#   description = "The name of the WAF policy."
-# }
 
 variable "enable_classic_rule" {
   type        = bool

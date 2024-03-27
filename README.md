@@ -22,17 +22,28 @@ The Terraform module for Azure Application Gateway is versatile and adaptable, a
 
 Each of these scenarios has its own set of input requirements, which can be tailored to meet your specific use case. The module provides the flexibility to deploy Azure Application Gateways for a wide range of applications and security needs.
 
-**[Simple HTTP Application Gateway](examples/simple\_http\_app\_gateway/README.md)**
+**[Simple HTTP Application Gateway](examples/simple\_http\_host\_single\_site\_app\_gateway/README.md)**
 This scenario sets up a straightforward HTTP Application Gateway, typically for basic web applications or services.
+
+**[Multi-site HTTP Application Gateway](examples/simple\_http\_host\_multiple\_sites\_app\_gateway/README.md)** Multi-site hosting enables you to configure more than one web application on the same port of application gateways using public-facing listeners. It allows you to configure a more efficient topology for your deployments by adding up to 100+ websites to one application gateway. Each website can be directed to its own backend pool. For example, three domains, contoso.com, fabrikam.com, and adatum.com, point to the IP address of the application gateway. You'd create three multi-site listeners and configure each listener for the respective port and protocol setting.
+
+**[Application Gateway Internal](examples/simple\_http\_app\_gateway\_internal/README.md)**
+Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
+
+**[Application Gateway Route web traffic based on the URL ](examples/simple\_http\_route\_by\_url\_app\_gateway/README.md)**
+Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
 
 **[Web Application Firewall (WAF)](examples/simple\_waf\_http\_app\_gateway/README.md)**
 A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
 
-**[Self-Signed SSL (HTTPS)](examples/simple\_http\_app\_gateway/README.md)**
+**[Application Gateway with Self-Signed SSL (HTTPS)](examples/selfssl\_waf\_https\_app\_gateway/README.md)**
 In this scenario, self-signed SSL certificates are utilized to secure traffic to HTTPS. You'll need to configure SSL certificates and redirection rules.
 
-**[SSL with Azure Key Vault](examples/kv\_selfssl\_waf\_https\_app\_gateway/README.md)**
+**[Application Gateway with SSL with Azure Key Vault](examples/kv\_selfssl\_waf\_https\_app\_gateway/README.md)**
 For enhanced security, SSL certificates are managed using Azure Key Vault. This scenario involves setting up Key Vault and integrating it with the Application Gateway. Detailed configuration for Key Vault and SSL certificates is necessary.
+
+**[Application Gateway monitors the health probes](examples/simple\_http\_probe\_app\_gateway/README.md)**
+Azure Application Gateway monitors the health of all the servers in its backend pool and automatically stops sending traffic to any server it considers unhealthy. The probes continue to monitor such an unhealthy server, and the gateway starts routing the traffic to it once again as soon as the probes detect it as healthy.
 
 Before running the script, make sure you have logged in to your Azure subscription using the Azure CLI or Azure PowerShell, so Terraform can authenticate and interact with your Azure account.
 
@@ -61,24 +72,19 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_application_gateway.application_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
-- [azurerm_monitor_diagnostic_setting.diagnostic_setting_for_app_gateway](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_monitor_diagnostic_setting.diagnostic_setting_for_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
-- [azurerm_public_ip.public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
+- [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
+- [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
+- [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
+- [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [random_id.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
-- [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subnet) (data source)
+- [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subnet) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
 
 The following input variables are required:
-
-### <a name="input_app_gateway_name"></a> [app\_gateway\_name](#input\_app\_gateway\_name)
-
-Description: The name of the application gateway.
-
-Type: `string`
 
 ### <a name="input_backend_address_pools"></a> [backend\_address\_pools](#input\_backend\_address\_pools)
 
@@ -87,7 +93,7 @@ Description: List of backend address pools
 Type:
 
 ```hcl
-list(object({
+map(object({
     name         = string
     fqdns        = optional(list(string))
     ip_addresses = optional(list(string))
@@ -101,15 +107,38 @@ Description: List of backend HTTP settings
 Type:
 
 ```hcl
-list(object({
-    name                  = string
-    port                  = number
-    protocol              = string
-    cookie_based_affinity = string
-    # affinity_cookie_name  = optional(string)
-    # enable_https = bool
+map(object({
+    name                                = string
+    cookie_based_affinity               = string
+    path                                = optional(string)
+    affinity_cookie_name                = optional(string)
+    enable_https                        = bool
+    probe_name                          = optional(string)
+    request_timeout                     = number
+    host_name                           = optional(string)
+    pick_host_name_from_backend_address = optional(bool)
+    authentication_certificate = optional(object({
+      name = string
+    }))
+    trusted_root_certificate_names = optional(list(string))
+    connection_draining = optional(object({
+      enable_connection_draining = bool
+      drain_timeout_sec          = number
+    }))
+  }))
+```
 
-    # Define other attributes as needed
+### <a name="input_frontend_ports"></a> [frontend\_ports](#input\_frontend\_ports)
+
+Description: Map of frontend ports
+
+Type:
+
+```hcl
+map(object({
+    name = string
+    port = number
+
   }))
 ```
 
@@ -120,14 +149,14 @@ Description: List of HTTP listeners
 Type:
 
 ```hcl
-list(object({
-    name                   = string
-    frontend_port_name     = string
-    protocol               = string
-    firewall_policy_id     = optional(string)
-    frontend_ip_assocation = string
-    host_name              = optional(string)
-    host_names             = optional(list(string))
+map(object({
+    name               = string
+    frontend_port_name = string
+
+    firewall_policy_id   = optional(string)
+    require_sni          = optional(bool)
+    host_name            = optional(string)
+    host_names           = optional(list(string))
     ssl_certificate_name = optional(string)
     ssl_profile_name     = optional(string)
     custom_error_configuration = optional(list(object({
@@ -144,9 +173,9 @@ Description: The Azure regional location where the resources will be deployed.
 
 Type: `string`
 
-### <a name="input_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#input\_log\_analytics\_workspace\_id)
+### <a name="input_name"></a> [name](#input\_name)
 
-Description: The Log Analytics Workspace ID
+Description: The name of the application gateway.
 
 Type: `string`
 
@@ -163,7 +192,7 @@ Description: List of request routing rules
 Type:
 
 ```hcl
-list(object({
+map(object({
     name                        = string
     rule_type                   = string
     http_listener_name          = string
@@ -219,7 +248,7 @@ Type: `any`
 
 The following input variables are optional (have default values):
 
-### <a name="input_app_gateway_waf_policy_name"></a> [app\_gateway\_waf\_policy\_name](#input\_app\_gateway\_waf\_policy\_name)
+### <a name="input_app_gateway_waf_policy_resource_id"></a> [app\_gateway\_waf\_policy\_resource\_id](#input\_app\_gateway\_waf\_policy\_resource\_id)
 
 Description: n/a
 
@@ -250,12 +279,46 @@ Type:
 
 ```hcl
 object({
-    min_capacity = number           // Minimum in the range 0 to 100
-    max_capacity = optional(number) // Maximum in the range 2 to 125
+    min_capacity = optional(number, 1) // Minimum in the range 0 to 100
+    max_capacity = optional(number, 2) // Maximum in the range 2 to 125
   })
 ```
 
 Default: `null`
+
+### <a name="input_diagnostic_settings"></a> [diagnostic\_settings](#input\_diagnostic\_settings)
+
+Description: A map of diagnostic settings to create on the ddos protection plan. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `name` - (Optional) The name of the diagnostic setting. One will be generated if not set, however this will not be unique if you want to create multiple diagnostic setting resources.
+- `log_categories` - (Optional) A set of log categories to send to the log analytics workspace. Defaults to `[]`.
+- `log_groups` - (Optional) A set of log groups to send to the log analytics workspace. Defaults to `["allLogs"]`.
+- `metric_categories` - (Optional) A set of metric categories to send to the log analytics workspace. Defaults to `["AllMetrics"]`.
+- `log_analytics_destination_type` - (Optional) The destination type for the diagnostic setting. Possible values are `Dedicated` and `AzureDiagnostics`. Defaults to `Dedicated`.
+- `workspace_resource_id` - (Optional) The resource ID of the log analytics workspace to send logs and metrics to.
+- `storage_account_resource_id` - (Optional) The resource ID of the storage account to send logs and metrics to.
+- `event_hub_authorization_rule_resource_id` - (Optional) The resource ID of the event hub authorization rule to send logs and metrics to.
+- `event_hub_name` - (Optional) The name of the event hub. If none is specified, the default event hub will be selected.
+- `marketplace_partner_resource_id` - (Optional) The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic LogsLogs.
+
+Type:
+
+```hcl
+map(object({
+    name                                     = optional(string, null)
+    log_categories                           = optional(set(string), [])
+    log_groups                               = optional(set(string), ["allLogs"])
+    metric_categories                        = optional(set(string), ["AllMetrics"])
+    log_analytics_destination_type           = optional(string, "Dedicated")
+    workspace_resource_id                    = optional(string, null)
+    storage_account_resource_id              = optional(string, null)
+    event_hub_authorization_rule_resource_id = optional(string, null)
+    event_hub_name                           = optional(string, null)
+    marketplace_partner_resource_id          = optional(string, null)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_enable_classic_rule"></a> [enable\_classic\_rule](#input\_enable\_classic\_rule)
 
@@ -275,6 +338,14 @@ Type: `bool`
 
 Default: `true`
 
+### <a name="input_frontend_ip_type"></a> [frontend\_ip\_type](#input\_frontend\_ip\_type)
+
+Description: Type of frontend IP configuration. Possible values: 'public', 'private', 'both'
+
+Type: `string`
+
+Default: `"public"`
+
 ### <a name="input_http2_enable"></a> [http2\_enable](#input\_http2\_enable)
 
 Description: The Azure application gateway HTTP/2 protocol support
@@ -291,6 +362,21 @@ Type: `any`
 
 Default: `null`
 
+### <a name="input_lock"></a> [lock](#input\_lock)
+
+Description: The lock level to apply to the deployed resource. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+
+Type:
+
+```hcl
+object({
+    name = optional(string, null)
+    kind = optional(string, "None")
+  })
+```
+
+Default: `{}`
+
 ### <a name="input_private_ip_address"></a> [private\_ip\_address](#input\_private\_ip\_address)
 
 Description: Private IP Address to assign to the Application Gateway Load Balancer.
@@ -306,9 +392,9 @@ Description: List of probe configurations.
 Type:
 
 ```hcl
-list(object({
+map(object({
     name                                      = string
-    host                                      = optional(string)
+    host                                      = string
     interval                                  = number
     timeout                                   = number
     unhealthy_threshold                       = number
@@ -324,7 +410,7 @@ list(object({
   }))
 ```
 
-Default: `[]`
+Default: `null`
 
 ### <a name="input_public_ip_allocation_method"></a> [public\_ip\_allocation\_method](#input\_public\_ip\_allocation\_method)
 
@@ -342,24 +428,54 @@ Type: `string`
 
 Default: `"Standard"`
 
-### <a name="input_redirection_configurations"></a> [redirection\_configurations](#input\_redirection\_configurations)
+### <a name="input_redirect_configuration"></a> [redirect\_configuration](#input\_redirect\_configuration)
 
 Description: List of redirection configurations.
 
 Type:
 
 ```hcl
-list(object({
+map(object({
     name                 = string
     redirect_type        = string
-    target_url           = string
+    target_listener_name = optional(string)
+    target_url           = optional(string)
     include_path         = optional(bool)
     include_query_string = optional(bool)
 
   }))
 ```
 
-Default: `[]`
+Default: `null`
+
+### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
+
+Description:  A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+
+- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+- `principal_id` - The ID of the principal to assign the role to.
+- `description` - The description of the role assignment.
+- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+- `condition` - The condition which will be used to scope the role assignment.
+- `condition_version` - The version of the condition syntax. Valid values are '2.0'.
+
+> Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
+
+Type:
+
+```hcl
+map(object({
+    role_definition_id_or_name             = string
+    principal_id                           = string
+    description                            = optional(string, null)
+    skip_service_principal_aad_check       = optional(bool, false)
+    condition                              = optional(string, null)
+    condition_version                      = optional(string, null)
+    delegated_managed_identity_resource_id = optional(string, null)
+  }))
+```
+
+Default: `{}`
 
 ### <a name="input_ssl_certificates"></a> [ssl\_certificates](#input\_ssl\_certificates)
 
@@ -385,13 +501,13 @@ Description: Application Gateway SSL configuration
 Type:
 
 ```hcl
-object({
+map(object({
     disabled_protocols   = optional(list(string))
     policy_type          = optional(string)
     policy_name          = optional(string)
     cipher_suites        = optional(list(string))
     min_protocol_version = optional(string)
-  })
+  }))
 ```
 
 Default: `null`
@@ -434,13 +550,13 @@ Description: List of URL path map configurations.
 Type:
 
 ```hcl
-list(object({
+map(object({
     name                                = string
     default_redirect_configuration_name = optional(string)
     default_rewrite_rule_set_name       = optional(string)
     default_backend_http_settings_name  = optional(string)
     default_backend_address_pool_name   = optional(string)
-    path_rules = list(object({
+    path_rules = map(object({
       name                        = string
       paths                       = list(string)
       backend_address_pool_name   = optional(string)
@@ -452,7 +568,7 @@ list(object({
   }))
 ```
 
-Default: `[]`
+Default: `null`
 
 ### <a name="input_waf_configuration"></a> [waf\_configuration](#input\_waf\_configuration)
 
@@ -480,7 +596,7 @@ Type: `bool`
 
 Default: `true`
 
-### <a name="input_zone_redundant"></a> [zone\_redundant](#input\_zone\_redundant)
+### <a name="input_zones"></a> [zones](#input\_zones)
 
 Description: The Azure application gateway zone redundancy
 
@@ -508,14 +624,6 @@ Description: Information about the backend address pools configured for the Appl
 
 Description: Information about the backend HTTP settings for the Application Gateway, including settings like port and protocol.
 
-### <a name="output_diagnostic_setting_for_app_gateway_id"></a> [diagnostic\_setting\_for\_app\_gateway\_id](#output\_diagnostic\_setting\_for\_app\_gateway\_id)
-
-Description: The ID of the diagnostic settings for the Application Gateway.
-
-### <a name="output_diagnostic_setting_for_public_ip_id"></a> [diagnostic\_setting\_for\_public\_ip\_id](#output\_diagnostic\_setting\_for\_public\_ip\_id)
-
-Description: The ID of the diagnostic settings for the associated Public IP address.
-
 ### <a name="output_frontend_port"></a> [frontend\_port](#output\_frontend\_port)
 
 Description: Information about the frontend ports used by the Application Gateway, including their names and port numbers.
@@ -523,10 +631,6 @@ Description: Information about the frontend ports used by the Application Gatewa
 ### <a name="output_http_listeners"></a> [http\_listeners](#output\_http\_listeners)
 
 Description: Information about the HTTP listeners configured for the Application Gateway, including their names and settings.
-
-### <a name="output_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#output\_log\_analytics\_workspace\_id)
-
-Description: The ID of the Azure Log Analytics workspace.
 
 ### <a name="output_probes"></a> [probes](#output\_probes)
 

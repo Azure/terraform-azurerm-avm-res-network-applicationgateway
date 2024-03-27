@@ -1,11 +1,18 @@
 <!-- BEGIN_TF_DOCS -->
+# Application Gateway Route web traffic based on the URL
+Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
+
 # Default example
 
 This deploys the module in its simplest form.
 
 ```hcl
-#----------All Required Provider Section----------- 
+#----------Testing Use Case  -------------
+# Application Gateway routing for different types of traffic from your application. 
+# The routing then directs the traffic to different server pools based on the URL.
+# The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-url-route-cli
 
+#----------All Required Provider Section----------- 
 terraform {
   required_version = ">= 1.5"
 
@@ -46,24 +53,24 @@ resource "random_integer" "region_index" {
 
 }
 
-
 module "application-gateway" {
-  source     = "../../"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group, azurerm_log_analytics_workspace.log_analytics_workspace]
+  source = "../../"
+  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module
 
-  public_ip_name             = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name        = azurerm_resource_group.rg-group.name
-  location                   = azurerm_resource_group.rg-group.location
-  vnet_name                  = azurerm_virtual_network.vnet.name
-  subnet_name_frontend       = azurerm_subnet.frontend.name
-  subnet_name_backend        = azurerm_subnet.backend.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry    = var.enable_telemetry
+  public_ip_name       = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name  = azurerm_resource_group.rg-group.name
+  location             = azurerm_resource_group.rg-group.location
+  vnet_name            = azurerm_virtual_network.vnet.name
+  subnet_name_frontend = azurerm_subnet.frontend.name
+  subnet_name_backend  = azurerm_subnet.backend.name
+  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
+  enable_telemetry = var.enable_telemetry
 
   # provide Application gateway name 
-  app_gateway_name = module.naming.application_gateway.name_unique
+  name = module.naming.application_gateway.name_unique
 
   tags = {
     environment = "dev"
@@ -81,87 +88,147 @@ module "application-gateway" {
   }
 
   autoscale_configuration = {
-    min_capacity = 2
-    max_capacity = 15
+    min_capacity = 1
+    max_capacity = 2
   }
 
-  # frontend configuration block for the application gateway
-  # frontend_ip_configuration_name = "app-gateway-feip"
-  private_ip_address = "100.64.1.5" // IP address from backend subnet
+  frontend_ports = {
 
-  # Backend configuration for the application gateway
-  backend_address_pools = [
-    {
-      name = "Pool1"
-      #fqdns        = ["example1.com", "example2.com"]
-      ip_addresses = ["10.90.2.4", "10.90.2.6"]
+    frontend-port-80 = {
+      name = "frontend-port-80"
+      port = 80
     },
-    {
-      name = "Pool2"
-      # fqdns        = ["contoso.com", "app1.contoso.com"]
-      ip_addresses = ["10.90.2.4", "10.90.2.6"]
+    port8080 = {
+      name = "port8080"
+      port = 8080
     }
-    # Add more pools as needed
-  ]
+    # Add more ports as needed
+  }
 
-  # Http Listerners configuration for the application gateway
-  http_listeners = [
-    {
-      name                   = "http-listener-80"
-      frontend_port_name     = null
-      protocol               = "Http"
-      frontend_ip_assocation = "public"
+  # Backend address pool configuration for the application gateway
+  # Mandatory Input
+  backend_address_pools = {
+    appGatewayBackendPool = {
+      name = "appGatewayBackendPool"
+
     },
-    {
-      name                   = "http-listener2-81"
-      frontend_port_name     = null
-      protocol               = "Http"
-      frontend_ip_assocation = "both"
+    imagesBackendPool = {
+      name = "imagesBackendPool"
+
+    },
+    videoBackendPool = {
+      name = "videoBackendPool"
+
     }
-    # Add more http listeners as needed
-  ]
+
+  }
 
   # Backend http settings configuration for the application gateway
+  # Mandatory Input
+  backend_http_settings = {
 
-  backend_http_settings = [
-    {
-      name                  = "port1-80"
-      port                  = 80
-      protocol              = "Http"
+    appGatewayBackendHttpSettings = {
+      name                  = "appGatewayBackendHttpSettings"
       cookie_based_affinity = "Disabled"
-    },
-    {
-      name                  = "port2-81"
-      port                  = 81
-      protocol              = "Http"
-      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      enable_https          = false
+      request_timeout       = 30
+      connection_draining = {
+        enable_connection_draining = true
+        drain_timeout_sec          = 300
+
+      }
     }
     # Add more http settings as needed
-  ]
+  }
+
+  # Http Listerners configuration for the application gateway
+  # Mandatory Input
+  http_listeners = {
+    appGatewayHttpListener = {
+      name               = "appGatewayHttpListener"
+      host_name          = null
+      frontend_port_name = "frontend-port-80"
+      //frontend_ip_association = "public"
+    },
+    backendListener = {
+      name               = "backendListener"
+      host_name          = null
+      frontend_port_name = "port8080"
+      // frontend_ip_association = "Private"
+
+    }
+    # # Add more http listeners as needed
+  }
 
   # Routing rules configuration for the backend pool
-  request_routing_rules = [
-    {
-      name                      = "Rule1"
-      rule_type                 = "Basic"
-      http_listener_name        = null
-      backend_address_pool_name = null
-      priority                  = 9
-    },
-    {
-      name                      = "Rule2"
-      rule_type                 = "Basic"            
-      http_listener_name        = null 
-      backend_address_pool_name = null
-      priority                  = 10
-    },
+  # Mandatory Input
+  request_routing_rules = {
+    routing-rule-1 = {
+      name                       = "rule1"
+      rule_type                  = "Basic"
+      http_listener_name         = "appGatewayHttpListener"
+      backend_address_pool_name  = "appGatewayBackendPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      priority                   = 100
+    }
+    routing-rule-2 = {
+      name                       = "rule2"
+      rule_type                  = "PathBasedRouting"
+      url_path_map_name          = "myPathMap"
+      http_listener_name         = "backendListener"
+      backend_address_pool_name  = "appGatewayBackendPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      priority                   = 200
+    }
     # Add more rules as needed
-  ]
+  }
+
+  url_path_map_configurations = {
+    url_path_map_default = {
+      name                                = "myPathMap"
+      default_backend_address_pool_name   = "appGatewayBackendPool"
+      default_backend_http_settings_name  = "appGatewayBackendHttpSettings"
+      default_redirect_configuration_name = null
+      default_rewrite_rule_set_name       = null
+      path_rules = {
+        imagePathRule = {
+          name                        = "imagePathRule"
+          paths                       = ["/images/*"]
+          backend_address_pool_name   = "imagesBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        },
+        videoPathRule = {
+          name                        = "videoPathRule"
+          paths                       = ["/video/*"]
+          backend_address_pool_name   = "videoBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        }
+      }
+    }
+  }
+
 
   # Optional Input  
-  zone_redundant = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
-}
+  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
+  diagnostic_settings = {
+    example_setting = {
+      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
+      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
+      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
+      log_groups                     = ["allLogs"]
+      metric_categories              = ["AllMetrics"]
+    }
+  }
+
+}
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -234,14 +301,6 @@ Description: ID of the Frontend Subnet
 ### <a name="output_frontend_subnet_name"></a> [frontend\_subnet\_name](#output\_frontend\_subnet\_name)
 
 Description: Name of the Frontend Subnet
-
-### <a name="output_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#output\_log\_analytics\_workspace\_id)
-
-Description: ID of the Azure Log Analytics Workspace
-
-### <a name="output_log_analytics_workspace_name"></a> [log\_analytics\_workspace\_name](#output\_log\_analytics\_workspace\_name)
-
-Description: Name of the Azure Log Analytics Workspace
 
 ### <a name="output_private_ip_test_subnet_id"></a> [private\_ip\_test\_subnet\_id](#output\_private\_ip\_test\_subnet\_id)
 

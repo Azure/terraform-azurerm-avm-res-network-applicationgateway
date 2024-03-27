@@ -1,11 +1,13 @@
 <!-- BEGIN_TF_DOCS -->
+# Application Gateway Internal
+Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
+
 # Default example
 
 This deploys the module in its simplest form.
 
 ```hcl
 #----------All Required Provider Section----------- 
-
 terraform {
   required_version = ">= 1.5"
 
@@ -46,24 +48,24 @@ resource "random_integer" "region_index" {
 
 }
 
-
 module "application-gateway" {
-  source     = "../../"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group, azurerm_log_analytics_workspace.log_analytics_workspace]
+  source = "../../"
+  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 
   # pre-requisites resources input required for the module
 
-  public_ip_name             = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name        = azurerm_resource_group.rg-group.name
-  location                   = azurerm_resource_group.rg-group.location
-  vnet_name                  = azurerm_virtual_network.vnet.name
-  subnet_name_frontend       = azurerm_subnet.frontend.name
-  subnet_name_backend        = azurerm_subnet.backend.name
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry    = var.enable_telemetry
+  public_ip_name       = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name  = azurerm_resource_group.rg-group.name
+  location             = azurerm_resource_group.rg-group.location
+  vnet_name            = azurerm_virtual_network.vnet.name
+  subnet_name_frontend = azurerm_subnet.frontend.name
+  subnet_name_backend  = azurerm_subnet.backend.name
+  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
+  enable_telemetry = var.enable_telemetry
 
   # provide Application gateway name 
-  app_gateway_name = module.naming.application_gateway.name_unique
+  name = module.naming.application_gateway.name_unique
 
   tags = {
     environment = "dev"
@@ -86,80 +88,81 @@ module "application-gateway" {
   }
 
   # frontend configuration block for the application gateway
-  # frontend_ip_configuration_name = "app-gateway-feip"
-  private_ip_address = "100.64.1.5" // IP address from backend subnet
+  # Provide Static IP address from backend subnet
+  # Mandatory Input
 
-  # Backend configuration for the application gateway
-  backend_address_pools = [
-    {
-      name = "Pool1"
-      #fqdns        = ["example1.com", "example2.com"]
-      ip_addresses = ["10.90.2.4", "10.90.2.6"]
-    },
-    {
-      name = "Pool2"
-      # fqdns        = ["contoso.com", "app1.contoso.com"]
-      ip_addresses = ["10.90.2.4", "10.90.2.6"]
+  private_ip_address = "100.64.1.5"
+  # Frontend port configuration for the application gateway
+  # Mandatory Input
+  frontend_ports = {
+
+    frontend-port-80 = {
+      name = "frontend-port-80"
+      port = 80
     }
-    # Add more pools as needed
-  ]
+    # Add more ports as needed
+  }
+
+
+  # Backend address pool configuration for the application gateway
+  # Mandatory Input
+  backend_address_pools = {
+    pool-1 = {
+      name = "Pool1"
+      # ip_addresses = ["100.64.2.4", "100.64.2.5"]
+      #fqdns        = ["example1.com", "example2.com"]
+    }
+
+  }
+
 
   # Http Listerners configuration for the application gateway
-  http_listeners = [
-    {
-      name                   = "http-listener-80"
-      frontend_port_name     = null
-      protocol               = "Http"
-      frontend_ip_assocation = "public"
-    },
-    {
-      name                   = "http-listener2-81"
-      frontend_port_name     = null
-      protocol               = "Http"
-      frontend_ip_assocation = "both"
+  # Mandatory Input
+  http_listeners = {
+    http_listeners-for-80 = {
+      name = "http_listeners-for-80"
+      # The frontend_port_name must be same as given frontend_port block 
+      frontend_port_name      = "frontend-port-80"
+      protocol                = "Http"
+      frontend_ip_association = "public"
     }
     # Add more http listeners as needed
-  ]
+  }
 
   # Backend http settings configuration for the application gateway
-
-  backend_http_settings = [
-    {
-      name                  = "port1-80"
+  # Mandatory Input
+  backend_http_settings = {
+    port80 = {
+      name                  = "backend_http_settings-port-80"
       port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
-    },
-    {
-      name                  = "port2-81"
-      port                  = 81
-      protocol              = "Http"
-      cookie_based_affinity = "Disabled"
+      enable_https          = false
+      request_timeout       = 30
     }
     # Add more http settings as needed
-  ]
+  }
 
   # Routing rules configuration for the backend pool
-  request_routing_rules = [
-    {
-      name                      = "Rule1"
-      rule_type                 = "Basic"
-      http_listener_name        = null
-      backend_address_pool_name = null
-      priority                  = 9
-    },
-    {
-      name                      = "Rule2"
-      rule_type                 = "Basic"            
-      http_listener_name        = null 
-      backend_address_pool_name = null
-      priority                  = 10
-    },
+  # Mandatory Input
+  request_routing_rules = {
+    routing-rule-1 = {
+      name      = "Rule1"
+      rule_type = "Basic"
+      # The http_listener_name must be same as given http_listeners block
+      http_listener_name = "http_listeners-for-80"
+      # The backend_address_pool_name  must be same as given backend_address_pool block
+      backend_address_pool_name = "Pool1"
+      # The backend_http_settings_name must be same as given backend_http_settings block
+      backend_http_settings_name = "backend_http_settings-port-80"
+      priority                   = 9
+    }
     # Add more rules as needed
-  ]
+  }
 
   # Optional Input  
-  zone_redundant = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+
 }
 
 ```
@@ -187,7 +190,6 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.rg-group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -234,14 +236,6 @@ Description: ID of the Frontend Subnet
 ### <a name="output_frontend_subnet_name"></a> [frontend\_subnet\_name](#output\_frontend\_subnet\_name)
 
 Description: Name of the Frontend Subnet
-
-### <a name="output_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#output\_log\_analytics\_workspace\_id)
-
-Description: ID of the Azure Log Analytics Workspace
-
-### <a name="output_log_analytics_workspace_name"></a> [log\_analytics\_workspace\_name](#output\_log\_analytics\_workspace\_name)
-
-Description: Name of the Azure Log Analytics Workspace
 
 ### <a name="output_private_ip_test_subnet_id"></a> [private\_ip\_test\_subnet\_id](#output\_private\_ip\_test\_subnet\_id)
 
