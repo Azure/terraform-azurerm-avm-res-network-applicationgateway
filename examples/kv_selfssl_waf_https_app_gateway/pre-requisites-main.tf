@@ -65,13 +65,13 @@ resource "azurerm_subnet" "private-ip-test" {
 #   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 # }
 
-# resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
-#   name                = module.naming.log_analytics_workspace.name_unique
-#   resource_group_name = azurerm_resource_group.rg-group.name
-#   location            = azurerm_resource_group.rg-group.location
-#   sku                 = "PerGB2018"
-#   depends_on          = [azurerm_resource_group.rg-group]
-# }
+resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
+  name                = module.naming.log_analytics_workspace.name_unique
+  resource_group_name = azurerm_resource_group.rg-group.name
+  location            = azurerm_resource_group.rg-group.location
+  sku                 = "PerGB2018"
+  depends_on          = [azurerm_resource_group.rg-group]
+}
 
 #-----------------------------------------------------------------
 #  Enable these to deeploy sample application to VMSS 
