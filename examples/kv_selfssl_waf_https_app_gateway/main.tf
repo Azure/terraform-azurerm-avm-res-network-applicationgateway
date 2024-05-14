@@ -172,8 +172,6 @@ module "application-gateway" {
     }
   }
 
-
-
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
@@ -193,6 +191,5 @@ module "application-gateway" {
   }
 
 }
-
 
 

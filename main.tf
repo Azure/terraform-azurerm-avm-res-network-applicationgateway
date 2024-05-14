@@ -9,6 +9,12 @@
 
 #----------Local declarations-----------
 locals {
+  # frontend_ports = [
+  #   {
+  #     name = null
+  #     port = null
+  #   }
+  # ]
 
   frontend_port_name             = "appgw-${var.name}-feport"
   frontend_ip_configuration_name = "appgw-${var.name}-fepip"
@@ -176,6 +182,7 @@ resource "azurerm_application_gateway" "this" {
       key_vault_secret_id = lookup(ssl_certificate.value, "key_vault_secret_id", null)
     }
   }
+
   # Check if key_vault_secret_id is not null, and include the identity block accordingly
   #----------Optionl Configuration  -----------
   dynamic "identity" {
@@ -335,4 +342,3 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 }
 
 # Other configurations for your environment
-

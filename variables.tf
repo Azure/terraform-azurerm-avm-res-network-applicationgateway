@@ -344,6 +344,8 @@ variable "trusted_root_certificates" {
   default = []
 }
 
+# Variable declaration for the request routing rules
+
 
 variable "private_ip_address" {
   description = "Private IP Address to assign to the Application Gateway Load Balancer."
