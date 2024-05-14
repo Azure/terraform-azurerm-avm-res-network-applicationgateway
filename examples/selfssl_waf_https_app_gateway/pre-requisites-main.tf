@@ -252,7 +252,7 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 # }
 
 # Datasource-1: To get Azure Tenant Id
-data "azurerm_client_config" "current" {}
+# data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "appag_umid" {
   name                = module.naming.user_assigned_identity.name_unique
