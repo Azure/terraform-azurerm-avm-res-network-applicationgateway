@@ -49,9 +49,8 @@ module "regions" {
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
-
+  min = 0
 }
 
 module "application-gateway" {

@@ -50,9 +50,8 @@ module "regions" {
 
 # This allows us to randomize the region for the resource group.
 resource "random_integer" "region_index" {
-  min = 0
   max = length(module.regions.regions) - 1
-
+  min = 0
 }
 
 
@@ -172,6 +171,7 @@ module "application-gateway" {
 
 }
 ```
+
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -187,14 +187,15 @@ The following requirements are needed by this module:
 
 The following providers are used by this module:
 
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (3.77.0)
+- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (>= 3.0, < 4.0)
 
-- <a name="provider_random"></a> [random](#provider\_random) (3.5.1)
+- <a name="provider_random"></a> [random](#provider\_random) (>= 3.5.0, < 4.0.0)
 
 ## Resources
 
 The following resources are used by this module:
 
+- [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.rg-group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
