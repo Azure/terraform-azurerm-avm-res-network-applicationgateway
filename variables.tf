@@ -28,7 +28,7 @@ variable "backend_http_settings" {
       drain_timeout_sec          = number
     }))
   }))
-  description = "List of backend HTTP settings"
+  description = "List of backend HTTP settings "
 }
 
 # # Variable declaration for the frontend ports
