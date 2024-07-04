@@ -170,8 +170,8 @@ resource "azurerm_application_gateway" "this" {
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
     content {
-      identity_ids = var.identity_ids[0].identity_ids
       type         = "UserAssigned"
+      identity_ids = var.identity_ids[0].identity_ids
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
