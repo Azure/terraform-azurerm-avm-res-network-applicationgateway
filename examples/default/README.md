@@ -12,10 +12,6 @@ This deploys the module in its simplest form.
 
 No requirements.
 
-## Providers
-
-No providers.
-
 ## Resources
 
 No resources.
