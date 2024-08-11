@@ -5,50 +5,55 @@
 # network security group, storage account, key vault and user assigned identity.
 
 resource "azurerm_resource_group" "rg-group" {
-  name     = module.naming.resource_group.name_unique
   location = "southeastasia" //module.regions.regions[random_integer.region_index.result].name
+  name     = module.naming.resource_group.name_unique
 }
 
 resource "azurerm_virtual_network" "vnet" {
+  address_space       = ["10.90.0.0/16"] # address space for VNET 
+  location            = azurerm_resource_group.rg-group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg-group.name
-  location            = azurerm_resource_group.rg-group.location
-  address_space       = ["10.90.0.0/16"] # address space for VNET 
-  depends_on          = [azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_resource_group.rg-group]
 }
 
 resource "azurerm_subnet" "frontend" {
+  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
-  depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
 resource "azurerm_subnet" "backend" {
+  address_prefixes     = ["10.90.1.0/24"]
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.1.0/24"]
-  depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
 # Required for to deploy VMSS and Web Server to host application
 resource "azurerm_subnet" "workload" {
+  address_prefixes     = ["10.90.2.0/24"]
   name                 = "workload"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.2.0/24"]
-  depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
 # Required for Frontend Private IP endpoint testing 
 resource "azurerm_subnet" "private-ip-test" {
+  address_prefixes     = ["10.90.3.0/24"]
   name                 = "private-ip-test"
   resource_group_name  = azurerm_resource_group.rg-group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.90.3.0/24"]
-  depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
 }
 
 #-----------------------------------------------------------------
@@ -66,11 +71,12 @@ resource "azurerm_subnet" "private-ip-test" {
 # }
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
+  location            = azurerm_resource_group.rg-group.location
   name                = module.naming.log_analytics_workspace.name_unique
   resource_group_name = azurerm_resource_group.rg-group.name
-  location            = azurerm_resource_group.rg-group.location
   sku                 = "PerGB2018"
-  depends_on          = [azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_resource_group.rg-group]
 }
 
 #-----------------------------------------------------------------
@@ -256,33 +262,32 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "appag_umid" {
+  location            = azurerm_resource_group.rg-group.location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.rg-group.name
-  location            = azurerm_resource_group.rg-group.location
-  depends_on          = [azurerm_resource_group.rg-group]
+
+  depends_on = [azurerm_resource_group.rg-group]
 }
 
 
 resource "azurerm_key_vault" "keyvault" {
+  location                        = azurerm_resource_group.rg-group.location
   name                            = module.naming.key_vault.name_unique
   resource_group_name             = azurerm_resource_group.rg-group.name
-  location                        = azurerm_resource_group.rg-group.location
-  enabled_for_disk_encryption     = true
-  tenant_id                       = data.azurerm_client_config.current.tenant_id
-  soft_delete_retention_days      = 7
-  purge_protection_enabled        = false
-  enabled_for_template_deployment = true
   sku_name                        = "premium"
-  depends_on                      = [azurerm_resource_group.rg-group]
+  tenant_id                       = data.azurerm_client_config.current.tenant_id
+  enabled_for_disk_encryption     = true
+  enabled_for_template_deployment = true
+  purge_protection_enabled        = false
+  soft_delete_retention_days      = 7
+
+  depends_on = [azurerm_resource_group.rg-group]
 }
 
 resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
   key_vault_id = azurerm_key_vault.keyvault.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
   object_id    = data.azurerm_client_config.current.object_id
-  lifecycle {
-    create_before_destroy = true
-  }
+  tenant_id    = data.azurerm_client_config.current.tenant_id
   certificate_permissions = [
     "Backup", "Create", "Delete", "DeleteIssuers", "Get", "GetIssuers", "Import", "List", "ListIssuers", "ManageContacts", "ManageIssuers", "Purge", "Recover", "Restore", "SetIssuers", "Update"
   ]
@@ -295,41 +300,41 @@ resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
   storage_permissions = [
     "Backup", "Delete", "DeleteSAS", "Get", "GetSAS", "List", "ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"
   ]
+
   depends_on = [azurerm_resource_group.rg-group]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "azurerm_key_vault_access_policy" "appag_key_vault_access_policy" {
   key_vault_id = azurerm_key_vault.keyvault.id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
   object_id    = azurerm_user_assigned_identity.appag_umid.principal_id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
   secret_permissions = [
     "Get",
   ]
 }
 
 resource "azurerm_key_vault_certificate" "ssl_cert_id" {
-  depends_on   = [azurerm_key_vault_access_policy.key_vault_default_policy]
-  name         = "app-gateway-cert"
   key_vault_id = azurerm_key_vault.keyvault.id
-
+  name         = "app-gateway-cert"
 
   certificate {
     contents = filebase64("./ssl_cert_generate/certificate.pfx")
     password = "terraform-avm"
   }
-
   certificate_policy {
     issuer_parameters {
       name = "Unknown"
     }
-
     key_properties {
       exportable = true
-      key_size   = 2048
       key_type   = "RSA"
       reuse_key  = true
+      key_size   = 2048
     }
-
     secret_properties {
       content_type = "application/x-pkcs12"
     }
@@ -343,4 +348,5 @@ resource "azurerm_key_vault_certificate" "ssl_cert_id" {
     }
   }
 
+  depends_on = [azurerm_key_vault_access_policy.key_vault_default_policy]
 }
