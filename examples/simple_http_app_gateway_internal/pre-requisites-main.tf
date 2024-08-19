@@ -5,7 +5,7 @@
 # network security group, storage account, key vault and user assigned identity.
 
 resource "azurerm_resource_group" "rg-group" {
-  location = "southeastasia" //module.regions.regions[random_integer.region_index.result].name
+  location = "southeastasia"
   name     = module.naming.resource_group.name_unique
 }
 

@@ -81,7 +81,8 @@ resource "azurerm_public_ip" "this" {
   name                = var.public_ip_name
   resource_group_name = var.resource_group_name
   sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
-  zones               = var.zones
+  # WAF : Deploy Application Gateway in a zone-redundant configuration
+  zones = var.zones
 }
 
 #----------Application Gateway resource creation provider block-----------
@@ -205,6 +206,7 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   #----------SKU and configuration for the application gateway-----------
+  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku {
     name     = var.sku.name
     tier     = var.sku.tier
@@ -227,6 +229,7 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
+  # WAF : Use Health Probes to detect backend availability
   #----------Optionl Configuration  -----------
   dynamic "probe" {
     for_each = var.probe_configurations != null ? var.probe_configurations : {}
@@ -281,10 +284,11 @@ resource "azurerm_application_gateway" "this" {
         for_each = url_path_map.value.path_rules != null ? url_path_map.value.path_rules : {}
 
         content {
-          name                        = path_rule.value.name
-          paths                       = path_rule.value.paths
-          backend_address_pool_name   = path_rule.value.backend_address_pool_name
-          backend_http_settings_name  = path_rule.value.backend_http_settings_name
+          name                       = path_rule.value.name
+          paths                      = path_rule.value.paths
+          backend_address_pool_name  = path_rule.value.backend_address_pool_name
+          backend_http_settings_name = path_rule.value.backend_http_settings_name
+          # WAF Enable Web Application Firewall policies
           firewall_policy_id          = path_rule.value.firewall_policy_id
           redirect_configuration_name = path_rule.value.redirect_configuration_name
           rewrite_rule_set_name       = path_rule.value.rewrite_rule_set_name
@@ -293,6 +297,8 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   #----------Classic WAF Configuration for the application gateway -----------
+  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
+  # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
   #----------Optionl Configuration  -----------
   dynamic "waf_configuration" {
 
@@ -334,6 +340,7 @@ resource "azurerm_role_assignment" "this" {
 }
 
 #----------Diagnostic logs settings for the application gateway -----------
+# WAF : Monitor and Log the configurations and traffic
 resource "azurerm_monitor_diagnostic_setting" "this" {
   for_each = var.diagnostic_settings
 

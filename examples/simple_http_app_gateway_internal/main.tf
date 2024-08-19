@@ -63,6 +63,7 @@ module "application-gateway" {
     project     = "AVM"
   }
 
+  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
     name = "Standard_v2"
@@ -84,6 +85,9 @@ module "application-gateway" {
   private_ip_address = "100.64.1.5"
   # Frontend port configuration for the application gateway
   # Mandatory Input
+
+  # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
+  # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
 
     frontend-port-80 = {

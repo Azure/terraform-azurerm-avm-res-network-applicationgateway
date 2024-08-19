@@ -68,6 +68,7 @@ module "application-gateway" {
     project     = "AVM"
   }
 
+  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
     name = "WAF_v2"
@@ -83,6 +84,8 @@ module "application-gateway" {
   }
 
   # frontend port configuration block for the application gateway
+  # WAF : Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
+
   frontend_ports = {
     frontend-port-443 = {
       name = "frontend-port-443"
@@ -131,7 +134,12 @@ module "application-gateway" {
     # # Add more http listeners as needed
   }
 
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
+  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
+  # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
+  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
+
+  app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
+  enable_classic_rule                = false
   waf_configuration = [
     {
       enabled          = true
@@ -175,8 +183,8 @@ module "application-gateway" {
   }
 
   # Optional Input  
-  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
-
+  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  zones = ["1", "2", "3"]
   identity_ids = [{
     identity_ids = [
       azurerm_user_assigned_identity.appag_umid.id
