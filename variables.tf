@@ -254,6 +254,7 @@ variable "http2_enable" {
 }
 
 variable "identity_ids" {
+  type        = list(string)
   default     = []
   description = "Specifies a list with a single user managed identity id to be assigned to the Application Gateway"
 }

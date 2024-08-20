@@ -220,11 +220,19 @@ resource "azurerm_application_gateway" "this" {
   }
   # Check if key_vault_secret_id is not null, and include the identity block accordingly
   #----------Optionl Configuration  -----------
+  # dynamic "identity" {
+  #   for_each = length(var.ssl_certificates) > 0 ? [1] : []
+  #   content {
+  #     type         = "UserAssigned"
+  #     identity_ids = var.identity_ids[0].identity_ids
+  #   }
+  # }
+
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
     content {
       type         = "UserAssigned"
-      identity_ids = var.identity_ids[0].identity_ids
+      identity_ids = var.identity_ids # Directly use the list of identity IDs
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
@@ -665,7 +673,7 @@ Default: `true`
 
 Description: Specifies a list with a single user managed identity id to be assigned to the Application Gateway
 
-Type: `list`
+Type: `list(string)`
 
 Default: `[]`
 

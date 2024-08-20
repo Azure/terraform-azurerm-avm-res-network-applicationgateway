@@ -199,10 +199,9 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"] 
   zones = ["1", "2", "3"]
 
-  identity_ids = [{
-    identity_ids = [
-      azurerm_user_assigned_identity.appag_umid.id
-  ] }]
+  identity_ids = [
+    azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
+  ]
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
@@ -243,7 +242,7 @@ The following providers are used by this module:
 
 The following resources are used by this module:
 
-- [azurerm_bastion_host.bastion-host](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
+- [azurerm_bastion_host.bastion_host](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
 - [azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine_scale_set) (resource)
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_network_interface.bastion_win_vm_nic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface) (resource)

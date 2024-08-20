@@ -190,10 +190,9 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"] 
   zones = ["1", "2", "3"]
 
-  identity_ids = [{
-    identity_ids = [
-      azurerm_user_assigned_identity.appag_umid.id
-  ] }]
+  identity_ids = [
+    azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
+  ]
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
