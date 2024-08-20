@@ -80,6 +80,11 @@ module "application_gateway" {
     project     = "AVM"
   }
 
+  lock = {
+    name = "lock-${module.naming.application_gateway.name_unique}" # optional
+    kind = "CanNotDelete"
+  }
+
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
