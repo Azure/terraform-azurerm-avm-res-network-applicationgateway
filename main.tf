@@ -158,6 +158,7 @@ resource "azurerm_application_gateway" "this" {
     name     = var.sku.name
     tier     = var.sku.tier
     capacity = var.autoscale_configuration == null ? var.sku.capacity : null
+    #   capacity = var.autoscale_configuration == null ? var.sku.capacity : var.autoscale_configuration.min_capacity
   }
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
@@ -166,15 +167,6 @@ resource "azurerm_application_gateway" "this" {
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
-  # Check if key_vault_secret_id is not null, and include the identity block accordingly
-  #----------Optionl Configuration  -----------
-  # dynamic "identity" {
-  #   for_each = length(var.ssl_certificates) > 0 ? [1] : []
-  #   content {
-  #     type         = "UserAssigned"
-  #     identity_ids = var.identity_ids[0].identity_ids
-  #   }
-  # }
 
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []

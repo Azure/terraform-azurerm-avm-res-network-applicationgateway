@@ -30,9 +30,6 @@ This scenario sets up a straightforward HTTP Application Gateway, typically for 
 **[Application Gateway Internal](examples/simple\_http\_app\_gateway\_internal/README.md)**
 Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
 
-**[Application Gateway Route web traffic based on the URL ](examples/simple\_http\_route\_by\_url\_app\_gateway/README.md)**
-Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
-
 **[Web Application Firewall (WAF)](examples/simple\_waf\_http\_app\_gateway/README.md)**
 A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
 
@@ -210,6 +207,7 @@ resource "azurerm_application_gateway" "this" {
     name     = var.sku.name
     tier     = var.sku.tier
     capacity = var.autoscale_configuration == null ? var.sku.capacity : null
+    #   capacity = var.autoscale_configuration == null ? var.sku.capacity : var.autoscale_configuration.min_capacity
   }
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
@@ -218,15 +216,6 @@ resource "azurerm_application_gateway" "this" {
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
-  # Check if key_vault_secret_id is not null, and include the identity block accordingly
-  #----------Optionl Configuration  -----------
-  # dynamic "identity" {
-  #   for_each = length(var.ssl_certificates) > 0 ? [1] : []
-  #   content {
-  #     type         = "UserAssigned"
-  #     identity_ids = var.identity_ids[0].identity_ids
-  #   }
-  # }
 
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
@@ -548,20 +537,6 @@ Description: The resource group where the resources will be deployed.
 
 Type: `string`
 
-### <a name="input_sku"></a> [sku](#input\_sku)
-
-Description: The application gateway sku and tier.
-
-Type:
-
-```hcl
-object({
-    name     = string           # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string           # Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
-  })
-```
-
 ### <a name="input_subnet_name_backend"></a> [subnet\_name\_backend](#input\_subnet\_name\_backend)
 
 Description: The backend subnet where the applicaiton gateway resources configuration will be deployed.
@@ -781,6 +756,30 @@ map(object({
 ```
 
 Default: `{}`
+
+### <a name="input_sku"></a> [sku](#input\_sku)
+
+Description: The application gateway sku and tier.
+
+Type:
+
+```hcl
+object({
+    name     = string              # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string              # Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number, 2) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+  })
+```
+
+Default:
+
+```json
+{
+  "capacity": 2,
+  "name": "Standard_v2",
+  "tier": "Standard_v2"
+}
+```
 
 ### <a name="input_ssl_certificates"></a> [ssl\_certificates](#input\_ssl\_certificates)
 
