@@ -126,7 +126,7 @@ resource "azurerm_subnet" "private_ip_test" {
 # }
 
 # # Create Azure Bastion Host
-# resource "azurerm_bastion_host" "bastion-host" {
+# resource "azurerm_bastion_host" "bastion_host" {
 #   name                = module.naming.bastion_host.name_unique
 #   location            = azurerm_resource_group.rg_group.location
 #   resource_group_name = azurerm_resource_group.rg_group.name
