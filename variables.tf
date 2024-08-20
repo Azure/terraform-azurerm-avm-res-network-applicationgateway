@@ -123,9 +123,9 @@ variable "resource_group_name" {
 # Variable declaration for the application gateway sku and tier
 variable "sku" {
   type = object({
-    name     = string           // Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string           // Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number) // V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+    name     = string           # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string           # Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
   })
   description = "The application gateway sku and tier."
 
@@ -151,20 +151,9 @@ variable "subnet_name_backend" {
 }
 
 # Variable declaration for the  resource location
-variable "subnet_name_frontend" {
-  type        = string
-  description = "The frontend subnet where the applicaiton gateway IP address resources will be deployed."
-
-  validation {
-    condition     = length(var.subnet_name_frontend) > 0
-    error_message = "The frontend subnet name must not be empty."
-  }
-}
-
-# Variable declaration for the  resource location
 variable "vnet_name" {
   description = "The VNET where the applicaiton gateway resources will be deployed."
-
+  type        = string
   validation {
     condition     = length(var.vnet_name) > 0
     error_message = "The VNET name must not be empty."
@@ -176,19 +165,11 @@ variable "app_gateway_waf_policy_resource_id" {
   default = null
 }
 
-variable "authentication_certificates" {
-  type = list(object({
-    name = string
-    data = string
-  }))
-  default     = []
-  description = "Authentication certificates to allow the backend with Azure Application Gateway"
-}
 
 variable "autoscale_configuration" {
   type = object({
-    min_capacity = optional(number, 1) // Minimum in the range 0 to 100
-    max_capacity = optional(number, 2) // Maximum in the range 2 to 125
+    min_capacity = optional(number, 1) # Minimum in the range 0 to 100
+    max_capacity = optional(number, 2) # Maximum in the range 2 to 125
   })
   default     = null
   description = "V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU"
@@ -273,7 +254,7 @@ variable "http2_enable" {
 }
 
 variable "identity_ids" {
-  default     = null
+  default     = []
   description = "Specifies a list with a single user managed identity id to be assigned to the Application Gateway"
 }
 
@@ -282,7 +263,10 @@ variable "lock" {
     name = optional(string, null)
     kind = optional(string, "None")
   })
-  default     = {}
+  default = {
+    name = null
+    kind = "None"
+  }
   description = "The lock level to apply to the deployed resource. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`."
   nullable    = false
 
@@ -320,30 +304,6 @@ variable "probe_configurations" {
   description = "List of probe configurations."
 }
 
-# Variable declaration for the  public  ip allocation method
-variable "public_ip_allocation_method" {
-  type        = string
-  default     = "Static"
-  description = "The Azure public allocation method dynamic / static"
-
-  validation {
-    condition     = var.public_ip_allocation_method == "Dynamic" || var.public_ip_allocation_method == "Static"
-    error_message = "The variable must be either Dynamic or Static"
-  }
-}
-
-# Variable declaration for the  public  ip sku
-variable "public_ip_sku_tier" {
-  type        = string
-  default     = "Standard"
-  description = "The Azure public ip sku Basic / Standard"
-
-  validation {
-    condition     = var.public_ip_sku_tier == "Basic" || var.public_ip_sku_tier == "Standard"
-    error_message = "The variable must be either Basic, Standard"
-  }
-}
-
 # Define a list of redirection configuration
 variable "redirect_configuration" {
   type = map(object({
@@ -370,6 +330,7 @@ variable "role_assignments" {
     delegated_managed_identity_resource_id = optional(string, null)
   }))
   default     = {}
+  nullable    = false
   description = <<DESCRIPTION
  A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
@@ -395,17 +356,6 @@ variable "ssl_certificates" {
   description = "List of SSL certificates data for Application gateway"
 }
 
-variable "ssl_policy" {
-  type = map(object({
-    disabled_protocols   = optional(list(string))
-    policy_type          = optional(string)
-    policy_name          = optional(string)
-    cipher_suites        = optional(list(string))
-    min_protocol_version = optional(string)
-  }))
-  default     = null
-  description = "Application Gateway SSL configuration"
-}
 
 variable "tags" {
   type = map(string)
@@ -414,17 +364,10 @@ variable "tags" {
     owner       = "your-name"
     project     = "my-project"
   }
+  nullable    = false
   description = "A map of tags to apply to the Application Gateway."
 }
 
-variable "trusted_root_certificates" {
-  type = list(object({
-    name = string
-    data = string
-  }))
-  default     = []
-  description = "Trusted root certificates to allow the backend with Azure Application Gateway"
-}
 
 # Define a list of URL path map configurations
 variable "url_path_map_configurations" {
@@ -460,14 +403,10 @@ variable "waf_configuration" {
   description = "Web Application Firewall (WAF) configuration."
 }
 
-variable "waf_enable" {
-  type        = bool
-  default     = true
-  description = "Enable or disable the Web Application Firewall"
-}
+
 
 variable "zones" {
   type        = list(string)
-  default     = [] #["1", "2", "3"]
+  default     = ["1", "2", "3"] #["1", "2", "3"]
   description = "The Azure application gateway zone redundancy"
 }

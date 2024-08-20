@@ -52,19 +52,19 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-module "application-gateway" {
+module "application_gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
 
-  public_ip_name       = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name  = azurerm_resource_group.rg-group.name
-  location             = azurerm_resource_group.rg-group.location
-  vnet_name            = azurerm_virtual_network.vnet.name
-  subnet_name_frontend = azurerm_subnet.frontend.name
-  subnet_name_backend  = azurerm_subnet.backend.name
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
+  vnet_name           = azurerm_virtual_network.vnet.name
+  # subnet_name_frontend = azurerm_subnet.frontend.name
+  subnet_name_backend = azurerm_subnet.backend.name
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
@@ -151,13 +151,12 @@ module "application-gateway" {
       name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
-      //frontend_ip_association = "public"
+
     },
     backendListener = {
       name               = "backendListener"
       host_name          = null
       frontend_port_name = "port8080"
-      // frontend_ip_association = "Private"
 
     }
     # # Add more http listeners as needed
@@ -258,10 +257,10 @@ The following providers are used by this module:
 The following resources are used by this module:
 
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_resource_group.rg-group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.private-ip-test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.workload](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
@@ -341,7 +340,7 @@ Description: Name of the Workload Subnet
 
 The following Modules are called:
 
-### <a name="module_application-gateway"></a> [application-gateway](#module\_application-gateway)
+### <a name="module_application_gateway"></a> [application\_gateway](#module\_application\_gateway)
 
 Source: ../../
 

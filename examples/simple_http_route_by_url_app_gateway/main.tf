@@ -43,19 +43,19 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-module "application-gateway" {
+module "application_gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
 
-  public_ip_name       = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name  = azurerm_resource_group.rg-group.name
-  location             = azurerm_resource_group.rg-group.location
-  vnet_name            = azurerm_virtual_network.vnet.name
-  subnet_name_frontend = azurerm_subnet.frontend.name
-  subnet_name_backend  = azurerm_subnet.backend.name
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
+  vnet_name           = azurerm_virtual_network.vnet.name
+  # subnet_name_frontend = azurerm_subnet.frontend.name
+  subnet_name_backend = azurerm_subnet.backend.name
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
@@ -142,13 +142,12 @@ module "application-gateway" {
       name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
-      //frontend_ip_association = "public"
+
     },
     backendListener = {
       name               = "backendListener"
       host_name          = null
       frontend_port_name = "port8080"
-      // frontend_ip_association = "Private"
 
     }
     # # Add more http listeners as needed

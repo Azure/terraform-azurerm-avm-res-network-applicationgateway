@@ -4,56 +4,56 @@
 # Virtual network, subnets, log analytics workspace, virtual machine scale set, 
 # network security group, storage account, key vault and user assigned identity.
 
-resource "azurerm_resource_group" "rg-group" {
-  location = "southeastasia" //module.regions.regions[random_integer.region_index.result].name
+resource "azurerm_resource_group" "rg_group" {
+  location = "southeastasia"
   name     = module.naming.resource_group.name_unique
 }
 
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.90.0.0/16"] # address space for VNET 
-  location            = azurerm_resource_group.rg-group.location
+  location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
+  resource_group_name = azurerm_resource_group.rg_group.name
 
-  depends_on = [azurerm_resource_group.rg-group]
+  depends_on = [azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "frontend" {
   address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
   name                 = "frontend"
-  resource_group_name  = azurerm_resource_group.rg-group.name
+  resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "backend" {
   address_prefixes     = ["10.90.1.0/24"]
   name                 = "backend"
-  resource_group_name  = azurerm_resource_group.rg-group.name
+  resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for to deploy VMSS and Web Server to host application
 resource "azurerm_subnet" "workload" {
   address_prefixes     = ["10.90.2.0/24"]
   name                 = "workload"
-  resource_group_name  = azurerm_resource_group.rg-group.name
+  resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for Frontend Private IP endpoint testing 
-resource "azurerm_subnet" "private-ip-test" {
+resource "azurerm_subnet" "private_ip_test" {
   address_prefixes     = ["10.90.3.0/24"]
-  name                 = "private-ip-test"
-  resource_group_name  = azurerm_resource_group.rg-group.name
+  name                 = "private_ip_test"
+  resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 #-----------------------------------------------------------------
@@ -64,19 +64,19 @@ resource "azurerm_subnet" "private-ip-test" {
 # # Required bastion host subnet to test private IP endpoint
 # resource "azurerm_subnet" "bastion" {
 #   name                 = "AzureBastionSubnet"
-#   resource_group_name  = azurerm_resource_group.rg-group.name
+#   resource_group_name  = azurerm_resource_group.rg_group.name
 #   virtual_network_name = azurerm_virtual_network.vnet.name
 #   address_prefixes     = ["10.90.4.0/24"] # Adjust the IP address prefix as needed
-#   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+#   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
-  location            = azurerm_resource_group.rg-group.location
+  location            = azurerm_resource_group.rg_group.location
   name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
+  resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "PerGB2018"
 
-  depends_on = [azurerm_resource_group.rg-group]
+  depends_on = [azurerm_resource_group.rg_group]
 }
 
 #-----------------------------------------------------------------
@@ -86,14 +86,14 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 
 # resource "azurerm_windows_virtual_machine" "bastion" {
 #   name                  = module.naming.windows_virtual_machine.name_unique
-#   resource_group_name   = azurerm_resource_group.rg-group.name
-#   location              = azurerm_resource_group.rg-group.location
+#   resource_group_name   = azurerm_resource_group.rg_group.name
+#   location              = azurerm_resource_group.rg_group.location
 #   network_interface_ids = [azurerm_network_interface.bastion_win_vm_nic.id]
 #   size                  = "Standard_DS1_v2"
 #   os_disk {
 #     # name              = "bastion-os-disk"
 #     caching              = "ReadWrite"
-#     storage_account_type = "Standard_LRS"
+#     storage_account_type = "Premium_LRS"
 #   }
 #   source_image_reference {
 #     publisher = "MicrosoftWindowsDesktop"
@@ -108,20 +108,20 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 
 # resource "azurerm_network_interface" "bastion_win_vm_nic" {
 #   name                = module.naming.network_interface.name_unique
-#   resource_group_name = azurerm_resource_group.rg-group.name
-#   location            = azurerm_resource_group.rg-group.location
+#   resource_group_name = azurerm_resource_group.rg_group.name
+#   location            = azurerm_resource_group.rg_group.location
 
 #   ip_configuration {
 #     name                          = module.naming.network_interface.name_unique
-#     subnet_id                     = azurerm_subnet.private-ip-test.id
+#     subnet_id                     = azurerm_subnet.private_ip_test.id
 #     private_ip_address_allocation = "Dynamic"
 #   }
 # }
 
 # resource "azurerm_public_ip" "bastion_public_ip" {
 #   name                = module.naming.public_ip.name_unique
-#   location            = azurerm_resource_group.rg-group.location
-#   resource_group_name = azurerm_resource_group.rg-group.name
+#   location            = azurerm_resource_group.rg_group.location
+#   resource_group_name = azurerm_resource_group.rg_group.name
 #   allocation_method   = "Static" # You can choose Dynamic if preferred
 #   sku                 = "Standard"
 # }
@@ -129,8 +129,8 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 # # Create Azure Bastion Host
 # resource "azurerm_bastion_host" "bastion-host" {
 #   name                = module.naming.bastion_host.name_unique
-#   location            = azurerm_resource_group.rg-group.location
-#   resource_group_name = azurerm_resource_group.rg-group.name
+#   location            = azurerm_resource_group.rg_group.location
+#   resource_group_name = azurerm_resource_group.rg_group.name
 #   scale_units         = 2
 
 #   ip_configuration {
@@ -143,8 +143,8 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 
 # resource "azurerm_linux_virtual_machine_scale_set" "app_gateway_web_vmss" {
 #   name                            = module.naming.linux_virtual_machine_scale_set.name_unique
-#   resource_group_name             = azurerm_resource_group.rg-group.name
-#   location                        = azurerm_resource_group.rg-group.location
+#   resource_group_name             = azurerm_resource_group.rg_group.name
+#   location                        = azurerm_resource_group.rg_group.location
 #   sku                             = "Standard_DS1_v2"
 #   instances                       = 2
 #   admin_username                  = "azureuser"
@@ -165,7 +165,7 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 #   }
 
 #   os_disk {
-#     storage_account_type = "Standard_LRS"
+#     storage_account_type = "Premium_LRS"
 #     caching              = "ReadWrite"
 #   }
 
@@ -183,15 +183,15 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 #     }
 #   }
 #   custom_data = base64encode(local.webvm_custom_data)
-#   depends_on  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group, module.application-gateway]
+#   depends_on  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group, module.application-gateway]
 # }
 
 # # Create Network Security Group (NSG)
 # resource "azurerm_network_security_group" "ag_subnet_nsg" {
 #   name                = module.naming.network_security_group.name_unique
-#   resource_group_name = azurerm_resource_group.rg-group.name
-#   location            = azurerm_resource_group.rg-group.location
-#   depends_on          = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+#   resource_group_name = azurerm_resource_group.rg_group.name
+#   location            = azurerm_resource_group.rg_group.location
+#   depends_on          = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 # # Associate NSG and Subnet
@@ -253,27 +253,27 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 #   destination_port_range      = each.value.destination_port
 #   source_address_prefix       = each.value.source_address
 #   destination_address_prefix  = "*"
-#   resource_group_name         = azurerm_resource_group.rg-group.name
+#   resource_group_name         = azurerm_resource_group.rg_group.name
 #   network_security_group_name = azurerm_network_security_group.ag_subnet_nsg.name
-#   depends_on                  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+#   depends_on                  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 # Datasource-1: To get Azure Tenant Id
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "appag_umid" {
-  location            = azurerm_resource_group.rg-group.location
+  location            = azurerm_resource_group.rg_group.location
   name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
+  resource_group_name = azurerm_resource_group.rg_group.name
 
-  depends_on = [azurerm_resource_group.rg-group]
+  depends_on = [azurerm_resource_group.rg_group]
 }
 
 
 resource "azurerm_key_vault" "keyvault" {
-  location                        = azurerm_resource_group.rg-group.location
+  location                        = azurerm_resource_group.rg_group.location
   name                            = module.naming.key_vault.name_unique
-  resource_group_name             = azurerm_resource_group.rg-group.name
+  resource_group_name             = azurerm_resource_group.rg_group.name
   sku_name                        = "premium"
   tenant_id                       = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption     = true
@@ -281,7 +281,7 @@ resource "azurerm_key_vault" "keyvault" {
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
 
-  depends_on = [azurerm_resource_group.rg-group]
+  depends_on = [azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
@@ -301,7 +301,7 @@ resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
     "Backup", "Delete", "DeleteSAS", "Get", "GetSAS", "List", "ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"
   ]
 
-  depends_on = [azurerm_resource_group.rg-group]
+  depends_on = [azurerm_resource_group.rg_group]
 
   lifecycle {
     create_before_destroy = true
@@ -354,8 +354,8 @@ resource "azurerm_key_vault_certificate" "ssl_cert_id" {
 
 resource "azurerm_web_application_firewall_policy" "azure_waf" {
   name                = "example-wafpolicy"
-  resource_group_name = azurerm_resource_group.rg-group.name
-  location            = azurerm_resource_group.rg-group.location
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
 
   custom_rules {
     name      = "Rule1"

@@ -63,7 +63,6 @@ Please ensure that you have a clear plan and architecture for your Azure Applica
 locals {
   frontend_ip_configuration_name = "appgw-${var.name}-fepip"
   frontend_ip_private_name       = "appgw-${var.name}-fepvt-ip"
-  frontend_port_name             = "appgw-${var.name}-feport"
   gateway_ip_configuration_name  = "appgw-${var.name}-gwipc"
 }
 
@@ -116,7 +115,7 @@ resource "azurerm_application_gateway" "this" {
       port                                = backend_http_settings.value.enable_https ? 443 : 80
       protocol                            = backend_http_settings.value.enable_https ? "Https" : "Http"
       affinity_cookie_name                = lookup(backend_http_settings.value, "affinity_cookie_name", null)
-      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name") : null
+      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name", null) : null
       path                                = lookup(backend_http_settings.value, "path", "/")
       pick_host_name_from_backend_address = lookup(backend_http_settings.value, "pick_host_name_from_backend_address", false)
       probe_name                          = lookup(backend_http_settings.value, "probe_name", null)
@@ -215,8 +214,8 @@ resource "azurerm_application_gateway" "this" {
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
     content {
-      min_capacity = lookup(autoscale_configuration.value, "min_capacity")
-      max_capacity = lookup(autoscale_configuration.value, "max_capacity")
+      min_capacity = lookup(autoscale_configuration.value, "min_capacity", 1)
+      max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
   # Check if key_vault_secret_id is not null, and include the identity block accordingly
@@ -385,6 +384,8 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
 ## Providers
@@ -547,9 +548,9 @@ Type:
 
 ```hcl
 object({
-    name     = string           // Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string           // Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number) // V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+    name     = string           # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string           # Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
   })
 ```
 
@@ -559,17 +560,11 @@ Description: The backend subnet where the applicaiton gateway resources configur
 
 Type: `string`
 
-### <a name="input_subnet_name_frontend"></a> [subnet\_name\_frontend](#input\_subnet\_name\_frontend)
-
-Description: The frontend subnet where the applicaiton gateway IP address resources will be deployed.
-
-Type: `string`
-
 ### <a name="input_vnet_name"></a> [vnet\_name](#input\_vnet\_name)
 
 Description: The VNET where the applicaiton gateway resources will be deployed.
 
-Type: `any`
+Type: `string`
 
 ## Optional Inputs
 
@@ -583,21 +578,6 @@ Type: `string`
 
 Default: `null`
 
-### <a name="input_authentication_certificates"></a> [authentication\_certificates](#input\_authentication\_certificates)
-
-Description: Authentication certificates to allow the backend with Azure Application Gateway
-
-Type:
-
-```hcl
-list(object({
-    name = string
-    data = string
-  }))
-```
-
-Default: `[]`
-
 ### <a name="input_autoscale_configuration"></a> [autoscale\_configuration](#input\_autoscale\_configuration)
 
 Description: V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
@@ -606,8 +586,8 @@ Type:
 
 ```hcl
 object({
-    min_capacity = optional(number, 1) // Minimum in the range 0 to 100
-    max_capacity = optional(number, 2) // Maximum in the range 2 to 125
+    min_capacity = optional(number, 1) # Minimum in the range 0 to 100
+    max_capacity = optional(number, 2) # Maximum in the range 2 to 125
   })
 ```
 
@@ -685,9 +665,9 @@ Default: `true`
 
 Description: Specifies a list with a single user managed identity id to be assigned to the Application Gateway
 
-Type: `any`
+Type: `list`
 
-Default: `null`
+Default: `[]`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
@@ -702,7 +682,14 @@ object({
   })
 ```
 
-Default: `{}`
+Default:
+
+```json
+{
+  "kind": "None",
+  "name": null
+}
+```
 
 ### <a name="input_private_ip_address"></a> [private\_ip\_address](#input\_private\_ip\_address)
 
@@ -738,22 +725,6 @@ map(object({
 ```
 
 Default: `null`
-
-### <a name="input_public_ip_allocation_method"></a> [public\_ip\_allocation\_method](#input\_public\_ip\_allocation\_method)
-
-Description: The Azure public allocation method dynamic / static
-
-Type: `string`
-
-Default: `"Static"`
-
-### <a name="input_public_ip_sku_tier"></a> [public\_ip\_sku\_tier](#input\_public\_ip\_sku\_tier)
-
-Description: The Azure public ip sku Basic / Standard
-
-Type: `string`
-
-Default: `"Standard"`
 
 ### <a name="input_redirect_configuration"></a> [redirect\_configuration](#input\_redirect\_configuration)
 
@@ -821,24 +792,6 @@ list(object({
 
 Default: `[]`
 
-### <a name="input_ssl_policy"></a> [ssl\_policy](#input\_ssl\_policy)
-
-Description: Application Gateway SSL configuration
-
-Type:
-
-```hcl
-map(object({
-    disabled_protocols   = optional(list(string))
-    policy_type          = optional(string)
-    policy_name          = optional(string)
-    cipher_suites        = optional(list(string))
-    min_protocol_version = optional(string)
-  }))
-```
-
-Default: `null`
-
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: A map of tags to apply to the Application Gateway.
@@ -854,21 +807,6 @@ Default:
   "project": "my-project"
 }
 ```
-
-### <a name="input_trusted_root_certificates"></a> [trusted\_root\_certificates](#input\_trusted\_root\_certificates)
-
-Description: Trusted root certificates to allow the backend with Azure Application Gateway
-
-Type:
-
-```hcl
-list(object({
-    name = string
-    data = string
-  }))
-```
-
-Default: `[]`
 
 ### <a name="input_url_path_map_configurations"></a> [url\_path\_map\_configurations](#input\_url\_path\_map\_configurations)
 
@@ -915,21 +853,21 @@ list(object({
 
 Default: `null`
 
-### <a name="input_waf_enable"></a> [waf\_enable](#input\_waf\_enable)
-
-Description: Enable or disable the Web Application Firewall
-
-Type: `bool`
-
-Default: `true`
-
 ### <a name="input_zones"></a> [zones](#input\_zones)
 
 Description: The Azure application gateway zone redundancy
 
 Type: `list(string)`
 
-Default: `[]`
+Default:
+
+```json
+[
+  "1",
+  "2",
+  "3"
+]
+```
 
 ## Outputs
 
@@ -974,6 +912,10 @@ Description: The ID of the Azure Public IP address associated with the Applicati
 ### <a name="output_request_routing_rules"></a> [request\_routing\_rules](#output\_request\_routing\_rules)
 
 Description: Information about request routing rules defined for the Application Gateway, including their names and configurations.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: Resource ID of Container Group Instance
 
 ### <a name="output_ssl_certificates"></a> [ssl\_certificates](#output\_ssl\_certificates)
 

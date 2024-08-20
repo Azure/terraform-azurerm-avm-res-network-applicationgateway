@@ -3,6 +3,11 @@ output "application_gateway_id" {
   value       = azurerm_application_gateway.this.id
 }
 
+output "resource_id" {
+  description = "Resource ID of Container Group Instance"
+  value       = azurerm_application_gateway.this.id
+}
+
 output "application_gateway_name" {
   description = "The name of the Azure Application Gateway."
   value       = azurerm_application_gateway.this.name

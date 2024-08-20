@@ -11,7 +11,6 @@
 locals {
   frontend_ip_configuration_name = "appgw-${var.name}-fepip"
   frontend_ip_private_name       = "appgw-${var.name}-fepvt-ip"
-  frontend_port_name             = "appgw-${var.name}-feport"
   gateway_ip_configuration_name  = "appgw-${var.name}-gwipc"
 }
 
@@ -64,7 +63,7 @@ resource "azurerm_application_gateway" "this" {
       port                                = backend_http_settings.value.enable_https ? 443 : 80
       protocol                            = backend_http_settings.value.enable_https ? "Https" : "Http"
       affinity_cookie_name                = lookup(backend_http_settings.value, "affinity_cookie_name", null)
-      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name") : null
+      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name", null) : null
       path                                = lookup(backend_http_settings.value, "path", "/")
       pick_host_name_from_backend_address = lookup(backend_http_settings.value, "pick_host_name_from_backend_address", false)
       probe_name                          = lookup(backend_http_settings.value, "probe_name", null)
@@ -163,8 +162,8 @@ resource "azurerm_application_gateway" "this" {
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
     content {
-      min_capacity = lookup(autoscale_configuration.value, "min_capacity")
-      max_capacity = lookup(autoscale_configuration.value, "max_capacity")
+      min_capacity = lookup(autoscale_configuration.value, "min_capacity", 1)
+      max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
   # Check if key_vault_secret_id is not null, and include the identity block accordingly

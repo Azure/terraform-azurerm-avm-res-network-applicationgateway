@@ -34,24 +34,24 @@ output "log_analytics_workspace_name" {
 
 output "private_ip_test_subnet_id" {
   description = "ID of the Private IP Test Subnet"
-  value       = azurerm_subnet.private-ip-test.id
+  value       = azurerm_subnet.private_ip_test.id
 }
 
 output "private_ip_test_subnet_name" {
   description = "Name of the Private IP Test Subnet"
-  value       = azurerm_subnet.private-ip-test.name
+  value       = azurerm_subnet.private_ip_test.name
 }
 
 # Output for Resource Group
 output "resource_group_id" {
   description = "ID of the Azure Resource Group"
-  value       = azurerm_resource_group.rg-group.id
+  value       = azurerm_resource_group.rg_group.id
 }
 
 # Output for Resource Group
 output "resource_group_name" {
   description = "Name of the Azure Resource Group"
-  value       = azurerm_resource_group.rg-group.name
+  value       = azurerm_resource_group.rg_group.name
 }
 
 # Output for Virtual Network
