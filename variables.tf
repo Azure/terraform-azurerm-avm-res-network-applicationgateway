@@ -127,6 +127,12 @@ variable "sku" {
     tier     = string           # Standard, Standard_v2, WAF and WAF_v2
     capacity = optional(number) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
   })
+  default = {
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
+    capacity = 2
+  }
+
   description = "The application gateway sku and tier."
 
   validation {
