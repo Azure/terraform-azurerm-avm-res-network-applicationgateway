@@ -30,9 +30,6 @@ This scenario sets up a straightforward HTTP Application Gateway, typically for 
 **[Application Gateway Internal](examples/simple_http_app_gateway_internal/README.md)** 
 Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
 
-**[Application Gateway Route web traffic based on the URL ](examples/simple_http_route_by_url_app_gateway/README.md)** 
-Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
-
 **[Web Application Firewall (WAF)](examples/simple_waf_http_app_gateway/README.md)** 
 A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
 

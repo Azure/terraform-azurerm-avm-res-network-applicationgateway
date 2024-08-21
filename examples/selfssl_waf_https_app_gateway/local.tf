@@ -1,3 +1,5 @@
+# Enable this local value when you are ready to deploy the VMs
+
 locals {
   webvm_custom_data = <<CUSTOM_DATA
 #!/bin/sh

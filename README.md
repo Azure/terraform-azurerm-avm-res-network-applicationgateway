@@ -30,9 +30,6 @@ This scenario sets up a straightforward HTTP Application Gateway, typically for 
 **[Application Gateway Internal](examples/simple\_http\_app\_gateway\_internal/README.md)**
 Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
 
-**[Application Gateway Route web traffic based on the URL ](examples/simple\_http\_route\_by\_url\_app\_gateway/README.md)**
-Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
-
 **[Web Application Firewall (WAF)](examples/simple\_waf\_http\_app\_gateway/README.md)**
 A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
 
@@ -58,15 +55,9 @@ The following requirements are needed by this module:
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71.0)
 
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
-
-## Providers
-
-The following providers are used by this module:
-
-- <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) (3.78.0)
-
-- <a name="provider_random"></a> [random](#provider\_random) (3.5.1)
 
 ## Resources
 
@@ -76,10 +67,12 @@ The following resources are used by this module:
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
 - [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
-- [azurerm_resource_group_template_deployment.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group_template_deployment) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
-- [random_id.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) (resource)
+- [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
+- [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
+- [azurerm_client_config.telemetry](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 - [azurerm_subnet.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/subnet) (data source)
+- [modtm_module_source.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/data-sources/module_source) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -212,29 +205,9 @@ Description: The resource group where the resources will be deployed.
 
 Type: `string`
 
-### <a name="input_sku"></a> [sku](#input\_sku)
-
-Description: The application gateway sku and tier.
-
-Type:
-
-```hcl
-object({
-    name     = string           // Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string           // Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number) // V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
-  })
-```
-
 ### <a name="input_subnet_name_backend"></a> [subnet\_name\_backend](#input\_subnet\_name\_backend)
 
 Description: The backend subnet where the applicaiton gateway resources configuration will be deployed.
-
-Type: `string`
-
-### <a name="input_subnet_name_frontend"></a> [subnet\_name\_frontend](#input\_subnet\_name\_frontend)
-
-Description: The frontend subnet where the applicaiton gateway IP address resources will be deployed.
 
 Type: `string`
 
@@ -242,7 +215,7 @@ Type: `string`
 
 Description: The VNET where the applicaiton gateway resources will be deployed.
 
-Type: `any`
+Type: `string`
 
 ## Optional Inputs
 
@@ -250,26 +223,11 @@ The following input variables are optional (have default values):
 
 ### <a name="input_app_gateway_waf_policy_resource_id"></a> [app\_gateway\_waf\_policy\_resource\_id](#input\_app\_gateway\_waf\_policy\_resource\_id)
 
-Description: n/a
+Description: The ID of the WAF policy to associate with the Application Gateway.
 
 Type: `string`
 
 Default: `null`
-
-### <a name="input_authentication_certificates"></a> [authentication\_certificates](#input\_authentication\_certificates)
-
-Description: Authentication certificates to allow the backend with Azure Application Gateway
-
-Type:
-
-```hcl
-list(object({
-    name = string
-    data = string
-  }))
-```
-
-Default: `[]`
 
 ### <a name="input_autoscale_configuration"></a> [autoscale\_configuration](#input\_autoscale\_configuration)
 
@@ -279,8 +237,8 @@ Type:
 
 ```hcl
 object({
-    min_capacity = optional(number, 1) // Minimum in the range 0 to 100
-    max_capacity = optional(number, 2) // Maximum in the range 2 to 125
+    min_capacity = optional(number, 1) # Minimum in the range 0 to 100
+    max_capacity = optional(number, 2) # Maximum in the range 2 to 125
   })
 ```
 
@@ -358,24 +316,27 @@ Default: `true`
 
 Description: Specifies a list with a single user managed identity id to be assigned to the Application Gateway
 
-Type: `any`
+Type: `list(string)`
 
-Default: `null`
+Default: `[]`
 
 ### <a name="input_lock"></a> [lock](#input\_lock)
 
-Description: The lock level to apply to the deployed resource. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+Description:   Controls the Resource Lock configuration for this resource. The following properties can be specified:
+
+  - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
+  - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
 
 Type:
 
 ```hcl
 object({
+    kind = string
     name = optional(string, null)
-    kind = optional(string, "None")
   })
 ```
 
-Default: `{}`
+Default: `null`
 
 ### <a name="input_private_ip_address"></a> [private\_ip\_address](#input\_private\_ip\_address)
 
@@ -412,22 +373,6 @@ map(object({
 
 Default: `null`
 
-### <a name="input_public_ip_allocation_method"></a> [public\_ip\_allocation\_method](#input\_public\_ip\_allocation\_method)
-
-Description: The Azure public allocation method dynamic / static
-
-Type: `string`
-
-Default: `"Static"`
-
-### <a name="input_public_ip_sku_tier"></a> [public\_ip\_sku\_tier](#input\_public\_ip\_sku\_tier)
-
-Description: The Azure public ip sku Basic / Standard
-
-Type: `string`
-
-Default: `"Standard"`
-
 ### <a name="input_redirect_configuration"></a> [redirect\_configuration](#input\_redirect\_configuration)
 
 Description: List of redirection configurations.
@@ -450,16 +395,18 @@ Default: `null`
 
 ### <a name="input_role_assignments"></a> [role\_assignments](#input\_role\_assignments)
 
-Description:  A map of role assignments to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description:   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
 
-- `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
-- `principal_id` - The ID of the principal to assign the role to.
-- `description` - The description of the role assignment.
-- `skip_service_principal_aad_check` - If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
-- `condition` - The condition which will be used to scope the role assignment.
-- `condition_version` - The version of the condition syntax. Valid values are '2.0'.
+  - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
+  - `principal_id` - The ID of the principal to assign the role to.
+  - `description` - (Optional) The description of the role assignment.
+  - `skip_service_principal_aad_check` - (Optional) If set to true, skips the Azure Active Directory check for the service principal in the tenant. Defaults to false.
+  - `condition` - (Optional) The condition which will be used to scope the role assignment.
+  - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
+  - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
+  - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
 
-> Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
+  > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
 
 Type:
 
@@ -472,10 +419,35 @@ map(object({
     condition                              = optional(string, null)
     condition_version                      = optional(string, null)
     delegated_managed_identity_resource_id = optional(string, null)
+    principal_type                         = optional(string, null)
   }))
 ```
 
 Default: `{}`
+
+### <a name="input_sku"></a> [sku](#input\_sku)
+
+Description: The application gateway sku and tier.
+
+Type:
+
+```hcl
+object({
+    name     = string              # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string              # Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number, 2) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+  })
+```
+
+Default:
+
+```json
+{
+  "capacity": 2,
+  "name": "Standard_v2",
+  "tier": "Standard_v2"
+}
+```
 
 ### <a name="input_ssl_certificates"></a> [ssl\_certificates](#input\_ssl\_certificates)
 
@@ -494,54 +466,13 @@ list(object({
 
 Default: `[]`
 
-### <a name="input_ssl_policy"></a> [ssl\_policy](#input\_ssl\_policy)
-
-Description: Application Gateway SSL configuration
-
-Type:
-
-```hcl
-map(object({
-    disabled_protocols   = optional(list(string))
-    policy_type          = optional(string)
-    policy_name          = optional(string)
-    cipher_suites        = optional(list(string))
-    min_protocol_version = optional(string)
-  }))
-```
-
-Default: `null`
-
 ### <a name="input_tags"></a> [tags](#input\_tags)
 
 Description: A map of tags to apply to the Application Gateway.
 
 Type: `map(string)`
 
-Default:
-
-```json
-{
-  "environment": "development",
-  "owner": "your-name",
-  "project": "my-project"
-}
-```
-
-### <a name="input_trusted_root_certificates"></a> [trusted\_root\_certificates](#input\_trusted\_root\_certificates)
-
-Description: Trusted root certificates to allow the backend with Azure Application Gateway
-
-Type:
-
-```hcl
-list(object({
-    name = string
-    data = string
-  }))
-```
-
-Default: `[]`
+Default: `null`
 
 ### <a name="input_url_path_map_configurations"></a> [url\_path\_map\_configurations](#input\_url\_path\_map\_configurations)
 
@@ -588,21 +519,21 @@ list(object({
 
 Default: `null`
 
-### <a name="input_waf_enable"></a> [waf\_enable](#input\_waf\_enable)
-
-Description: Enable or disable the Web Application Firewall
-
-Type: `bool`
-
-Default: `true`
-
 ### <a name="input_zones"></a> [zones](#input\_zones)
 
 Description: The Azure application gateway zone redundancy
 
 Type: `list(string)`
 
-Default: `[]`
+Default:
+
+```json
+[
+  "1",
+  "2",
+  "3"
+]
+```
 
 ## Outputs
 
@@ -647,6 +578,10 @@ Description: The ID of the Azure Public IP address associated with the Applicati
 ### <a name="output_request_routing_rules"></a> [request\_routing\_rules](#output\_request\_routing\_rules)
 
 Description: Information about request routing rules defined for the Application Gateway, including their names and configurations.
+
+### <a name="output_resource_id"></a> [resource\_id](#output\_resource\_id)
+
+Description: Resource ID of Container Group Instance
 
 ### <a name="output_ssl_certificates"></a> [ssl\_certificates](#output\_ssl\_certificates)
 
