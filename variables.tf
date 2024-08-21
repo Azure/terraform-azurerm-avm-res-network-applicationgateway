@@ -66,6 +66,7 @@ variable "location" {
   type        = string
   description = "The Azure regional location where the resources will be deployed."
   nullable    = false
+
   validation {
     condition     = length(var.location) > 0
     error_message = "The azure region must not be empty."
@@ -120,31 +121,6 @@ variable "resource_group_name" {
   }
 }
 
-# Variable declaration for the application gateway sku and tier
-variable "sku" {
-  type = object({
-    name     = string              # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
-    tier     = string              # Standard, Standard_v2, WAF and WAF_v2
-    capacity = optional(number, 2) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
-  })
-  default = {
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
-    capacity = 2
-  }
-
-  description = "The application gateway sku and tier."
-
-  validation {
-    condition     = can(regex("^(Standard_v2|WAF_v2)$", var.sku.name))
-    error_message = "SKU name must be 'Standard_v2' or 'WAF_v2'."
-  }
-  validation {
-    condition     = can(regex("^(Standard_v2|WAF_v2)$", var.sku.tier))
-    error_message = "SKU tier must be 'Standard_v2' or 'WAF_v2'."
-  }
-}
-
 # Variable declaration for the  resource location
 variable "subnet_name_backend" {
   type        = string
@@ -158,8 +134,9 @@ variable "subnet_name_backend" {
 
 # Variable declaration for the  resource location
 variable "vnet_name" {
-  description = "The VNET where the applicaiton gateway resources will be deployed."
   type        = string
+  description = "The VNET where the applicaiton gateway resources will be deployed."
+
   validation {
     condition     = length(var.vnet_name) > 0
     error_message = "The VNET name must not be empty."
@@ -171,7 +148,6 @@ variable "app_gateway_waf_policy_resource_id" {
   default     = null
   description = "The ID of the WAF policy to associate with the Application Gateway."
 }
-
 
 variable "autoscale_configuration" {
   type = object({
@@ -284,6 +260,7 @@ variable "lock" {
     error_message = "Lock kind must be either `\"CanNotDelete\"` or `\"ReadOnly\"`."
   }
 }
+
 variable "private_ip_address" {
   type        = string
   default     = null
@@ -339,7 +316,6 @@ variable "role_assignments" {
     principal_type                         = optional(string, null)
   }))
   default     = {}
-  nullable    = false
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   
@@ -354,7 +330,33 @@ variable "role_assignments" {
   
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
+  nullable    = false
 }
+
+# Variable declaration for the application gateway sku and tier
+variable "sku" {
+  type = object({
+    name     = string              # Standard_Small, Standard_Medium, Standard_Large, Standard_v2, WAF_Medium, WAF_Large, and WAF_v2
+    tier     = string              # Standard, Standard_v2, WAF and WAF_v2
+    capacity = optional(number, 2) # V1 SKU this value must be between 1 and 32, and 1 to 125 for a V2 SKU
+  })
+  default = {
+    name     = "Standard_v2"
+    tier     = "Standard_v2"
+    capacity = 2
+  }
+  description = "The application gateway sku and tier."
+
+  validation {
+    condition     = can(regex("^(Standard_v2|WAF_v2)$", var.sku.name))
+    error_message = "SKU name must be 'Standard_v2' or 'WAF_v2'."
+  }
+  validation {
+    condition     = can(regex("^(Standard_v2|WAF_v2)$", var.sku.tier))
+    error_message = "SKU tier must be 'Standard_v2' or 'WAF_v2'."
+  }
+}
+
 variable "ssl_certificates" {
   type = list(object({
     name                = string
@@ -366,13 +368,11 @@ variable "ssl_certificates" {
   description = "List of SSL certificates data for Application gateway"
 }
 
-
 variable "tags" {
   type        = map(string)
   default     = null
   description = "A map of tags to apply to the Application Gateway."
 }
-
 
 # Define a list of URL path map configurations
 variable "url_path_map_configurations" {
@@ -407,8 +407,6 @@ variable "waf_configuration" {
   default     = null
   description = "Web Application Firewall (WAF) configuration."
 }
-
-
 
 variable "zones" {
   type        = list(string)

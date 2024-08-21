@@ -28,9 +28,9 @@ resource "azurerm_public_ip" "this" {
   name                = var.public_ip_name
   resource_group_name = var.resource_group_name
   sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
+  tags                = var.tags
   # WAF : Deploy Application Gateway in a zone-redundant configuration
   zones = var.zones
-  tags  = var.tags
 }
 
 #----------Application Gateway resource creation provider block-----------
@@ -159,7 +159,6 @@ resource "azurerm_application_gateway" "this" {
     name     = var.sku.name
     tier     = var.sku.tier
     capacity = var.autoscale_configuration == null ? var.sku.capacity : null
-    #   capacity = var.autoscale_configuration == null ? var.sku.capacity : var.autoscale_configuration.min_capacity
   }
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
@@ -168,7 +167,6 @@ resource "azurerm_application_gateway" "this" {
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
-
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
     content {
@@ -276,16 +274,17 @@ resource "azurerm_management_lock" "this" {
 
 #----------role assignment settings for the application gateway -----------
 resource "azurerm_role_assignment" "this" {
-  for_each                               = var.role_assignments
-  scope                                  = azurerm_application_gateway.this.id
-  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
-  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
+  for_each = var.role_assignments
+
   principal_id                           = each.value.principal_id
+  scope                                  = azurerm_application_gateway.this.id
   condition                              = each.value.condition
   condition_version                      = each.value.condition_version
-  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
   delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
   principal_type                         = each.value.principal_type
+  role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
+  role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
+  skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
 #----------Diagnostic logs settings for the application gateway -----------
 # WAF : Monitor and Log the configurations and traffic
