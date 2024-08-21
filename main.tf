@@ -262,16 +262,16 @@ resource "azurerm_application_gateway" "this" {
   depends_on = [azurerm_public_ip.this]
 }
 
-#----------lock settings for the application gateway -----------
-#----------Optionl Configuration  -----------
+# Example resource implementation
 resource "azurerm_management_lock" "this" {
-  count = var.lock.kind != "None" ? 1 : 0
+  count = var.lock != null ? 1 : 0
 
   lock_level = var.lock.kind
-  name       = coalesce(var.lock.name, "lock-${var.name}")
-  scope      = azurerm_application_gateway.this.id
+  name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
+  scope      = azurerm_MY_RESOURCE.this.id
   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 }
+
 
 #----------role assignment settings for the application gateway -----------
 resource "azurerm_role_assignment" "this" {
