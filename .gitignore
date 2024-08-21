@@ -47,10 +47,5 @@ avm.tflint.merged.hcl
 avm.tflint_example.hcl
 avm.tflint_example.merged.hcl
 avmmakefile
-<<<<<<< HEAD
 
 examples/simple_http_route_by_url_app_gateway/
-=======
-avm.tflint_module.hcl
-avm.tflint_module.merged.hcl
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7

@@ -4,31 +4,18 @@
 # Virtual network, subnets, log analytics workspace, virtual machine scale set, 
 # network security group, storage account, key vault and user assigned identity.
 
-<<<<<<< HEAD
 resource "azurerm_resource_group" "rg_group" {
   location = "southeastasia"
-=======
-resource "azurerm_resource_group" "rg-group" {
-  location = "southeastasia" //module.regions.regions[random_integer.region_index.result].name
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   name     = module.naming.resource_group.name_unique
 }
 
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.90.0.0/16"] # address space for VNET 
-<<<<<<< HEAD
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
 
   depends_on = [azurerm_resource_group.rg_group]
-=======
-  location            = azurerm_resource_group.rg-group.location
-  name                = module.naming.virtual_network.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
-
-  depends_on = [azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -37,11 +24,7 @@ resource "azurerm_subnet" "frontend" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
-=======
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 resource "azurerm_subnet" "backend" {
@@ -50,11 +33,7 @@ resource "azurerm_subnet" "backend" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
-=======
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 # Required for to deploy VMSS and Web Server to host application
@@ -64,7 +43,6 @@ resource "azurerm_subnet" "workload" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
-<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
@@ -76,19 +54,6 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
-=======
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
-}
-
-# Required for Frontend Private IP endpoint testing 
-resource "azurerm_subnet" "private-ip-test" {
-  address_prefixes     = ["10.90.3.0/24"]
-  name                 = "private-ip-test"
-  resource_group_name  = azurerm_resource_group.rg-group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 #-----------------------------------------------------------------
@@ -106,21 +71,12 @@ resource "azurerm_subnet" "private-ip-test" {
 # }
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
-<<<<<<< HEAD
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.log_analytics_workspace.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "PerGB2018"
 
   depends_on = [azurerm_resource_group.rg_group]
-=======
-  location            = azurerm_resource_group.rg-group.location
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
-  sku                 = "PerGB2018"
-
-  depends_on = [azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 #-----------------------------------------------------------------
@@ -306,32 +262,18 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_user_assigned_identity" "appag_umid" {
-<<<<<<< HEAD
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
 
   depends_on = [azurerm_resource_group.rg_group]
-=======
-  location            = azurerm_resource_group.rg-group.location
-  name                = module.naming.user_assigned_identity.name_unique
-  resource_group_name = azurerm_resource_group.rg-group.name
-
-  depends_on = [azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 
 resource "azurerm_key_vault" "keyvault" {
-<<<<<<< HEAD
   location                        = azurerm_resource_group.rg_group.location
   name                            = module.naming.key_vault.name_unique
   resource_group_name             = azurerm_resource_group.rg_group.name
-=======
-  location                        = azurerm_resource_group.rg-group.location
-  name                            = module.naming.key_vault.name_unique
-  resource_group_name             = azurerm_resource_group.rg-group.name
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   sku_name                        = "premium"
   tenant_id                       = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption     = true
@@ -339,11 +281,7 @@ resource "azurerm_key_vault" "keyvault" {
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
 
-<<<<<<< HEAD
   depends_on = [azurerm_resource_group.rg_group]
-=======
-  depends_on = [azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
@@ -363,11 +301,7 @@ resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {
     "Backup", "Delete", "DeleteSAS", "Get", "GetSAS", "List", "ListSAS", "Purge", "Recover", "RegenerateKey", "Restore", "Set", "SetSAS", "Update"
   ]
 
-<<<<<<< HEAD
   depends_on = [azurerm_resource_group.rg_group]
-=======
-  depends_on = [azurerm_resource_group.rg-group]
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 
   lifecycle {
     create_before_destroy = true
@@ -415,7 +349,6 @@ resource "azurerm_key_vault_certificate" "ssl_cert_id" {
   }
 
   depends_on = [azurerm_key_vault_access_policy.key_vault_default_policy]
-<<<<<<< HEAD
 }
 
 
@@ -504,6 +437,4 @@ resource "azurerm_web_application_firewall_policy" "azure_waf" {
     mode                        = "Prevention"
     request_body_check          = true
   }
-=======
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
