@@ -167,8 +167,9 @@ variable "vnet_name" {
 }
 
 variable "app_gateway_waf_policy_resource_id" {
-  type    = string
-  default = null
+  type        = string
+  default     = null
+  description = "The ID of the WAF policy to associate with the Application Gateway."
 }
 
 

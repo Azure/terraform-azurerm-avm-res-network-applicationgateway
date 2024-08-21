@@ -30,6 +30,7 @@ resource "azurerm_public_ip" "this" {
   sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
   # WAF : Deploy Application Gateway in a zone-redundant configuration
   zones = var.zones
+  tags  = var.tags
 }
 
 #----------Application Gateway resource creation provider block-----------
