@@ -4,18 +4,31 @@
 # Virtual network, subnets, log analytics workspace, virtual machine scale set, 
 # network security group, storage account, key vault and user assigned identity.
 
+<<<<<<< HEAD
 resource "azurerm_resource_group" "rg_group" {
   location = "southeastasia"
+=======
+resource "azurerm_resource_group" "rg-group" {
+  location = "southeastasia" //module.regions.regions[random_integer.region_index.result].name
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   name     = module.naming.resource_group.name_unique
 }
 
 resource "azurerm_virtual_network" "vnet" {
   address_space       = ["10.90.0.0/16"] # address space for VNET 
+<<<<<<< HEAD
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
 
   depends_on = [azurerm_resource_group.rg_group]
+=======
+  location            = azurerm_resource_group.rg-group.location
+  name                = module.naming.virtual_network.name_unique
+  resource_group_name = azurerm_resource_group.rg-group.name
+
+  depends_on = [azurerm_resource_group.rg-group]
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -24,7 +37,11 @@ resource "azurerm_subnet" "frontend" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
+<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+=======
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 resource "azurerm_subnet" "backend" {
@@ -33,7 +50,11 @@ resource "azurerm_subnet" "backend" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
+<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+=======
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 # Required for to deploy VMSS and Web Server to host application
@@ -43,6 +64,7 @@ resource "azurerm_subnet" "workload" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 
+<<<<<<< HEAD
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
@@ -54,6 +76,19 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+=======
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+}
+
+# Required for Frontend Private IP endpoint testing 
+resource "azurerm_subnet" "private-ip-test" {
+  address_prefixes     = ["10.90.3.0/24"]
+  name                 = "private-ip-test"
+  resource_group_name  = azurerm_resource_group.rg-group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+
+  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg-group]
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 #-----------------------------------------------------------------
@@ -71,12 +106,21 @@ resource "azurerm_subnet" "private_ip_test" {
 # }
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
+<<<<<<< HEAD
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.log_analytics_workspace.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "PerGB2018"
 
   depends_on = [azurerm_resource_group.rg_group]
+=======
+  location            = azurerm_resource_group.rg-group.location
+  name                = module.naming.log_analytics_workspace.name_unique
+  resource_group_name = azurerm_resource_group.rg-group.name
+  sku                 = "PerGB2018"
+
+  depends_on = [azurerm_resource_group.rg-group]
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 #-----------------------------------------------------------------

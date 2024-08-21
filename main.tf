@@ -11,6 +11,10 @@
 locals {
   frontend_ip_configuration_name = "appgw-${var.name}-fepip"
   frontend_ip_private_name       = "appgw-${var.name}-fepvt-ip"
+<<<<<<< HEAD
+=======
+  frontend_port_name             = "appgw-${var.name}-feport"
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   gateway_ip_configuration_name  = "appgw-${var.name}-gwipc"
 }
 
@@ -64,7 +68,11 @@ resource "azurerm_application_gateway" "this" {
       port                                = backend_http_settings.value.enable_https ? 443 : 80
       protocol                            = backend_http_settings.value.enable_https ? "Https" : "Http"
       affinity_cookie_name                = lookup(backend_http_settings.value, "affinity_cookie_name", null)
+<<<<<<< HEAD
       host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name", null) : null
+=======
+      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name") : null
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
       path                                = lookup(backend_http_settings.value, "path", "/")
       pick_host_name_from_backend_address = lookup(backend_http_settings.value, "pick_host_name_from_backend_address", false)
       probe_name                          = lookup(backend_http_settings.value, "probe_name", null)
@@ -154,7 +162,10 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   #----------SKU and configuration for the application gateway-----------
+<<<<<<< HEAD
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
+=======
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   sku {
     name     = var.sku.name
     tier     = var.sku.tier
@@ -163,15 +174,28 @@ resource "azurerm_application_gateway" "this" {
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
     content {
+<<<<<<< HEAD
       min_capacity = lookup(autoscale_configuration.value, "min_capacity", 1)
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
+=======
+      min_capacity = lookup(autoscale_configuration.value, "min_capacity")
+      max_capacity = lookup(autoscale_configuration.value, "max_capacity")
+    }
+  }
+  # Check if key_vault_secret_id is not null, and include the identity block accordingly
+  #----------Optionl Configuration  -----------
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
     content {
       type         = "UserAssigned"
+<<<<<<< HEAD
       identity_ids = var.identity_ids # Directly use the list of identity IDs
+=======
+      identity_ids = var.identity_ids[0].identity_ids
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
@@ -230,11 +254,18 @@ resource "azurerm_application_gateway" "this" {
         for_each = url_path_map.value.path_rules != null ? url_path_map.value.path_rules : {}
 
         content {
+<<<<<<< HEAD
           name                       = path_rule.value.name
           paths                      = path_rule.value.paths
           backend_address_pool_name  = path_rule.value.backend_address_pool_name
           backend_http_settings_name = path_rule.value.backend_http_settings_name
           # WAF Enable Web Application Firewall policies
+=======
+          name                        = path_rule.value.name
+          paths                       = path_rule.value.paths
+          backend_address_pool_name   = path_rule.value.backend_address_pool_name
+          backend_http_settings_name  = path_rule.value.backend_http_settings_name
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
           firewall_policy_id          = path_rule.value.firewall_policy_id
           redirect_configuration_name = path_rule.value.redirect_configuration_name
           rewrite_rule_set_name       = path_rule.value.rewrite_rule_set_name
@@ -263,12 +294,20 @@ resource "azurerm_application_gateway" "this" {
 
 # Example resource implementation
 resource "azurerm_management_lock" "this" {
+<<<<<<< HEAD
   count = var.lock != null ? 1 : 0
 
   lock_level = var.lock.kind
   name       = coalesce(var.lock.name, "lock-${var.lock.kind}")
   scope      = azurerm_application_gateway.this.id
   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
+=======
+  count = var.lock.kind != "None" ? 1 : 0
+
+  lock_level = var.lock.kind
+  name       = coalesce(var.lock.name, "lock-${var.name}")
+  scope      = azurerm_application_gateway.this.id
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 }
 
 
@@ -281,7 +320,10 @@ resource "azurerm_role_assignment" "this" {
   condition                              = each.value.condition
   condition_version                      = each.value.condition_version
   delegated_managed_identity_resource_id = each.value.delegated_managed_identity_resource_id
+<<<<<<< HEAD
   principal_type                         = each.value.principal_type
+=======
+>>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
   role_definition_id                     = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? each.value.role_definition_id_or_name : null
   role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check

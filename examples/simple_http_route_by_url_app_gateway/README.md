@@ -1,19 +1,16 @@
 <!-- BEGIN_TF_DOCS -->
-# Application Gateway with SSL with Azure Key Vault
-For enhanced security, SSL certificates are managed using Azure Key Vault. This scenario involves setting up Key Vault and integrating it with the Application Gateway. Detailed configuration for Key Vault and SSL certificates is necessary.
+# Application Gateway Route web traffic based on the URL
+Route web traffic based on the URL set up and configure Application Gateway routing for different types of traffic from your application. The routing then directs the traffic to different server pools based on the URL.
 
 # Default example
 
 This deploys the module in its simplest form.
 
-<<<<<<< HEAD
-=======
 ```hcl
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
-# The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
-# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/configure-keyvault-ps
+# Application Gateway routing for different types of traffic from your application. 
+# The routing then directs the traffic to different server pools based on the URL.
+# The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-url-route-cli
 
 #----------All Required Provider Section----------- 
 terraform {
@@ -82,9 +79,9 @@ module "application-gateway" {
 
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
+    name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
+    tier = "Standard_v2"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
     capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
@@ -94,12 +91,17 @@ module "application-gateway" {
     max_capacity = 2
   }
 
-  # frontend port configuration block for the application gateway
   frontend_ports = {
-    frontend-port-443 = {
-      name = "frontend-port-443"
-      port = 443
+
+    frontend-port-80 = {
+      name = "frontend-port-80"
+      port = 80
+    },
+    port8080 = {
+      name = "port8080"
+      port = 8080
     }
+    # Add more ports as needed
   }
 
   # Backend address pool configuration for the application gateway
@@ -107,14 +109,23 @@ module "application-gateway" {
   backend_address_pools = {
     appGatewayBackendPool = {
       name = "appGatewayBackendPool"
-      # ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
+
+    },
+    imagesBackendPool = {
+      name = "imagesBackendPool"
+
+    },
+    videoBackendPool = {
+      name = "videoBackendPool"
+
     }
+
   }
 
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
+
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
       cookie_based_affinity = "Disabled"
@@ -124,6 +135,7 @@ module "application-gateway" {
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
+
       }
     }
     # Add more http settings as needed
@@ -133,79 +145,91 @@ module "application-gateway" {
   # Mandatory Input
   http_listeners = {
     appGatewayHttpListener = {
-      name                 = "appGatewayHttpListener"
-      host_name            = null
-      frontend_port_name   = "frontend-port-443"
-      ssl_certificate_name = "app-gateway-cert"
+      name               = "appGatewayHttpListener"
+      host_name          = null
+      frontend_port_name = "frontend-port-80"
+      //frontend_ip_association = "public"
+    },
+    backendListener = {
+      name               = "backendListener"
+      host_name          = null
+      frontend_port_name = "port8080"
+      // frontend_ip_association = "Private"
+
     }
     # # Add more http listeners as needed
   }
-
-  enable_classic_rule = true //applicable only for WAF_v2 SKU. this will enable WAF standard policy
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
 
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
     routing-rule-1 = {
-      name                       = "rule-1"
+      name                       = "rule1"
       rule_type                  = "Basic"
       http_listener_name         = "appGatewayHttpListener"
       backend_address_pool_name  = "appGatewayBackendPool"
       backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
     }
+    routing-rule-2 = {
+      name                       = "rule2"
+      rule_type                  = "PathBasedRouting"
+      url_path_map_name          = "myPathMap"
+      http_listener_name         = "backendListener"
+      backend_address_pool_name  = "appGatewayBackendPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      priority                   = 200
+    }
     # Add more rules as needed
   }
 
-  # SSL Certificate Block
-  ssl_certificates = [{
-    name                = "app-gateway-cert"
-    key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
-  }]
-
-  # HTTP to HTTPS Redirection Configuration for
-  redirect_configuration = {
-    redirect_config_1 = {
-      name                 = "Redirect1"
-      redirect_type        = "Permanent"
-      include_path         = true
-      include_query_string = true
-      target_listener_name = "appGatewayHttpListener"
+  url_path_map_configurations = {
+    url_path_map_default = {
+      name                                = "myPathMap"
+      default_backend_address_pool_name   = "appGatewayBackendPool"
+      default_backend_http_settings_name  = "appGatewayBackendHttpSettings"
+      default_redirect_configuration_name = null
+      default_rewrite_rule_set_name       = null
+      path_rules = {
+        imagePathRule = {
+          name                        = "imagePathRule"
+          paths                       = ["/images/*"]
+          backend_address_pool_name   = "imagesBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        },
+        videoPathRule = {
+          name                        = "videoPathRule"
+          paths                       = ["/video/*"]
+          backend_address_pool_name   = "videoBackendPool"
+          backend_http_settings_name  = "appGatewayBackendHttpSettings"
+          redirect_configuration_name = null
+          rewrite_rule_set_name       = null
+          firewall_policy_id          = null
+        }
+      }
     }
   }
+
 
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
-  identity_ids = [{
-    identity_ids = [
-      azurerm_user_assigned_identity.appag_umid.id
-  ] }]
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
       workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
       log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+      log_groups                     = ["allLogs"]
+      metric_categories              = ["AllMetrics"]
     }
   }
 
 }
-
-
 ```
 
->>>>>>> edc4a8a5c63b47006a932f49cb5e7e860ba577b7
 <!-- markdownlint-disable MD033 -->
 ## Requirements
 
@@ -221,21 +245,14 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_key_vault.keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault) (resource)
-- [azurerm_key_vault_access_policy.appag_key_vault_access_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
-- [azurerm_key_vault_access_policy.key_vault_default_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
-- [azurerm_key_vault_certificate.ssl_cert_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.rg-group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
+- [azurerm_subnet.private-ip-test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.workload](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_user_assigned_identity.appag_umid](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_web_application_firewall_policy.azure_waf](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/web_application_firewall_policy) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
-- [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs
@@ -260,10 +277,6 @@ Default: `true`
 
 The following outputs are exported:
 
-### <a name="output_azurerm_key_vault_certificate_secret_id"></a> [azurerm\_key\_vault\_certificate\_secret\_id](#output\_azurerm\_key\_vault\_certificate\_secret\_id)
-
-Description: n/a
-
 ### <a name="output_backend_subnet_id"></a> [backend\_subnet\_id](#output\_backend\_subnet\_id)
 
 Description: ID of the Backend Subnet
@@ -280,10 +293,6 @@ Description: ID of the Frontend Subnet
 
 Description: Name of the Frontend Subnet
 
-### <a name="output_key_vault_id"></a> [key\_vault\_id](#output\_key\_vault\_id)
-
-Description: ID of the Azure Key Vault
-
 ### <a name="output_private_ip_test_subnet_id"></a> [private\_ip\_test\_subnet\_id](#output\_private\_ip\_test\_subnet\_id)
 
 Description: ID of the Private IP Test Subnet
@@ -299,10 +308,6 @@ Description: ID of the Azure Resource Group
 ### <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name)
 
 Description: Name of the Azure Resource Group
-
-### <a name="output_self_signed_certificate_id"></a> [self\_signed\_certificate\_id](#output\_self\_signed\_certificate\_id)
-
-Description: ID of the self-signed SSL certificate in Azure Key Vault
 
 ### <a name="output_virtual_network_id"></a> [virtual\_network\_id](#output\_virtual\_network\_id)
 
@@ -324,7 +329,7 @@ Description: Name of the Workload Subnet
 
 The following Modules are called:
 
-### <a name="module_application_gateway"></a> [application\_gateway](#module\_application\_gateway)
+### <a name="module_application-gateway"></a> [application-gateway](#module\_application-gateway)
 
 Source: ../../
 
