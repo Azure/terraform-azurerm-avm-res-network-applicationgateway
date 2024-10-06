@@ -20,10 +20,6 @@ sections:
 content: |-
   {{ .Header }}
 
-  ```hcl
-  {{ include "main.tf" }}
-  ```
-
   <!-- markdownlint-disable MD033 -->
   {{ .Requirements }}
 
@@ -37,6 +33,7 @@ content: |-
   {{ .Modules }}
 
   {{ .Footer }}
+
 output:
   file: README.md
   mode: replace
