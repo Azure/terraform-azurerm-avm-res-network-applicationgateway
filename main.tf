@@ -49,6 +49,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Backend Address Pool Configuration for the application gateway -----------
   dynamic "backend_address_pool" {
     for_each = var.backend_address_pools
+
     content {
       name         = backend_address_pool.value.name
       fqdns        = backend_address_pool.value.fqdns != null ? backend_address_pool.value.fqdns : null
@@ -58,6 +59,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Backend Http Settings Configuration for the application gateway -----------
   dynamic "backend_http_settings" {
     for_each = var.backend_http_settings
+
     content {
       cookie_based_affinity               = lookup(backend_http_settings.value, "cookie_based_affinity", "Disabled")
       name                                = backend_http_settings.value.name
@@ -73,12 +75,14 @@ resource "azurerm_application_gateway" "this" {
 
       dynamic "authentication_certificate" {
         for_each = backend_http_settings.value.authentication_certificate[*]
+
         content {
           name = authentication_certificate.value.name
         }
       }
       dynamic "connection_draining" {
         for_each = backend_http_settings.value.connection_draining[*]
+
         content {
           drain_timeout_sec = connection_draining.value.drain_timeout_sec
           enabled           = connection_draining.value.enable_connection_draining
@@ -94,6 +98,7 @@ resource "azurerm_application_gateway" "this" {
   # Private frontend IP configuration
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_type != null && var.private_ip_address != null ? [1] : []
+
     content {
       name                          = local.frontend_ip_private_name
       private_ip_address            = var.private_ip_address != null ? var.private_ip_address : null
@@ -104,6 +109,7 @@ resource "azurerm_application_gateway" "this" {
   # Private frontend IP Port configuration
   dynamic "frontend_port" {
     for_each = var.frontend_ports
+
     content {
       name = lookup(frontend_port.value, "name", null)
       port = lookup(frontend_port.value, "port", null)
@@ -117,6 +123,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Http Listener Configuration for the application gateway -----------
   dynamic "http_listener" {
     for_each = var.http_listeners
+
     content {
       frontend_ip_configuration_name = var.frontend_ip_type != null && var.private_ip_address != null ? local.frontend_ip_private_name : local.frontend_ip_configuration_name
       frontend_port_name             = lookup(http_listener.value, "frontend_port_name", null)
@@ -131,6 +138,7 @@ resource "azurerm_application_gateway" "this" {
 
       dynamic "custom_error_configuration" {
         for_each = http_listener.value.custom_error_configuration != null ? lookup(http_listener.value, "custom_error_configuration", {}) : []
+
         content {
           custom_error_page_url = lookup(custom_error_configuration.value, "custom_error_page_url", null)
           status_code           = lookup(custom_error_configuration.value, "status_code", null)
@@ -141,6 +149,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Rules Configuration for the application gateway -----------
   dynamic "request_routing_rule" {
     for_each = var.request_routing_rules
+
     content {
       http_listener_name          = request_routing_rule.value.http_listener_name
       name                        = request_routing_rule.value.name
@@ -162,6 +171,7 @@ resource "azurerm_application_gateway" "this" {
   }
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
+
     content {
       min_capacity = lookup(autoscale_configuration.value, "min_capacity", 1)
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
@@ -169,6 +179,7 @@ resource "azurerm_application_gateway" "this" {
   }
   dynamic "identity" {
     for_each = length(var.ssl_certificates) > 0 ? [1] : []
+
     content {
       type         = "UserAssigned"
       identity_ids = var.identity_ids # Directly use the list of identity IDs
@@ -179,6 +190,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Optionl Configuration  -----------
   dynamic "probe" {
     for_each = var.probe_configurations != null ? var.probe_configurations : {}
+
     content {
       interval                                  = lookup(probe.value, "interval", 5)
       name                                      = probe.value.name
@@ -196,6 +208,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Optionl Configuration  -----------
   dynamic "redirect_configuration" {
     for_each = var.redirect_configuration != null ? var.redirect_configuration : {}
+
     content {
       name                 = lookup(redirect_configuration.value, "name", null)
       redirect_type        = lookup(redirect_configuration.value, "redirect_type", "Permanent")
@@ -209,6 +222,7 @@ resource "azurerm_application_gateway" "this" {
   #----------Optionl Configuration  -----------
   dynamic "ssl_certificate" {
     for_each = var.ssl_certificates
+
     content {
       name                = ssl_certificate.value.name
       data                = ssl_certificate.value.key_vault_secret_id == null ? ssl_certificate.value.data : null
@@ -247,7 +261,6 @@ resource "azurerm_application_gateway" "this" {
   # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
   #----------Optionl Configuration  -----------
   dynamic "waf_configuration" {
-
     for_each = var.sku.name == "WAF_v2" && var.enable_classic_rule == true != null ? [1] : []
 
     content {
@@ -302,18 +315,21 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 
   dynamic "enabled_log" {
     for_each = each.value.log_categories
+
     content {
       category = enabled_log.value
     }
   }
   dynamic "enabled_log" {
     for_each = each.value.log_groups
+
     content {
       category_group = enabled_log.value
     }
   }
   dynamic "metric" {
     for_each = each.value.metric_categories
+
     content {
       category = metric.value
     }
