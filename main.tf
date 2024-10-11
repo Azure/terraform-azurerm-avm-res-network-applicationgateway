@@ -90,8 +90,6 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-
-
   # Public frontend IP configuration
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
@@ -196,6 +194,7 @@ resource "azurerm_application_gateway" "this" {
       minimum_servers                           = lookup(probe.value, "minimum_servers", 0)
       pick_host_name_from_backend_http_settings = lookup(probe.value, "pick_host_name_from_backend_http_settings", false)
       port                                      = lookup(probe.value, "port", 80)
+
       #GitHub issue #59 request updated probe match configuration
       dynamic "match" {
         for_each = lookup(probe.value, "match", {}) != {} ? [probe.value.match] : []
@@ -206,7 +205,6 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-
   #----------Redirect Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "redirect_configuration" {

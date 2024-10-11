@@ -123,18 +123,6 @@ variable "resource_group_name" {
   }
 }
 
-
-# This is required for most resource modules
-#54 Added the variable for the vnet resource group name
-variable "vnet_resource_group_name" {
-  type        = string
-  description = "The resource group where the VNET resources deployed."
-
-  validation {
-    condition     = length(var.vnet_resource_group_name) > 0
-    error_message = "The resource group name must not be empty."
-  }
-}
 # Variable declaration for the  resource location
 variable "subnet_name_backend" {
   type        = string
@@ -154,6 +142,18 @@ variable "vnet_name" {
   validation {
     condition     = length(var.vnet_name) > 0
     error_message = "The VNET name must not be empty."
+  }
+}
+
+# This is required for most resource modules
+#54 Added the variable for the vnet resource group name
+variable "vnet_resource_group_name" {
+  type        = string
+  description = "The resource group where the VNET resources deployed."
+
+  validation {
+    condition     = length(var.vnet_resource_group_name) > 0
+    error_message = "The resource group name must not be empty."
   }
 }
 
