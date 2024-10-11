@@ -53,11 +53,12 @@ module "application_gateway" {
 
   # pre-requisites resources input required for the module
 
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name = azurerm_resource_group.rg_group.name
-  location            = azurerm_resource_group.rg_group.location
-  vnet_name           = azurerm_virtual_network.vnet.name
-  subnet_name_backend = azurerm_subnet.backend.name
+  public_ip_name           = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name      = azurerm_resource_group.rg_group.name
+  vnet_resource_group_name = azurerm_resource_group.rg_vnet.name
+  location                 = azurerm_resource_group.rg_group.location
+  vnet_name                = azurerm_virtual_network.vnet.name
+  subnet_name_backend      = azurerm_subnet.backend.name
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
@@ -95,7 +96,7 @@ module "application_gateway" {
   frontend_ports = {
     frontend-port-80 = {
       name = "frontend-port-80"
-      port = 80
+      port = 8080
     }
   }
 
@@ -119,6 +120,8 @@ module "application_gateway" {
       path                  = "/"
       enable_https          = false
       request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300

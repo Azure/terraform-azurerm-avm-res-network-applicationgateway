@@ -16,10 +16,13 @@ locals {
 
 #----------Frontend Subnet Selection Data block-----------
 data "azurerm_subnet" "this" {
-  name                 = var.subnet_name_backend
-  resource_group_name  = var.resource_group_name
+  name = var.subnet_name_backend
+  #GitHub issue #54 create AGW and Subnet in different resource group
+  resource_group_name  = var.vnet_resource_group_name
   virtual_network_name = var.vnet_name
 }
+
+
 
 #----------Public IP for application gateway-----------
 resource "azurerm_public_ip" "this" {
@@ -59,9 +62,10 @@ resource "azurerm_application_gateway" "this" {
   dynamic "backend_http_settings" {
     for_each = var.backend_http_settings
     content {
-      cookie_based_affinity               = lookup(backend_http_settings.value, "cookie_based_affinity", "Disabled")
-      name                                = backend_http_settings.value.name
-      port                                = backend_http_settings.value.enable_https ? 443 : 80
+      cookie_based_affinity = lookup(backend_http_settings.value, "cookie_based_affinity", "Disabled")
+      name                  = backend_http_settings.value.name
+      #Github issue #55 allow custom port for the backend
+      port                                = backend_http_settings.value.enable_https ? 443 : coalesce(lookup(backend_http_settings.value, "port", null), 80)
       protocol                            = backend_http_settings.value.enable_https ? "Https" : "Http"
       affinity_cookie_name                = lookup(backend_http_settings.value, "affinity_cookie_name", null)
       host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name", null) : null
@@ -86,6 +90,8 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
+
   # Public frontend IP configuration
   frontend_ip_configuration {
     name                 = local.frontend_ip_configuration_name
@@ -190,8 +196,17 @@ resource "azurerm_application_gateway" "this" {
       minimum_servers                           = lookup(probe.value, "minimum_servers", 0)
       pick_host_name_from_backend_http_settings = lookup(probe.value, "pick_host_name_from_backend_http_settings", false)
       port                                      = lookup(probe.value, "port", 80)
+      #GitHub issue #59 request updated probe match configuration
+      dynamic "match" {
+        for_each = lookup(probe.value, "match", {}) != {} ? [probe.value.match] : []
+        content {
+          status_code = lookup(match.value, "status_code", ["200-399"])
+          body        = lookup(match.value, "body", null)
+        }
+      }
     }
   }
+
   #----------Redirect Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "redirect_configuration" {
@@ -261,6 +276,10 @@ resource "azurerm_application_gateway" "this" {
   depends_on = [azurerm_public_ip.this]
 }
 
+output "backend_http_settings_debug" {
+  value       = jsonencode(var.backend_http_settings)
+  description = "Outputs the entire backend_http_settings for debugging purposes"
+}
 # Example resource implementation
 resource "azurerm_management_lock" "this" {
   count = var.lock != null ? 1 : 0
