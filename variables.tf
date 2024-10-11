@@ -146,7 +146,8 @@ variable "vnet_name" {
 }
 
 # This is required for most resource modules
-#54 Added the variable for the vnet resource group name
+#54 Added the variable for the vnet resource group name 
+#Customer would like to deploy AGW and Subnet in different resource group
 variable "vnet_resource_group_name" {
   type        = string
   description = "The resource group where the VNET resources deployed."
