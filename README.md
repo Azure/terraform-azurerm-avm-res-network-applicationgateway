@@ -345,10 +345,6 @@ resource "azurerm_application_gateway" "this" {
   depends_on = [azurerm_public_ip.this]
 }
 
-output "backend_http_settings_debug" {
-  value       = jsonencode(var.backend_http_settings)
-  description = "Outputs the entire backend_http_settings for debugging purposes"
-}
 # Example resource implementation
 resource "azurerm_management_lock" "this" {
   count = var.lock != null ? 1 : 0
@@ -929,10 +925,6 @@ Description: Information about the backend address pools configured for the Appl
 ### <a name="output_backend_http_settings"></a> [backend\_http\_settings](#output\_backend\_http\_settings)
 
 Description: Information about the backend HTTP settings for the Application Gateway, including settings like port and protocol.
-
-### <a name="output_backend_http_settings_debug"></a> [backend\_http\_settings\_debug](#output\_backend\_http\_settings\_debug)
-
-Description: Outputs the entire backend\_http\_settings for debugging purposes
 
 ### <a name="output_frontend_port"></a> [frontend\_port](#output\_frontend\_port)
 
