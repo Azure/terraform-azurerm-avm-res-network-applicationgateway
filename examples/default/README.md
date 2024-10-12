@@ -61,28 +61,23 @@ module "application_gateway" {
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
-
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  vnet_name           = azurerm_virtual_network.vnet.name
-  subnet_name_backend = azurerm_subnet.backend.name
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
+  frontend_ip_configuration = {
+    feip1 = {
+      public_ip_address_id = azurerm_public_ip.this.id
+    }
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
+
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
@@ -124,9 +119,10 @@ module "application_gateway" {
 
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
+      port                  = 80
+      protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
-      enable_https          = false
       request_timeout       = 30
       connection_draining = {
         enable_connection_draining = true
@@ -176,6 +172,11 @@ module "application_gateway" {
     }
   }
 
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
 }
 ```
 
@@ -195,6 +196,7 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
+- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)

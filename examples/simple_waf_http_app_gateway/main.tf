@@ -53,28 +53,23 @@ module "application_gateway" {
   depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
-
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  vnet_name           = azurerm_virtual_network.vnet.name
-  subnet_name_backend = azurerm_subnet.backend.name
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
+  frontend_ip_configuration = {
+    feip1 = {
+      public_ip_address_id = azurerm_public_ip.this.id
+    }
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
+
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
@@ -115,15 +110,14 @@ module "application_gateway" {
   backend_http_settings = {
 
     appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
-      cookie_based_affinity = "Disabled"
-      path                  = "/"
-      enable_https          = false
-      request_timeout       = 30
+      name            = "appGatewayBackendHttpSettings"
+      port            = 80
+      protocol        = "Http"
+      path            = "/"
+      request_timeout = 30
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
-
       }
     }
     # Add more http settings as needed
@@ -139,20 +133,11 @@ module "application_gateway" {
     }
     # # Add more http listeners as needed
   }
-  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
-  # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
-  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
 
+  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
+  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
+  # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
   app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
-  enable_classic_rule                = false
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
 
   # Routing rules configuration for the backend pool
   # Mandatory Input
@@ -183,6 +168,11 @@ module "application_gateway" {
     }
   }
 
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
 }
 
 

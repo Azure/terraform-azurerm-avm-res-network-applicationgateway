@@ -14,8 +14,6 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-
-  depends_on = [azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -23,8 +21,6 @@ resource "azurerm_subnet" "frontend" {
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "backend" {
@@ -32,8 +28,6 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for to deploy VMSS and Web Server to host application
@@ -42,8 +36,6 @@ resource "azurerm_subnet" "workload" {
   name                 = "workload"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for Frontend Private IP endpoint testing 
@@ -52,12 +44,18 @@ resource "azurerm_subnet" "private_ip_test" {
   name                 = "private_ip_test"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+}
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+resource "azurerm_public_ip" "this" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+  sku                 = "Standard"
 }
 
 #-----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
@@ -75,12 +73,10 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
   name                = module.naming.log_analytics_workspace.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "PerGB2018"
-
-  depends_on = [azurerm_resource_group.rg_group]
 }
 
 #-----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
@@ -265,8 +261,6 @@ resource "azurerm_user_assigned_identity" "appag_umid" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.user_assigned_identity.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-
-  depends_on = [azurerm_resource_group.rg_group]
 }
 
 
@@ -280,8 +274,6 @@ resource "azurerm_key_vault" "keyvault" {
   enabled_for_template_deployment = true
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
-
-  depends_on = [azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_key_vault_access_policy" "key_vault_default_policy" {

@@ -1,54 +1,24 @@
-# TODO: insert resources here.
-
 #----------About Terraform Module  -------------
 # Azure Application Gateway Terraform Module
 # Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications. 
-# When using Terraform to deploy Azure resources, you can make use of a Terraform module to define and configure the Azure Application Gateway. 
 #----------All Required Provider Section----------- 
-
-
-#----------Local declarations-----------
-locals {
-  frontend_ip_configuration_name = "appgw-${var.name}-fepip"
-  frontend_ip_private_name       = "appgw-${var.name}-fepvt-ip"
-  gateway_ip_configuration_name  = "appgw-${var.name}-gwipc"
-}
-
-#----------Frontend Subnet Selection Data block-----------
-data "azurerm_subnet" "this" {
-  name                 = var.subnet_name_backend
-  resource_group_name  = var.resource_group_name
-  virtual_network_name = var.vnet_name
-}
-
-#----------Public IP for application gateway-----------
-resource "azurerm_public_ip" "this" {
-  allocation_method   = var.sku.tier == "Standard" ? "Dynamic" : "Static" # Allocation method for the public ip //var.public_ip_allocation_method
-  location            = var.location
-  name                = var.public_ip_name
-  resource_group_name = var.resource_group_name
-  sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
-  tags                = var.tags
-  # WAF : Deploy Application Gateway in a zone-redundant configuration
-  zones = var.zones
-}
 
 #----------Application Gateway resource creation provider block-----------
 resource "azurerm_application_gateway" "this" {
-  location = var.location
-  #----------Basic configuration for the application gateway-----------
+  location                          = var.location
   name                              = var.name
   resource_group_name               = var.resource_group_name
   enable_http2                      = var.http2_enable
+  fips_enabled                      = var.fips_enabled
   firewall_policy_id                = var.app_gateway_waf_policy_resource_id
   force_firewall_policy_association = true
-  #----------Tag configuration for the application gateway-----------
-  tags  = var.tags
-  zones = var.zones
+  tags                              = var.tags
+  zones                             = var.zones
 
   #----------Backend Address Pool Configuration for the application gateway -----------
   dynamic "backend_address_pool" {
     for_each = var.backend_address_pools
+
     content {
       name         = backend_address_pool.value.name
       fqdns        = backend_address_pool.value.fqdns != null ? backend_address_pool.value.fqdns : null
@@ -58,27 +28,30 @@ resource "azurerm_application_gateway" "this" {
   #----------Backend Http Settings Configuration for the application gateway -----------
   dynamic "backend_http_settings" {
     for_each = var.backend_http_settings
+
     content {
-      cookie_based_affinity               = lookup(backend_http_settings.value, "cookie_based_affinity", "Disabled")
+      cookie_based_affinity               = backend_http_settings.value.cookie_based_affinity
       name                                = backend_http_settings.value.name
-      port                                = backend_http_settings.value.enable_https ? 443 : 80
-      protocol                            = backend_http_settings.value.enable_https ? "Https" : "Http"
-      affinity_cookie_name                = lookup(backend_http_settings.value, "affinity_cookie_name", null)
-      host_name                           = backend_http_settings.value.pick_host_name_from_backend_address == false ? lookup(backend_http_settings.value, "host_name", null) : null
-      path                                = lookup(backend_http_settings.value, "path", "/")
-      pick_host_name_from_backend_address = lookup(backend_http_settings.value, "pick_host_name_from_backend_address", false)
-      probe_name                          = lookup(backend_http_settings.value, "probe_name", null)
-      request_timeout                     = lookup(backend_http_settings.value, "request_timeout", 30)
-      trusted_root_certificate_names      = lookup(backend_http_settings.value, "trusted_root_certificate_names", null)
+      port                                = backend_http_settings.value.port
+      protocol                            = backend_http_settings.value.protocol
+      affinity_cookie_name                = backend_http_settings.value.affinity_cookie_name
+      host_name                           = backend_http_settings.value.host_name
+      path                                = backend_http_settings.value.path
+      pick_host_name_from_backend_address = backend_http_settings.value.pick_host_name_from_backend_address
+      probe_name                          = backend_http_settings.value.probe_name
+      request_timeout                     = backend_http_settings.value.request_timeout
+      trusted_root_certificate_names      = backend_http_settings.value.trusted_root_certificate_names
 
       dynamic "authentication_certificate" {
-        for_each = backend_http_settings.value.authentication_certificate[*]
+        for_each = backend_http_settings.value.authentication_certificate == null ? [] : backend_http_settings.value.authentication_certificate
+
         content {
           name = authentication_certificate.value.name
         }
       }
       dynamic "connection_draining" {
-        for_each = backend_http_settings.value.connection_draining[*]
+        for_each = backend_http_settings.value.connection_draining == null ? [] : [backend_http_settings.value.connection_draining]
+
         content {
           drain_timeout_sec = connection_draining.value.drain_timeout_sec
           enabled           = connection_draining.value.enable_connection_draining
@@ -86,51 +59,51 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Public frontend IP configuration
-  frontend_ip_configuration {
-    name                 = local.frontend_ip_configuration_name
-    public_ip_address_id = azurerm_public_ip.this.id
-  }
-  # Private frontend IP configuration
+  # Frontend IP configuration
   dynamic "frontend_ip_configuration" {
-    for_each = var.frontend_ip_type != null && var.private_ip_address != null ? [1] : []
+    for_each = var.frontend_ip_configuration
+
     content {
-      name                          = local.frontend_ip_private_name
-      private_ip_address            = var.private_ip_address != null ? var.private_ip_address : null
-      private_ip_address_allocation = var.private_ip_address != null ? "Static" : null
-      subnet_id                     = var.private_ip_address != null ? data.azurerm_subnet.this.id : null
+      name                            = coalesce(frontend_ip_configuration.value.name, local.frontend_ip_configuration_name)
+      private_ip_address              = frontend_ip_configuration.value.private_ip_address
+      private_ip_address_allocation   = frontend_ip_configuration.value.private_ip_address_allocation
+      private_link_configuration_name = frontend_ip_configuration.value.private_link_configuration_name
+      public_ip_address_id            = frontend_ip_configuration.value.public_ip_address_id
+      subnet_id                       = frontend_ip_configuration.value.subnet_id
     }
-  }
-  # Private frontend IP Port configuration
+  } # Frontend IP Port configuration
   dynamic "frontend_port" {
     for_each = var.frontend_ports
+
     content {
       name = lookup(frontend_port.value, "name", null)
       port = lookup(frontend_port.value, "port", null)
     }
   }
-  #----------Frontend configuration for the application gateway-----------
+  #----------Gateway configuration for the application gateway-----------
   gateway_ip_configuration {
-    name      = local.gateway_ip_configuration_name
-    subnet_id = data.azurerm_subnet.this.id
+    name      = coalesce(var.gateway_ip_configuration.name, local.gateway_ip_configuration_name)
+    subnet_id = var.gateway_ip_configuration.subnet_id
   }
   #----------Http Listener Configuration for the application gateway -----------
   dynamic "http_listener" {
     for_each = var.http_listeners
+
     content {
-      frontend_ip_configuration_name = var.frontend_ip_type != null && var.private_ip_address != null ? local.frontend_ip_private_name : local.frontend_ip_configuration_name
-      frontend_port_name             = lookup(http_listener.value, "frontend_port_name", null)
+      frontend_ip_configuration_name = try(http_listener.value.frontend_ip_configuration_name, local.frontend_ip_configuration_name)
+      frontend_port_name             = http_listener.value.frontend_port_name
       name                           = http_listener.value.name
       protocol                       = http_listener.value.ssl_certificate_name == null ? "Http" : "Https"
-      firewall_policy_id             = http_listener.value.firewall_policy_id != null ? http_listener.value.firewall_policy_id : null
-      host_name                      = http_listener.value.host_name != null ? http_listener.value.host_name : null
-      host_names                     = http_listener.value.host_names != null ? http_listener.value.host_names : null
-      require_sni                    = http_listener.value.ssl_certificate_name != null ? http_listener.value.require_sni : null
-      ssl_certificate_name           = http_listener.value.ssl_certificate_name != null ? http_listener.value.ssl_certificate_name : null
-      ssl_profile_name               = http_listener.value.ssl_profile_name != null ? http_listener.value.ssl_profile_name : null
+      firewall_policy_id             = http_listener.value.firewall_policy_id
+      host_name                      = http_listener.value.host_name
+      host_names                     = http_listener.value.host_names
+      require_sni                    = http_listener.value.require_sni
+      ssl_certificate_name           = http_listener.value.ssl_certificate_name
+      ssl_profile_name               = http_listener.value.ssl_profile_name
 
       dynamic "custom_error_configuration" {
         for_each = http_listener.value.custom_error_configuration != null ? lookup(http_listener.value, "custom_error_configuration", {}) : []
+
         content {
           custom_error_page_url = lookup(custom_error_configuration.value, "custom_error_page_url", null)
           status_code           = lookup(custom_error_configuration.value, "status_code", null)
@@ -141,16 +114,17 @@ resource "azurerm_application_gateway" "this" {
   #----------Rules Configuration for the application gateway -----------
   dynamic "request_routing_rule" {
     for_each = var.request_routing_rules
+
     content {
       http_listener_name          = request_routing_rule.value.http_listener_name
       name                        = request_routing_rule.value.name
-      rule_type                   = lookup(request_routing_rule.value, "rule_type", "Basic")
-      backend_address_pool_name   = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_address_pool_name", null) : null
-      backend_http_settings_name  = request_routing_rule.value.redirect_configuration_name == null ? lookup(request_routing_rule.value, "backend_http_settings_name", null) : null
-      priority                    = lookup(request_routing_rule.value, "priority", 100)
-      redirect_configuration_name = lookup(request_routing_rule.value, "redirect_configuration_name", null)
-      rewrite_rule_set_name       = lookup(request_routing_rule.value, "rewrite_rule_set_name", null)
-      url_path_map_name           = lookup(request_routing_rule.value, "url_path_map_name", null)
+      rule_type                   = request_routing_rule.value.rule_type
+      backend_address_pool_name   = request_routing_rule.value.backend_address_pool_name
+      backend_http_settings_name  = request_routing_rule.value.backend_http_settings_name
+      priority                    = request_routing_rule.value.priority
+      redirect_configuration_name = request_routing_rule.value.redirect_configuration_name
+      rewrite_rule_set_name       = request_routing_rule.value.rewrite_rule_set_name
+      url_path_map_name           = request_routing_rule.value.url_path_map_name
     }
   }
   #----------SKU and configuration for the application gateway-----------
@@ -160,18 +134,63 @@ resource "azurerm_application_gateway" "this" {
     tier     = var.sku.tier
     capacity = var.autoscale_configuration == null ? var.sku.capacity : null
   }
+  dynamic "authentication_certificate" {
+    for_each = var.authentication_certificate == null ? {} : var.authentication_certificate
+
+    content {
+      data = authentication_certificate.value.data
+      name = authentication_certificate.value.name
+    }
+  }
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
+
     content {
       min_capacity = lookup(autoscale_configuration.value, "min_capacity", 1)
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
-  dynamic "identity" {
-    for_each = length(var.ssl_certificates) > 0 ? [1] : []
+  dynamic "custom_error_configuration" {
+    for_each = var.custom_error_configuration == null ? {} : var.custom_error_configuration
+
     content {
-      type         = "UserAssigned"
-      identity_ids = var.identity_ids # Directly use the list of identity IDs
+      custom_error_page_url = custom_error_configuration.value.custom_error_page_url
+      status_code           = custom_error_configuration.value.status_code
+    }
+  }
+  dynamic "global" {
+    for_each = var.global == null ? [] : [var.global]
+
+    content {
+      request_buffering_enabled  = global.value.request_buffering_enabled
+      response_buffering_enabled = global.value.response_buffering_enabled
+    }
+  }
+  dynamic "identity" {
+    for_each = local.managed_identities.user_assigned
+
+    content {
+      type         = identity.value.type
+      identity_ids = identity.value.user_assigned_resource_ids
+    }
+  }
+  dynamic "private_link_configuration" {
+    for_each = var.private_link_configuration == null ? [] : var.private_link_configuration
+
+    content {
+      name = private_link_configuration.value.name
+
+      dynamic "ip_configuration" {
+        for_each = private_link_configuration.value.ip_configuration
+
+        content {
+          name                          = ip_configuration.value.name
+          primary                       = ip_configuration.value.primary
+          private_ip_address_allocation = ip_configuration.value.private_ip_address_allocation
+          subnet_id                     = ip_configuration.value.subnet_id
+          private_ip_address            = ip_configuration.value.private_ip_address
+        }
+      }
     }
   }
   #----------Prod Rules Configuration for the application gateway -----------
@@ -179,41 +198,166 @@ resource "azurerm_application_gateway" "this" {
   #----------Optionl Configuration  -----------
   dynamic "probe" {
     for_each = var.probe_configurations != null ? var.probe_configurations : {}
+
     content {
-      interval                                  = lookup(probe.value, "interval", 5)
+      interval                                  = probe.value.interval
       name                                      = probe.value.name
-      path                                      = lookup(probe.value, "path", "/")
-      protocol                                  = lookup(probe.value, "protocol", null)
-      timeout                                   = lookup(probe.value, "timeout", 30)
-      unhealthy_threshold                       = lookup(probe.value, "unhealthy_threshold", 2)
-      host                                      = lookup(probe.value, "host", "127.0.0.1")
-      minimum_servers                           = lookup(probe.value, "minimum_servers", 0)
-      pick_host_name_from_backend_http_settings = lookup(probe.value, "pick_host_name_from_backend_http_settings", false)
-      port                                      = lookup(probe.value, "port", 80)
+      path                                      = probe.value.path
+      protocol                                  = probe.value.protocol
+      timeout                                   = probe.value.timeout
+      unhealthy_threshold                       = probe.value.unhealthy_threshold
+      host                                      = probe.value.host
+      minimum_servers                           = probe.value.minimum_servers
+      pick_host_name_from_backend_http_settings = probe.value.pick_host_name_from_backend_http_settings
+      port                                      = probe.value.port
+
+      dynamic "match" {
+        for_each = probe.value.match == null ? [] : [probe.value.match]
+
+        content {
+          status_code = match.value.status_code
+          body        = match.value.body
+        }
+      }
     }
   }
   #----------Redirect Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "redirect_configuration" {
     for_each = var.redirect_configuration != null ? var.redirect_configuration : {}
+
     content {
-      name                 = lookup(redirect_configuration.value, "name", null)
-      redirect_type        = lookup(redirect_configuration.value, "redirect_type", "Permanent")
-      include_path         = lookup(redirect_configuration.value, "include_path", true)
-      include_query_string = lookup(redirect_configuration.value, "include_query_string", true)
-      target_listener_name = contains(keys(redirect_configuration.value), "target_listener_name") ? redirect_configuration.value.target_listener_name : null
-      target_url           = contains(keys(redirect_configuration.value), "target_url") ? redirect_configuration.value.target_url : null
+      name                 = redirect_configuration.value.name
+      redirect_type        = redirect_configuration.value.redirect_type
+      include_path         = redirect_configuration.value.include_path
+      include_query_string = redirect_configuration.value.include_query_string
+      target_listener_name = redirect_configuration.value.target_listener_name
+      target_url           = redirect_configuration.value.target_url
+    }
+  }
+  dynamic "rewrite_rule_set" {
+    for_each = var.rewrite_rule_set == null ? {} : var.rewrite_rule_set
+
+    content {
+      name = rewrite_rule_set.value.name
+
+      dynamic "rewrite_rule" {
+        for_each = rewrite_rule_set.value.rewrite_rule == null ? [] : rewrite_rule_set.value.rewrite_rule
+
+        content {
+          name          = rewrite_rule.value.name
+          rule_sequence = rewrite_rule.value.rule_sequence
+
+          dynamic "condition" {
+            for_each = rewrite_rule.value.condition == null ? [] : rewrite_rule.value.condition
+
+            content {
+              pattern     = condition.value.pattern
+              variable    = condition.value.variable
+              ignore_case = condition.value.ignore_case
+              negate      = condition.value.negate
+            }
+          }
+          dynamic "request_header_configuration" {
+            for_each = rewrite_rule.value.request_header_configuration == null ? [] : rewrite_rule.value.request_header_configuration
+
+            content {
+              header_name  = request_header_configuration.value.header_name
+              header_value = request_header_configuration.value.header_value
+            }
+          }
+          dynamic "response_header_configuration" {
+            for_each = rewrite_rule.value.response_header_configuration == null ? [] : rewrite_rule.value.response_header_configuration
+
+            content {
+              header_name  = response_header_configuration.value.header_name
+              header_value = response_header_configuration.value.header_value
+            }
+          }
+          dynamic "url" {
+            for_each = rewrite_rule.value.url == null ? [] : [rewrite_rule.value.url]
+
+            content {
+              components   = url.value.components
+              path         = url.value.path
+              query_string = url.value.query_string
+              reroute      = url.value.reroute
+            }
+          }
+        }
+      }
     }
   }
   #----------SSL Certificate Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "ssl_certificate" {
-    for_each = var.ssl_certificates
+    for_each = var.ssl_certificates == null ? {} : var.ssl_certificates
+
     content {
       name                = ssl_certificate.value.name
-      data                = ssl_certificate.value.key_vault_secret_id == null ? ssl_certificate.value.data : null
-      key_vault_secret_id = lookup(ssl_certificate.value, "key_vault_secret_id", null)
-      password            = ssl_certificate.value.key_vault_secret_id == null ? ssl_certificate.value.password : null
+      data                = ssl_certificate.value.data
+      key_vault_secret_id = ssl_certificate.value.key_vault_secret_id
+      password            = ssl_certificate.value.password
+    }
+  }
+  dynamic "ssl_policy" {
+    for_each = var.ssl_policy == null ? [] : [var.ssl_policy]
+
+    content {
+      cipher_suites        = ssl_policy.value.cipher_suites
+      disabled_protocols   = ssl_policy.value.disabled_protocols
+      min_protocol_version = ssl_policy.value.min_protocol_version
+      policy_name          = ssl_policy.value.policy_name
+      policy_type          = ssl_policy.value.policy_type
+    }
+  }
+  dynamic "ssl_profile" {
+    for_each = var.ssl_profile == null ? {} : var.ssl_profile
+
+    content {
+      name                                 = ssl_profile.value.name
+      trusted_client_certificate_names     = ssl_profile.value.trusted_client_certificate_names
+      verify_client_cert_issuer_dn         = ssl_profile.value.verify_client_cert_issuer_dn
+      verify_client_certificate_revocation = ssl_profile.value.verify_client_certificate_revocation
+
+      dynamic "ssl_policy" {
+        for_each = ssl_profile.value.ssl_policy == null ? [] : [ssl_profile.value.ssl_policy]
+
+        content {
+          cipher_suites        = ssl_policy.value.cipher_suites
+          disabled_protocols   = ssl_policy.value.disabled_protocols
+          min_protocol_version = ssl_policy.value.min_protocol_version
+          policy_name          = ssl_policy.value.policy_name
+          policy_type          = ssl_policy.value.policy_type
+        }
+      }
+    }
+  }
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      delete = timeouts.value.delete
+      read   = timeouts.value.read
+      update = timeouts.value.update
+    }
+  }
+  dynamic "trusted_client_certificate" {
+    for_each = var.trusted_client_certificate == null ? {} : var.trusted_client_certificate
+
+    content {
+      data = trusted_client_certificate.value.data
+      name = trusted_client_certificate.value.name
+    }
+  }
+  dynamic "trusted_root_certificate" {
+    for_each = var.trusted_root_certificate == null ? {} : var.trusted_root_certificate
+
+    content {
+      name                = trusted_root_certificate.value.name
+      data                = trusted_root_certificate.value.data
+      key_vault_secret_id = trusted_root_certificate.value.key_vault_secret_id
     }
   }
   dynamic "url_path_map" {
@@ -243,22 +387,40 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   #----------Classic WAF Configuration for the application gateway -----------
-  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
-  # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
-  #----------Optionl Configuration  -----------
+  # A separate WAF configuration policy is recommended, this allows for the configuration 'classic' policy inline with the application gateway.
+  # To Enable Web Application Firewall policies provide a the WAF configuration block.
+  #----------Optional Configuration  -----------
   dynamic "waf_configuration" {
-
-    for_each = var.sku.name == "WAF_v2" && var.enable_classic_rule == true != null ? [1] : []
+    for_each = var.waf_configuration == null ? [] : [var.waf_configuration]
 
     content {
-      enabled          = var.waf_configuration[0].enabled
-      firewall_mode    = var.waf_configuration[0].firewall_mode
-      rule_set_version = var.waf_configuration[0].rule_set_version
-      rule_set_type    = var.waf_configuration[0].rule_set_type
+      enabled                  = waf_configuration.value.enabled
+      firewall_mode            = waf_configuration.value.firewall_mode
+      rule_set_version         = waf_configuration.value.rule_set_version
+      file_upload_limit_mb     = waf_configuration.value.file_upload_limit_mb
+      max_request_body_size_kb = waf_configuration.value.max_request_body_size_kb
+      request_body_check       = waf_configuration.value.request_body_check
+      rule_set_type            = waf_configuration.value.rule_set_type
+
+      dynamic "disabled_rule_group" {
+        for_each = waf_configuration.value.disabled_rule_group == null ? [] : waf_configuration.value.disabled_rule_group
+
+        content {
+          rule_group_name = disabled_rule_group.value.rule_group_name
+          rules           = disabled_rule_group.value.rules
+        }
+      }
+      dynamic "exclusion" {
+        for_each = waf_configuration.value.exclusion == null ? [] : waf_configuration.value.exclusion
+
+        content {
+          match_variable          = exclusion.value.match_variable
+          selector                = exclusion.value.selector
+          selector_match_operator = exclusion.value.selector_match_operator
+        }
+      }
     }
   }
-
-  depends_on = [azurerm_public_ip.this]
 }
 
 # Example resource implementation
@@ -302,18 +464,21 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
 
   dynamic "enabled_log" {
     for_each = each.value.log_categories
+
     content {
       category = enabled_log.value
     }
   }
   dynamic "enabled_log" {
     for_each = each.value.log_groups
+
     content {
       category_group = enabled_log.value
     }
   }
   dynamic "metric" {
     for_each = each.value.metric_categories
+
     content {
       category = metric.value
     }

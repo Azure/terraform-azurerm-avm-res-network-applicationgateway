@@ -57,7 +57,7 @@ resource "azurerm_subnet" "private_ip_test" {
 }
 
 #-----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
@@ -81,7 +81,7 @@ resource "azurerm_subnet" "private_ip_test" {
 # }
 
 # -----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 # -----------------------------------------------------------------
 
