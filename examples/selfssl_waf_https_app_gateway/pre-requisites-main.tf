@@ -52,6 +52,7 @@ resource "azurerm_public_ip" "this" {
   name                = module.naming.public_ip.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "Standard"
+  zones               = ["1", "2", "3"]
 }
 
 #-----------------------------------------------------------------
