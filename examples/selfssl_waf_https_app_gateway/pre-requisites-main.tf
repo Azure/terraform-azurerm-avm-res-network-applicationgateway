@@ -117,7 +117,7 @@ resource "azurerm_network_interface" "bastion_win_vm_nic" {
 resource "azurerm_public_ip" "bastion_public_ip" {
   allocation_method   = "Static" # You can choose Dynamic if preferred
   location            = azurerm_resource_group.rg_group.location
-  name                = module.naming.public_ip.name_unique
+  name                = "${module.naming.public_ip.name_unique}-bastion"
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "Standard"
 }
