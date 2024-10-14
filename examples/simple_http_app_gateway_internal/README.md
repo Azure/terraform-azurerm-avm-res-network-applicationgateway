@@ -61,8 +61,16 @@ module "application_gateway" {
   name = module.naming.application_gateway.name_unique
 
   frontend_ip_configuration = {
+    # a front end IP is still needed for management until private deployments are out of preview
+    # https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-private-deployment
     feip1 = {
-      private_ip_address = "100.64.1.5"
+      public_ip_address_id = azurerm_public_ip.this.id
+    }
+    fepriv1 = {
+      name                          = "frontend-private-ip"
+      private_ip_address            = "100.64.1.5"
+      private_ip_address_allocation = "Static"
+      subnet_id                     = azurerm_subnet.backend.id
     }
   }
 
@@ -88,7 +96,6 @@ module "application_gateway" {
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
-
     frontend-port-80 = {
       name = "frontend-port-80"
       port = 80
@@ -113,9 +120,8 @@ module "application_gateway" {
     http_listeners-for-80 = {
       name = "http_listeners-for-80"
       # The frontend_port_name must be same as given frontend_port block 
-      frontend_port_name      = "frontend-port-80"
-      protocol                = "Http"
-      frontend_ip_association = "public"
+      frontend_port_name = "frontend-port-80"
+      protocol           = "Http"
     }
     # Add more http listeners as needed
   }
@@ -182,6 +188,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
