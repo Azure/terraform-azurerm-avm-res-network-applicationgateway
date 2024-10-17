@@ -14,6 +14,7 @@ variable "backend_http_settings" {
     cookie_based_affinity               = string
     path                                = optional(string)
     affinity_cookie_name                = optional(string)
+    port                                = optional(number)
     enable_https                        = bool
     probe_name                          = optional(string)
     request_timeout                     = number
@@ -89,8 +90,9 @@ variable "public_ip_name" {
   description = "The name of the application gateway."
 
   validation {
-    condition     = can(regex("^[a-z0-9-]{3,24}$", var.public_ip_name))
-    error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
+    #58 Updated the regex to allow for longer names to char 80
+    condition     = can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
+    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers and dashes."
   }
 }
 
@@ -124,7 +126,7 @@ variable "resource_group_name" {
 # Variable declaration for the  resource location
 variable "subnet_name_backend" {
   type        = string
-  description = "The backend subnet where the applicaiton gateway resources configuration will be deployed."
+  description = "The backend subnet where the application gateway resources configuration will be deployed."
 
   validation {
     condition     = length(var.subnet_name_backend) > 0
@@ -135,11 +137,24 @@ variable "subnet_name_backend" {
 # Variable declaration for the  resource location
 variable "vnet_name" {
   type        = string
-  description = "The VNET where the applicaiton gateway resources will be deployed."
+  description = "The VNET where the application gateway resources will be deployed."
 
   validation {
     condition     = length(var.vnet_name) > 0
     error_message = "The VNET name must not be empty."
+  }
+}
+
+# This is required for most resource modules
+#54 Added the variable for the vnet resource group name 
+#Customer would like to deploy AGW and Subnet in different resource group
+variable "vnet_resource_group_name" {
+  type        = string
+  description = "The resource group where the VNET resources deployed."
+
+  validation {
+    condition     = length(var.vnet_resource_group_name) > 0
+    error_message = "The resource group name must not be empty."
   }
 }
 

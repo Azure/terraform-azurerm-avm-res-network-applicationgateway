@@ -113,6 +113,7 @@ map(object({
     cookie_based_affinity               = string
     path                                = optional(string)
     affinity_cookie_name                = optional(string)
+    port                                = optional(number)
     enable_https                        = bool
     probe_name                          = optional(string)
     request_timeout                     = number
@@ -215,13 +216,19 @@ Type: `string`
 
 ### <a name="input_subnet_name_backend"></a> [subnet\_name\_backend](#input\_subnet\_name\_backend)
 
-Description: The backend subnet where the applicaiton gateway resources configuration will be deployed.
+Description: The backend subnet where the application gateway resources configuration will be deployed.
 
 Type: `string`
 
 ### <a name="input_vnet_name"></a> [vnet\_name](#input\_vnet\_name)
 
-Description: The VNET where the applicaiton gateway resources will be deployed.
+Description: The VNET where the application gateway resources will be deployed.
+
+Type: `string`
+
+### <a name="input_vnet_resource_group_name"></a> [vnet\_resource\_group\_name](#input\_vnet\_resource\_group\_name)
+
+Description: The resource group where the VNET resources deployed.
 
 Type: `string`
 

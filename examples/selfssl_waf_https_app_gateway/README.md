@@ -59,10 +59,11 @@ module "application_gateway" {
 
   # pre-requisites resources input required for the module
 
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name = azurerm_resource_group.rg_group.name
-  location            = azurerm_resource_group.rg_group.location
-  vnet_name           = azurerm_virtual_network.vnet.name
+  public_ip_name           = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name      = azurerm_resource_group.rg_group.name
+  vnet_resource_group_name = azurerm_resource_group.rg_group.name
+  location                 = azurerm_resource_group.rg_group.location
+  vnet_name                = azurerm_virtual_network.vnet.name
 
   subnet_name_backend = azurerm_subnet.backend.name
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
