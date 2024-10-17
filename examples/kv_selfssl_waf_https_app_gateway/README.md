@@ -56,6 +56,7 @@ module "application_gateway" {
   # version = "0.1.0"
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
@@ -63,12 +64,6 @@ module "application_gateway" {
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
-
-  frontend_ip_configuration = {
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-  }
 
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id
@@ -234,7 +229,6 @@ The following resources are used by this module:
 - [azurerm_key_vault_access_policy.key_vault_default_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_certificate.ssl_cert_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)

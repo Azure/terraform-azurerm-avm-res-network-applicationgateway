@@ -33,6 +33,16 @@ output "probes" {
   value       = azurerm_application_gateway.this.probe
 }
 
+output "public_ip_address" {
+  description = "The actual public IP address associated with the Public IP resource."
+  value       = azurerm_public_ip.this.ip_address
+}
+
+output "public_ip_id" {
+  description = "The ID of the Azure Public IP address associated with the Application Gateway."
+  value       = azurerm_public_ip.this.id
+}
+
 output "request_routing_rules" {
   description = "Information about request routing rules defined for the Application Gateway, including their names and configurations."
   value       = azurerm_application_gateway.this.request_routing_rule

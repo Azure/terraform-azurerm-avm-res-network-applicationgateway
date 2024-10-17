@@ -58,39 +58,16 @@ resource "random_integer" "region_index" {
 module "application_gateway" {
   source = "../../"
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
-
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  frontend_ip_configuration = {
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-  }
-
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id
-  }
-
-  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
-  sku = {
-    # Accpected value for names Standard_v2 and WAF_v2
-    name = "Standard_v2"
-    # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "Standard_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
-  }
-
-  autoscale_configuration = {
-    min_capacity = 1
-    max_capacity = 2
   }
 
   # frontend port configuration block for the application gateway
@@ -116,7 +93,6 @@ module "application_gateway" {
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
       port                  = 80
@@ -157,20 +133,6 @@ module "application_gateway" {
     }
     # Add more rules as needed
   }
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
-  zones = ["1", "2", "3"]
-
-  diagnostic_settings = {
-    example_setting = {
-      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
-      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
-      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
-    }
-  }
 
   tags = {
     environment = "dev"
@@ -196,7 +158,6 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -212,17 +173,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
-
-Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see https://aka.ms/avm/telemetryinfo.  
-If it is set to false, then no telemetry will be collected.
-
-Type: `bool`
-
-Default: `true`
+No optional inputs.
 
 ## Outputs
 

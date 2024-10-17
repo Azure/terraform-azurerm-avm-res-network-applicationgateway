@@ -46,15 +46,6 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-resource "azurerm_public_ip" "this" {
-  allocation_method   = "Static"
-  location            = azurerm_resource_group.rg_group.location
-  name                = module.naming.public_ip.name_unique
-  resource_group_name = azurerm_resource_group.rg_group.name
-  sku                 = "Standard"
-  zones               = ["1", "2", "3"]
-}
-
 #-----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  

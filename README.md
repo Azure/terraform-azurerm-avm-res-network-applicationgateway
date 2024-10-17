@@ -78,6 +78,7 @@ The following resources are used by this module:
 - [azurerm_application_gateway.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/application_gateway) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
+- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_role_assignment.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) (resource)
 - [modtm_telemetry.telemetry](https://registry.terraform.io/providers/Azure/modtm/latest/docs/resources/telemetry) (resource)
 - [random_uuid.telemetry](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/uuid) (resource)
@@ -232,6 +233,12 @@ Description: The name of the application gateway.
 
 Type: `string`
 
+### <a name="input_public_ip_name"></a> [public\_ip\_name](#input\_public\_ip\_name)
+
+Description: The name of the application gateway.
+
+Type: `string`
+
 ### <a name="input_request_routing_rules"></a> [request\_routing\_rules](#input\_request\_routing\_rules)
 
 Description: - `backend_address_pool_name` - (Optional) The Name of the Backend Address Pool which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
@@ -379,29 +386,35 @@ Type: `bool`
 
 Default: `null`
 
-### <a name="input_frontend_ip_configuration"></a> [frontend\_ip\_configuration](#input\_frontend\_ip\_configuration)
+### <a name="input_frontend_ip_configuration_private"></a> [frontend\_ip\_configuration\_private](#input\_frontend\_ip\_configuration\_private)
 
-Description: - `name` - (Required) The name of the Frontend IP Configuration.
-- `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
-- `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
-- `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
-- `public_ip_address_id` - (Optional) The ID of a Public IP Address which the Application Gateway should use. The allocation method for the Public IP Address depends on the `sku` of this Application Gateway. Please refer to the [Azure documentation for public IP addresses](https://docs.microsoft.com/azure/virtual-network/public-ip-addresses#application-gateways) for details.
-- `subnet_id` - (Optional) The ID of the Subnet.
+Description:  - `private_name` - (Optional) The name of the private  Frontend IP Configuration.
+ - `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
+ - `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
+ - `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
+
+The subnet id must be the same as supplied to the gateway configuration so is not required as a parameter.
 
 Type:
 
 ```hcl
-map(object({
+object({
     name                            = optional(string)
     private_ip_address              = optional(string)
     private_ip_address_allocation   = optional(string)
     private_link_configuration_name = optional(string)
-    public_ip_address_id            = optional(string)
-    subnet_id                       = optional(string)
-  }))
+  })
 ```
 
 Default: `{}`
+
+### <a name="input_frontend_ip_configuration_public_name"></a> [frontend\_ip\_configuration\_public\_name](#input\_frontend\_ip\_configuration\_public\_name)
+
+Description: (Optional) The name of the public Frontend IP Configuration.  If not supplied will be inferred from the resource name.
+
+Type: `string`
+
+Default: `null`
 
 ### <a name="input_global"></a> [global](#input\_global)
 
@@ -955,6 +968,14 @@ Description: Information about the HTTP listeners configured for the Application
 ### <a name="output_probes"></a> [probes](#output\_probes)
 
 Description: Information about health probes configured for the Application Gateway, including their settings.
+
+### <a name="output_public_ip_address"></a> [public\_ip\_address](#output\_public\_ip\_address)
+
+Description: The actual public IP address associated with the Public IP resource.
+
+### <a name="output_public_ip_id"></a> [public\_ip\_id](#output\_public\_ip\_id)
+
+Description: The ID of the Azure Public IP address associated with the Application Gateway.
 
 ### <a name="output_request_routing_rules"></a> [request\_routing\_rules](#output\_request\_routing\_rules)
 

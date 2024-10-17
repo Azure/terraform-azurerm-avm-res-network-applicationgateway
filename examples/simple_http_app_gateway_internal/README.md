@@ -53,6 +53,7 @@ module "application_gateway" {
   # version = "0.1.0"
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
@@ -60,18 +61,9 @@ module "application_gateway" {
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  frontend_ip_configuration = {
-    # a front end IP is still needed for management until private deployments are out of preview
-    # https://learn.microsoft.com/en-us/azure/application-gateway/application-gateway-private-deployment
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-    fepriv1 = {
-      name                          = "frontend-private-ip"
-      private_ip_address            = "100.64.1.5"
-      private_ip_address_allocation = "Static"
-      subnet_id                     = azurerm_subnet.backend.id
-    }
+  frontend_ip_configuration_private = {
+    private_ip_address            = "100.64.1.5"
+    private_ip_address_allocation = "Static"
   }
 
   gateway_ip_configuration = {
@@ -188,7 +180,6 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)

@@ -150,6 +150,16 @@ variable "name" {
   }
 }
 
+variable "public_ip_name" {
+  type        = string
+  description = "The name of the application gateway."
+
+  validation {
+    condition     = can(regex("^[a-z0-9-]{3,24}$", var.public_ip_name))
+    error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
+  }
+}
+
 variable "request_routing_rules" {
   type = map(object({
     name                        = string
@@ -291,24 +301,29 @@ variable "fips_enabled" {
   description = "(Optional) Is FIPS enabled on the Application Gateway?"
 }
 
-variable "frontend_ip_configuration" {
-  type = map(object({
+variable "frontend_ip_configuration_private" {
+  type = object({
     name                            = optional(string)
     private_ip_address              = optional(string)
     private_ip_address_allocation   = optional(string)
     private_link_configuration_name = optional(string)
-    public_ip_address_id            = optional(string)
-    subnet_id                       = optional(string)
-  }))
+  })
   default     = {}
   description = <<-DESCRIPTION
- - `name` - (Required) The name of the Frontend IP Configuration.
+ - `private_name` - (Optional) The name of the private  Frontend IP Configuration. 
  - `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
  - `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
  - `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
- - `public_ip_address_id` - (Optional) The ID of a Public IP Address which the Application Gateway should use. The allocation method for the Public IP Address depends on the `sku` of this Application Gateway. Please refer to the [Azure documentation for public IP addresses](https://docs.microsoft.com/azure/virtual-network/public-ip-addresses#application-gateways) for details.
- - `subnet_id` - (Optional) The ID of the Subnet.
+
+The subnet id must be the same as supplied to the gateway configuration so is not required as a parameter.
+
 DESCRIPTION
+}
+
+variable "frontend_ip_configuration_public_name" {
+  type        = string
+  default     = null
+  description = "(Optional) The name of the public Frontend IP Configuration.  If not supplied will be inferred from the resource name."
 }
 
 variable "global" {

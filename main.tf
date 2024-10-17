@@ -3,6 +3,21 @@
 # Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications. 
 #----------All Required Provider Section----------- 
 
+#----------Public IP for application gateway-----------
+# The AVM specification generally recommends that resources outside the scope of the resource provider should be supplied by the user.
+# In this instance, the public IP address resource is included to align with the experience in the Azure portal.
+# See decision noted here: https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/67
+resource "azurerm_public_ip" "this" {
+  allocation_method   = var.sku.tier == "Standard" ? "Dynamic" : "Static" # Allocation method for the public ip //var.public_ip_allocation_method
+  location            = var.location
+  name                = var.public_ip_name
+  resource_group_name = var.resource_group_name
+  sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
+  tags                = var.tags
+  # WAF : Deploy Application Gateway in a zone-redundant configuration
+  zones = var.zones
+}
+
 #----------Application Gateway resource creation provider block-----------
 resource "azurerm_application_gateway" "this" {
   location                          = var.location
@@ -59,17 +74,21 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Frontend IP configuration
+  # Public Frontend IP configuration
+  frontend_ip_configuration {
+    name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
+    public_ip_address_id = azurerm_public_ip.this.id
+  }
+  # Private Frontend IP configuration
   dynamic "frontend_ip_configuration" {
-    for_each = var.frontend_ip_configuration
+    for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
     content {
-      name                            = coalesce(frontend_ip_configuration.value.name, local.frontend_ip_configuration_name)
+      name                            = coalesce(frontend_ip_configuration.value.private_name, local.frontend_ip_configuration_private_name)
       private_ip_address              = frontend_ip_configuration.value.private_ip_address
       private_ip_address_allocation   = frontend_ip_configuration.value.private_ip_address_allocation
       private_link_configuration_name = frontend_ip_configuration.value.private_link_configuration_name
-      public_ip_address_id            = frontend_ip_configuration.value.public_ip_address_id
-      subnet_id                       = frontend_ip_configuration.value.subnet_id
+      subnet_id                       = var.gateway_ip_configuration.subnet_id
     }
   } # Frontend IP Port configuration
   dynamic "frontend_port" {
@@ -195,7 +214,7 @@ resource "azurerm_application_gateway" "this" {
   }
   #----------Prod Rules Configuration for the application gateway -----------
   # WAF : Use Health Probes to detect backend availability
-  #----------Optionl Configuration  -----------
+  #----------Optional Configuration  -----------
   dynamic "probe" {
     for_each = var.probe_configurations != null ? var.probe_configurations : {}
 

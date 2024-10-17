@@ -46,15 +46,6 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-resource "azurerm_public_ip" "this" {
-  allocation_method   = "Static"
-  location            = azurerm_resource_group.rg_group.location
-  name                = module.naming.public_ip.name_unique
-  resource_group_name = azurerm_resource_group.rg_group.name
-  sku                 = "Standard"
-  zones               = ["1", "2", "3"]
-}
-
 #-----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
@@ -66,7 +57,6 @@ resource "azurerm_public_ip" "this" {
 #   resource_group_name  = azurerm_resource_group.rg_group.name
 #   virtual_network_name = azurerm_virtual_network.vnet.name
 #   address_prefixes     = ["100.64.4.0/24"] # Adjust the IP address prefix as needed
-#   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 # THIS NEED TO BE REMOVED AFTER TESTING
@@ -185,7 +175,6 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
 
 # # Associate NSG and Subnet
 # resource "azurerm_subnet_network_security_group_association" "ag_subnet_nsg_associate" {
-#   depends_on = [azurerm_network_security_rule.ag_nsg_rule_inbound]
 #   # Every NSG Rule Association will disassociate NSG from Subnet and Associate it, so we associate it only after NSG is completely created 
 #   #- Azure Provider Bug https://github.com/terraform-providers/terraform-provider-azurerm/issues/354  
 #   subnet_id                 = azurerm_subnet.workload.id

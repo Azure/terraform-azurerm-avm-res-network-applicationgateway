@@ -58,21 +58,15 @@ resource "random_integer" "region_index" {
 module "application_gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
-
-  frontend_ip_configuration = {
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-  }
 
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id
@@ -209,7 +203,6 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)

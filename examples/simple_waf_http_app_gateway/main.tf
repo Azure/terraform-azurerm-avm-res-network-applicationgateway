@@ -50,21 +50,15 @@ resource "random_integer" "region_index" {
 module "application_gateway" {
   source = "../../"
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
-
-  frontend_ip_configuration = {
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-  }
 
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id

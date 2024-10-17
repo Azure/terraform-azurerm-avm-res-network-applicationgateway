@@ -58,6 +58,7 @@ module "application_gateway" {
   # version = "0.1.0"
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
 
@@ -67,13 +68,10 @@ module "application_gateway" {
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  frontend_ip_configuration = {
-    feip1 = {
-      public_ip_address_id = azurerm_public_ip.this.id
-    }
-  }
+  frontend_ip_configuration_public_name = "feip-test-name"
 
   gateway_ip_configuration = {
+    name      = "gwip-test-name"
     subnet_id = azurerm_subnet.backend.id
   }
 
@@ -242,7 +240,6 @@ The following resources are used by this module:
 - [azurerm_network_security_group.ag_subnet_nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) (resource)
 - [azurerm_network_security_rule.ag_nsg_rule_inbound](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) (resource)
 - [azurerm_public_ip.bastion_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
-- [azurerm_public_ip.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
