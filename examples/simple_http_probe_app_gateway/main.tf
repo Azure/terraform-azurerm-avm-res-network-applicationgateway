@@ -166,7 +166,9 @@ module "application_gateway" {
       protocol            = "Http"
       port                = 80
       path                = "/health"
-
+      match = {
+        status_code = ["200-399"]
+      }
     }
   }
 

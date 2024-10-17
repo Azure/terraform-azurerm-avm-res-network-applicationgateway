@@ -155,8 +155,9 @@ variable "public_ip_name" {
   description = "The name of the application gateway."
 
   validation {
-    condition     = can(regex("^[a-z0-9-]{3,24}$", var.public_ip_name))
-    error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
+    #58 Updated the regex to allow for longer names to char 80
+    condition     = can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
+    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers and dashes."
   }
 }
 

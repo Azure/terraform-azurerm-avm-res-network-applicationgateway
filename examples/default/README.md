@@ -1,5 +1,6 @@
 <!-- BEGIN_TF_DOCS -->
 # Simple HTTP Application Gateway
+
 This scenario sets up a straightforward HTTP Application Gateway, typically for basic web applications or services.
 
 # Default example
@@ -76,7 +77,7 @@ module "application_gateway" {
   frontend_ports = {
     frontend-port-80 = {
       name = "frontend-port-80"
-      port = 80
+      port = 8080
     }
   }
 
@@ -100,6 +101,8 @@ module "application_gateway" {
       cookie_based_affinity = "Disabled"
       path                  = "/"
       request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
@@ -159,6 +162,7 @@ The following resources are used by this module:
 
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.rg_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -238,6 +242,12 @@ Source: ../../
 Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.3.0
+
+### <a name="module_naming_rg_vnet"></a> [naming\_rg\_vnet](#module\_naming\_rg\_vnet)
 
 Source: Azure/naming/azurerm
 

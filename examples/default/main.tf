@@ -67,7 +67,7 @@ module "application_gateway" {
   frontend_ports = {
     frontend-port-80 = {
       name = "frontend-port-80"
-      port = 80
+      port = 8080
     }
   }
 
@@ -91,6 +91,8 @@ module "application_gateway" {
       cookie_based_affinity = "Disabled"
       path                  = "/"
       request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
