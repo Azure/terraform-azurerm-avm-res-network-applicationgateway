@@ -49,33 +49,25 @@ resource "random_integer" "region_index" {
 
 module "application_gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+  # source  = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  # version = "0.1.0"
 
   # pre-requisites resources input required for the module
-
-  public_ip_name           = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name      = azurerm_resource_group.rg_group.name
-  vnet_resource_group_name = azurerm_resource_group.rg_group.name
-  location                 = azurerm_resource_group.rg_group.location
-  vnet_name                = azurerm_virtual_network.vnet.name
-
-  subnet_name_backend = azurerm_subnet.backend.name
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry = var.enable_telemetry
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
+  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
+  frontend_ip_configuration_private = {
+    private_ip_address            = "100.64.1.5"
+    private_ip_address_allocation = "Static"
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
 
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
@@ -93,25 +85,15 @@ module "application_gateway" {
     max_capacity = 15
   }
 
-  # frontend configuration block for the application gateway
-  # Provide Static IP address from backend subnet
-  # Mandatory Input
-
-  private_ip_address = "100.64.1.5"
-  # Frontend port configuration for the application gateway
-  # Mandatory Input
-
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
-
     frontend-port-80 = {
       name = "frontend-port-80"
       port = 80
     }
     # Add more ports as needed
   }
-
 
   # Backend address pool configuration for the application gateway
   # Mandatory Input
@@ -124,16 +106,14 @@ module "application_gateway" {
 
   }
 
-
   # Http Listerners configuration for the application gateway
   # Mandatory Input
   http_listeners = {
     http_listeners-for-80 = {
       name = "http_listeners-for-80"
       # The frontend_port_name must be same as given frontend_port block 
-      frontend_port_name      = "frontend-port-80"
-      protocol                = "Http"
-      frontend_ip_association = "public"
+      frontend_port_name = "frontend-port-80"
+      protocol           = "Http"
     }
     # Add more http listeners as needed
   }
@@ -172,8 +152,17 @@ module "application_gateway" {
   # Optional Input  
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
-}
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
 
+  lock = {
+    name = "lock-${module.naming.application_gateway.name_unique}" # optional
+    kind = "CanNotDelete"
+  }
+}
 ```
 
 <!-- markdownlint-disable MD033 -->
