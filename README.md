@@ -575,53 +575,53 @@ Default: `null`
 Description: - `name` - (Required) Unique name of the rewrite rule set block
 
 ---
-`rewrite_rule` block supports the following:
+`rewrite_rules` block supports the following:
 - `name` - (Required) Unique name of the rewrite rule block
 - `rule_sequence` - (Required) Rule sequence of the rewrite rule that determines the order of execution in a set.
 
----
-`condition` block supports the following:
-- `ignore_case` - (Optional) Perform a case in-sensitive comparison. Defaults to `false`
-- `negate` - (Optional) Negate the result of the condition evaluation. Defaults to `false`
-- `pattern` - (Required) The pattern, either fixed string or regular expression, that evaluates the truthfulness of the condition.
-- `variable` - (Required) The [variable](https://docs.microsoft.com/azure/application-gateway/rewrite-http-headers#server-variables) of the condition.
+  ---
+  `condition` block supports the following:
+  - `ignore_case` - (Optional) Perform a case in-sensitive comparison. Defaults to `false`
+  - `negate` - (Optional) Negate the result of the condition evaluation. Defaults to `false`
+  - `pattern` - (Required) The pattern, either fixed string or regular expression, that evaluates the truthfulness of the condition.
+  - `variable` - (Required) The [variable](https://docs.microsoft.com/azure/application-gateway/rewrite-http-headers#server-variables) of the condition.
 
----
-`request_header_configuration` block supports the following:
-- `header_name` - (Required) Header name of the header configuration.
-- `header_value` - (Required) Header value of the header configuration. To delete a request header set this property to an empty string.
+  ---
+  `request_header_configuration` block supports the following:
+  - `header_name` - (Required) Header name of the header configuration.
+  - `header_value` - (Required) Header value of the header configuration. To delete a request header set this property to an empty string.
 
----
-`response_header_configuration` block supports the following:
-- `header_name` - (Required) Header name of the header configuration.
-- `header_value` - (Required) Header value of the header configuration. To delete a response header set this property to an empty string.
+  ---
+  `response_header_configuration` block supports the following:
+  - `header_name` - (Required) Header name of the header configuration.
+  - `header_value` - (Required) Header value of the header configuration. To delete a response header set this property to an empty string.
 
----
-`url` block supports the following:
-- `components` - (Optional) The components used to rewrite the URL. Possible values are `path_only` and `query_string_only` to limit the rewrite to the URL Path or URL Query String only.
-- `path` - (Optional) The URL path to rewrite.
-- `query_string` - (Optional) The query string to rewrite.
-- `reroute` - (Optional) Whether the URL path map should be reevaluated after this rewrite has been applied. [More info on rewrite configuration](https://docs.microsoft.com/azure/application-gateway/rewrite-http-headers-url#rewrite-configuration)
+  ---
+  `url` block supports the following:
+  - `components` - (Optional) The components used to rewrite the URL. Possible values are `path_only` and `query_string_only` to limit the rewrite to the URL Path or URL Query String only.
+  - `path` - (Optional) The URL path to rewrite.
+  - `query_string` - (Optional) The query string to rewrite.
+  - `reroute` - (Optional) Whether the URL path map should be reevaluated after this rewrite has been applied. [More info on rewrite configuration](https://docs.microsoft.com/azure/application-gateway/rewrite-http-headers-url#rewrite-configuration)
 
 Type:
 
 ```hcl
 map(object({
     name = string
-    rewrite_rule = optional(list(object({
+    rewrite_rules = optional(map(object({
       name          = string
       rule_sequence = number
-      condition = optional(list(object({
+      conditions = optional(map(object({
         ignore_case = optional(bool)
         negate      = optional(bool)
         pattern     = string
         variable    = string
       })))
-      request_header_configuration = optional(list(object({
+      request_header_configurations = optional(map(object({
         header_name  = string
         header_value = string
       })))
-      response_header_configuration = optional(list(object({
+      response_header_configurations = optional(map(object({
         header_name  = string
         header_value = string
       })))

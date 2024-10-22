@@ -261,14 +261,14 @@ resource "azurerm_application_gateway" "this" {
       name = rewrite_rule_set.value.name
 
       dynamic "rewrite_rule" {
-        for_each = rewrite_rule_set.value.rewrite_rule == null ? [] : rewrite_rule_set.value.rewrite_rule
+        for_each = rewrite_rule_set.value.rewrite_rules == null ? {} : rewrite_rule_set.value.rewrite_rules
 
         content {
           name          = rewrite_rule.value.name
           rule_sequence = rewrite_rule.value.rule_sequence
 
           dynamic "condition" {
-            for_each = rewrite_rule.value.condition == null ? [] : rewrite_rule.value.condition
+            for_each = rewrite_rule.value.conditions == null ? {} : rewrite_rule.value.conditions
 
             content {
               pattern     = condition.value.pattern
@@ -278,7 +278,7 @@ resource "azurerm_application_gateway" "this" {
             }
           }
           dynamic "request_header_configuration" {
-            for_each = rewrite_rule.value.request_header_configuration == null ? [] : rewrite_rule.value.request_header_configuration
+            for_each = rewrite_rule.value.request_header_configurations == null ? {} : rewrite_rule.value.request_header_configurations
 
             content {
               header_name  = request_header_configuration.value.header_name
@@ -286,7 +286,7 @@ resource "azurerm_application_gateway" "this" {
             }
           }
           dynamic "response_header_configuration" {
-            for_each = rewrite_rule.value.response_header_configuration == null ? [] : rewrite_rule.value.response_header_configuration
+            for_each = rewrite_rule.value.response_header_configurations == null ? {} : rewrite_rule.value.response_header_configurations
 
             content {
               header_name  = response_header_configuration.value.header_name
