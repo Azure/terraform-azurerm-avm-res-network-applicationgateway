@@ -43,7 +43,6 @@ module "naming" {
 module "regions" {
   source  = "Azure/regions/azurerm"
   version = ">= 0.3.0"
-
 }
 
 # This allows us to randomize the region for the resource group.
@@ -51,34 +50,23 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
   min = 0
 }
+
 module "application_gateway" {
-  source     = "../../"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+  source = "../../"
+  # source  = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  # version = "0.1.0"
 
   # pre-requisites resources input required for the module
-
-  public_ip_name           = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name      = azurerm_resource_group.rg_group.name
-  vnet_resource_group_name = azurerm_resource_group.rg_group.name
-  location                 = azurerm_resource_group.rg_group.location
-  vnet_name                = azurerm_virtual_network.vnet.name
-
-  subnet_name_backend = azurerm_subnet.backend.name
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry = var.enable_telemetry
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
+  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
-  }
-
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
 
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
@@ -122,23 +110,21 @@ module "application_gateway" {
     fabrikamPool = {
       name = "fabrikamPool"
     }
-
   }
 
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
+      port                  = 80
+      protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
-      enable_https          = false
       request_timeout       = 30
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
-
       }
     }
   }
@@ -146,7 +132,6 @@ module "application_gateway" {
   # Http Listerners configuration for the application gateway
   # Mandatory Input
   http_listeners = {
-
     appGatewayHttpListener = {
       name               = "appGatewayHttpListener"
       host_name          = null
@@ -202,6 +187,11 @@ module "application_gateway" {
     }
   }
 
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
 }
 ```
 

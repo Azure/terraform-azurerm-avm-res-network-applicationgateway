@@ -1,16 +1,12 @@
 <!-- BEGIN_TF_DOCS -->
-# Web Application Firewall (WAF)
-A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
+# Re-write rule
 
-# Default example
-
-This deploys the module in its simplest form.
+This scenario tests re-write rules.
 
 ```hcl
 
-
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
+# Application Gateway routing traffic from your application. 
 # Assume that your Application runing the scale set contains two virtual machine instances. 
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
@@ -58,13 +54,11 @@ resource "random_integer" "region_index" {
 
 module "application_gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
 
   # pre-requisites resources input required for the module
   public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  enable_telemetry    = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
@@ -73,28 +67,13 @@ module "application_gateway" {
     subnet_id = azurerm_subnet.backend.id
   }
 
-  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
-  sku = {
-    # Accpected value for names Standard_v2 and WAF_v2
-    name = "WAF_v2"
-    # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "WAF_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
-  }
-
-  autoscale_configuration = {
-    min_capacity = 1
-    max_capacity = 2
-  }
-
   # frontend port configuration block for the application gateway
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
     frontend-port-80 = {
       name = "frontend-port-80"
-      port = 80
+      port = 8080
     }
   }
 
@@ -111,16 +90,18 @@ module "application_gateway" {
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
-      name            = "appGatewayBackendHttpSettings"
-      port            = 80
-      protocol        = "Http"
-      path            = "/"
-      request_timeout = 30
+      name                  = "appGatewayBackendHttpSettings"
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
+
       }
     }
     # Add more http settings as needed
@@ -137,11 +118,6 @@ module "application_gateway" {
     # # Add more http listeners as needed
   }
 
-  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
-  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
-  # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
-  app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
-
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
@@ -152,22 +128,52 @@ module "application_gateway" {
       backend_address_pool_name  = "appGatewayBackendPool"
       backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
+      rewrite_rule_set_name      = "my-rewrite-rule-set"
     }
     # Add more rules as needed
   }
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
-  zones = ["1", "2", "3"]
 
-  # WAF : Monitor and Log the configurations and traffic
-  diagnostic_settings = {
-    example_setting = {
-      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
-      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
-      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+  rewrite_rule_set = {
+    ruleset1 = {
+      name = "my-rewrite-rule-set"
+      rewrite_rules = {
+        rule_1 = {
+          name          = "rr-x-forwarded-for"
+          rule_sequence = 102
+          request_header_configurations = {
+            x-forwarded-for = {
+              header_name  = "X-Forwarded-For"
+              header_value = "{var_client_ip}"
+            }
+          }
+        }
+        rule_2 = {
+          name          = "rr-blog-post-rewrite"
+          rule_sequence = 103
+
+          # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
+          conditions = {
+            blog_path = {
+              variable    = "var_uri_path"
+              pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
+              ignore_case = false
+              negate      = false
+            }
+          }
+          response_header_configurations = {
+            # example frame embedding protection
+            x-frame-options = {
+              header_name  = "X-Frame-Options"
+              header_value = "DENY"
+            }
+          }
+
+          url = {
+            path    = "/blog/{var_uri_path_1}/{var_uri_path_2}"
+            reroute = false
+          }
+        }
+      }
     }
   }
 
@@ -177,9 +183,6 @@ module "application_gateway" {
     project     = "AVM"
   }
 }
-
-
-
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -204,7 +207,6 @@ The following resources are used by this module:
 - [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.workload](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
-- [azurerm_web_application_firewall_policy.azure_waf](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/web_application_firewall_policy) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
@@ -214,17 +216,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
-
-Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see https://aka.ms/avm/telemetryinfo.  
-If it is set to false, then no telemetry will be collected.
-
-Type: `bool`
-
-Default: `true`
+No optional inputs.
 
 ## Outputs
 
@@ -245,14 +237,6 @@ Description: ID of the Frontend Subnet
 ### <a name="output_frontend_subnet_name"></a> [frontend\_subnet\_name](#output\_frontend\_subnet\_name)
 
 Description: Name of the Frontend Subnet
-
-### <a name="output_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#output\_log\_analytics\_workspace\_id)
-
-Description: ID of the Azure Log Analytics Workspace
-
-### <a name="output_log_analytics_workspace_name"></a> [log\_analytics\_workspace\_name](#output\_log\_analytics\_workspace\_name)
-
-Description: Name of the Azure Log Analytics Workspace
 
 ### <a name="output_private_ip_test_subnet_id"></a> [private\_ip\_test\_subnet\_id](#output\_private\_ip\_test\_subnet\_id)
 

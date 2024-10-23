@@ -49,45 +49,16 @@ resource "random_integer" "region_index" {
 module "application_gateway" {
   source = "../../"
 
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
-
   # pre-requisites resources input required for the module
-
-  public_ip_name           = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name      = azurerm_resource_group.rg_group.name
-  vnet_resource_group_name = azurerm_resource_group.rg_vnet.name
-  location                 = azurerm_resource_group.rg_group.location
-  vnet_name                = azurerm_virtual_network.vnet.name
-  subnet_name_backend      = azurerm_subnet.backend.name
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
-  enable_telemetry = var.enable_telemetry
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
-  }
-
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
-  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
-  sku = {
-    # Accpected value for names Standard_v2 and WAF_v2
-    name = "Standard_v2"
-    # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "Standard_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
-  }
-
-  autoscale_configuration = {
-    min_capacity = 1
-    max_capacity = 2
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
 
   # frontend port configuration block for the application gateway
@@ -113,12 +84,11 @@ module "application_gateway" {
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
       name                  = "appGatewayBackendHttpSettings"
+      port                  = 80
+      protocol              = "Http"
       cookie_based_affinity = "Disabled"
-      path                  = "/"
-      enable_https          = false
       request_timeout       = 30
       #Github issue #55 allow custom port for the backend
       port = 8080
@@ -152,22 +122,58 @@ module "application_gateway" {
       backend_address_pool_name  = "appGatewayBackendPool"
       backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
+      rewrite_rule_set_name      = "my-rewrite-rule-set"
     }
     # Add more rules as needed
   }
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
-  zones = ["1", "2", "3"]
 
-  diagnostic_settings = {
-    example_setting = {
-      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
-      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
-      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+  rewrite_rule_set = {
+    ruleset1 = {
+      name = "my-rewrite-rule-set"
+      rewrite_rules = {
+        rule_1 = {
+          name          = "rr-x-forwarded-for"
+          rule_sequence = 102
+          request_header_configurations = {
+            x-forwarded-for = {
+              header_name  = "X-Forwarded-For"
+              header_value = "{var_client_ip}"
+            }
+          }
+        }
+        rule_2 = {
+          name          = "rr-blog-post-rewrite"
+          rule_sequence = 103
+
+          # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
+          conditions = {
+            blog_path = {
+              variable    = "var_uri_path"
+              pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
+              ignore_case = false
+              negate      = false
+            }
+          }
+          response_header_configurations = {
+            # example frame embedding protection
+            x-frame-options = {
+              header_name  = "X-Frame-Options"
+              header_value = "DENY"
+            }
+          }
+
+          url = {
+            path    = "/blog/{var_uri_path_1}/{var_uri_path_2}"
+            reroute = false
+          }
+        }
+      }
     }
   }
 
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
 }
