@@ -58,11 +58,7 @@ module "application_gateway" {
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
-
-  frontend_ip_configuration_public_name = "feip-test-name"
-
   gateway_ip_configuration = {
-    name      = "gwip-test-name"
     subnet_id = azurerm_subnet.backend.id
   }
 
