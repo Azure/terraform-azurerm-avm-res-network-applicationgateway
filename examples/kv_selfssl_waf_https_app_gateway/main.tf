@@ -46,32 +46,21 @@ resource "random_integer" "region_index" {
 
 module "application_gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
+  # source  = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
+  # version = "0.1.0"
 
   # pre-requisites resources input required for the module
-
   public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  vnet_name           = azurerm_virtual_network.vnet.name
-
-  subnet_name_backend = azurerm_subnet.backend.name
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
-  }
-
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
   }
 
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
@@ -115,7 +104,8 @@ module "application_gateway" {
       name                  = "appGatewayBackendHttpSettings"
       cookie_based_affinity = "Disabled"
       path                  = "/"
-      enable_https          = false
+      port                  = 80
+      protocol              = "Http"
       request_timeout       = 30
       connection_draining = {
         enable_connection_draining = true
@@ -139,19 +129,9 @@ module "application_gateway" {
 
 
   # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
-  # To Enable Web Application Firewall policies set enable_classic_rule = false and provide the WAF configuration block.
   # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
-
+  # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
   app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
-  enable_classic_rule                = false
-  waf_configuration = [
-    {
-      enabled          = true
-      firewall_mode    = "Prevention"
-      rule_set_type    = "OWASP"
-      rule_set_version = "3.1"
-    }
-  ]
 
   # Routing rules configuration for the backend pool
   # Mandatory Input
@@ -168,10 +148,12 @@ module "application_gateway" {
   }
 
   # SSL Certificate Block
-  ssl_certificates = [{
-    name                = "app-gateway-cert"
-    key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
-  }]
+  ssl_certificates = {
+    "app-gateway-cert" = {
+      name                = "app-gateway-cert"
+      key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
+    }
+  }
 
   # HTTP to HTTPS Redirection Configuration for
   redirect_configuration = {
@@ -188,9 +170,12 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"] 
   zones = ["1", "2", "3"]
 
-  identity_ids = [
-    azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
-  ]
+  managed_identities = {
+    user_assigned_resource_ids = [
+      azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
+    ]
+  }
+
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
@@ -200,6 +185,17 @@ module "application_gateway" {
       log_groups        = ["allLogs"]
       metric_categories = ["AllMetrics"]
     }
+  }
+
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
+  }
+
+  lock = {
+    name = "lock-${module.naming.application_gateway.name_unique}" # optional
+    kind = "CanNotDelete"
   }
 
 }
