@@ -84,7 +84,7 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
     content {
-      name                            = coalesce(frontend_ip_configuration.value.private_name, local.frontend_ip_configuration_private_name)
+      name                            = coalesce(frontend_ip_configuration.value.name, local.frontend_ip_configuration_private_name)
       private_ip_address              = frontend_ip_configuration.value.private_ip_address
       private_ip_address_allocation   = frontend_ip_configuration.value.private_ip_address_allocation
       private_link_configuration_name = frontend_ip_configuration.value.private_link_configuration_name
