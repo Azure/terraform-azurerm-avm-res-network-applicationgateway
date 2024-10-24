@@ -14,8 +14,6 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-
-  depends_on = [azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -23,8 +21,6 @@ resource "azurerm_subnet" "frontend" {
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 resource "azurerm_subnet" "backend" {
@@ -32,8 +28,6 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for to deploy VMSS and Web Server to host application
@@ -42,8 +36,6 @@ resource "azurerm_subnet" "workload" {
   name                 = "workload"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 # Required for Frontend Private IP endpoint testing 
@@ -52,12 +44,10 @@ resource "azurerm_subnet" "private_ip_test" {
   name                 = "private_ip_test"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-
-  depends_on = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 }
 
 #-----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
@@ -67,7 +57,6 @@ resource "azurerm_subnet" "private_ip_test" {
 #   resource_group_name  = azurerm_resource_group.rg_group.name
 #   virtual_network_name = azurerm_virtual_network.vnet.name
 #   address_prefixes     = ["100.64.4.0/24"] # Adjust the IP address prefix as needed
-#   depends_on           = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 # THIS NEED TO BE REMOVED AFTER TESTING
@@ -77,11 +66,10 @@ resource "azurerm_subnet" "private_ip_test" {
 #   resource_group_name = azurerm_resource_group.rg_group.name
 #   location            = azurerm_resource_group.rg_group.location
 #   sku                 = "PerGB2018"
-#   depends_on          = [azurerm_resource_group.rg_group]
 # }
 
 # -----------------------------------------------------------------
-#  Enable these to deeploy sample application to VMSS 
+#  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 # -----------------------------------------------------------------
 
@@ -177,7 +165,6 @@ resource "azurerm_subnet" "private_ip_test" {
 #     }
 #   }
 #   custom_data = base64encode(local.webvm_custom_data)
-#   depends_on  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group, module.application-gateway]
 # }
 
 
@@ -186,12 +173,10 @@ resource "azurerm_subnet" "private_ip_test" {
 #   name                = module.naming.network_security_group.name_unique
 #   resource_group_name = azurerm_resource_group.rg_group.name
 #   location            = azurerm_resource_group.rg_group.location
-#   depends_on          = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
 
 # # Associate NSG and Subnet
 # resource "azurerm_subnet_network_security_group_association" "ag_subnet_nsg_associate" {
-#   depends_on = [azurerm_network_security_rule.ag_nsg_rule_inbound]
 #   # Every NSG Rule Association will disassociate NSG from Subnet and Associate it, so we associate it only after NSG is completely created 
 #   #- Azure Provider Bug https://github.com/terraform-providers/terraform-provider-azurerm/issues/354  
 #   subnet_id                 = azurerm_subnet.workload.id
@@ -250,5 +235,4 @@ resource "azurerm_subnet" "private_ip_test" {
 #   destination_address_prefix  = "*"
 #   resource_group_name         = azurerm_resource_group.rg_group.name
 #   network_security_group_name = azurerm_network_security_group.ag_subnet_nsg.name
-#   depends_on                  = [azurerm_virtual_network.vnet, azurerm_resource_group.rg_group]
 # }
