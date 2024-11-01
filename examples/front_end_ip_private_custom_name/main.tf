@@ -2,6 +2,7 @@
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application. 
 # Add a custom health probe to application gateway
+# This example demonstrates how to create an Application Gateway configure with custom name for public and private ip address.
 
 
 #----------All Required Provider Section----------- 
@@ -50,15 +51,25 @@ module "application_gateway" {
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
 
   # pre-requisites resources input required for the module
-  public_ip_name        = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name   = azurerm_resource_group.rg_group.name
-  location              = azurerm_resource_group.rg_group.location
-  enable_telemetry      = var.enable_telemetry
-  public_ip_resource_id = azurerm_public_ip.public_ip.id
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  location            = azurerm_resource_group.rg_group.location
+  enable_telemetry    = var.enable_telemetry
+
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
 
+  frontend_ip_configuration_public_name = "public-ip-custom-name"
+
+  frontend_ip_configuration_private = {
+    name                          = "private-ip-custom-name"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "100.64.1.5"
+  }
+
+
   gateway_ip_configuration = {
+    name      = "appGatewayIpConfig"
     subnet_id = azurerm_subnet.backend.id
   }
 
@@ -68,10 +79,6 @@ module "application_gateway" {
     project     = "AVM"
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
 
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
@@ -92,8 +99,12 @@ module "application_gateway" {
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
-    frontend-port-80 = {
-      name = "frontend-port-80"
+    port_1 = {
+      name = "port_81"
+      port = 81
+    }
+    port_2 = {
+      name = "port_80"
       port = 80
     }
   }
@@ -101,20 +112,35 @@ module "application_gateway" {
   # Backend address pool configuration for the application gateway
   # Mandatory Input
   backend_address_pools = {
-    appGatewayBackendPool = {
-      name         = "app-Gateway-Backend-Pool"
+    appGatewayBackendPool_80 = {
+      name         = "app-Gateway-Backend-Pool-80"
       ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
+    },
+    appGatewayBackendPool_81 = {
+      name  = "app-Gateway-Backend-Pool-81"
+      fqdns = ["example1.com", "example2.com"]
     }
   }
-
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
 
-    appGatewayBackendHttpSettings = {
-      name                  = "app-Gateway-Backend-Http-Settings"
+    appGatewayBackendHttpSettings_80 = {
+      name                  = "app-Gateway-Backend-Http-Settings-80"
       port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      connection_draining = {
+        enable_connection_draining = true
+        drain_timeout_sec          = 300
+
+      }
+    },
+    appGatewayBackendHttpSettings_81 = {
+      name                  = "app-Gateway-Backend-Http-Settings-81"
+      port                  = 81
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
@@ -131,10 +157,17 @@ module "application_gateway" {
   # Http Listerners configuration for the application gateway
   # Mandatory Input
   http_listeners = {
-    appGatewayHttpListener = {
-      name               = "app-Gateway-Http-Listener"
-      host_name          = null
-      frontend_port_name = "frontend-port-80"
+    appGatewayHttpListener_80 = {
+      name                           = "app-Gateway-Http-Listener-80"
+      frontend_ip_configuration_name = "public-ip-custom-name"
+      host_name                      = null
+      frontend_port_name             = "port_80"
+    },
+    appGatewayHttpListener_81 = {
+      name                           = "app-Gateway-Http-Listener-81"
+      frontend_ip_configuration_name = "private-ip-custom-name"
+      host_name                      = null
+      frontend_port_name             = "port_81"
     }
     # # Add more http listeners as needed
   }
@@ -145,39 +178,22 @@ module "application_gateway" {
     routing-rule-1 = {
       name                       = "rule-1"
       rule_type                  = "Basic"
-      http_listener_name         = "app-Gateway-Http-Listener"
-      backend_address_pool_name  = "app-Gateway-Backend-Pool"
-      backend_http_settings_name = "app-Gateway-Backend-Http-Settings"
+      http_listener_name         = "app-Gateway-Http-Listener-80"
+      backend_address_pool_name  = "app-Gateway-Backend-Pool-80"
+      backend_http_settings_name = "app-Gateway-Backend-Http-Settings-80"
       priority                   = 100
+    },
+    routing-rule-2 = {
+      name                       = "rule-2"
+      rule_type                  = "Basic"
+      http_listener_name         = "app-Gateway-Http-Listener-81"
+      backend_address_pool_name  = "app-Gateway-Backend-Pool-81"
+      backend_http_settings_name = "app-Gateway-Backend-Http-Settings-81"
+      priority                   = 101
     }
     # Add more rules as needed
   }
 
-  # probe configurations for the application gateway
-  # WAF : Use Health Probes to detect backend availability
-  # # Optional Input
-  probe_configurations = {
-    probe1 = {
-      name                                      = "Probe1"
-      interval                                  = 30
-      timeout                                   = 10
-      unhealthy_threshold                       = 3
-      protocol                                  = "Http"
-      port                                      = 80
-      path                                      = "/health"
-      host                                      = "127.0.0.1"
-      pick_host_name_from_backend_http_settings = false
-
-      # Note on host : The Hostname used for this Probe. If the Application Gateway is configured for a single site, 
-      # by default the Host name should be specified as 127.0.0.1, 
-      # unless otherwise configured in custom probe. 
-      # Cannot be set if pick_host_name_from_backend_http_settings is set to true.
-      # You must provide host value if pick_host_name_from_backend_http_settings is set to false.
-      match = {
-        status_code = ["200-399"]
-      }
-    }
-  }
 
   # Optional Input  
   # WAF :  Deploy Application Gateway in a zone-redundant configuration

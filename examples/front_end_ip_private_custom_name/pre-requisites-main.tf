@@ -46,21 +46,12 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-resource "azurerm_public_ip" "public_ip" {
-  allocation_method   = "Dynamic"
-  location            = azurerm_resource_group.rg_group.location
-  name                = module.naming.public_ip.name_unique
-  resource_group_name = azurerm_resource_group.rg_group.name
-  sku                 = "Standard"
-  zones               = [1, 2, 3]
-}
-
 #-----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
 #-----------------------------------------------------------------
 
-# # Required bastion host subnet to test private IP endpoint
+# Required bastion host subnet to test private IP endpoint
 # resource "azurerm_subnet" "bastion" {
 #   name                 = "AzureBastionSubnet"
 #   resource_group_name  = azurerm_resource_group.rg_group.name
@@ -77,10 +68,10 @@ resource "azurerm_public_ip" "public_ip" {
 #   sku                 = "PerGB2018"
 # }
 
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  
-#-----------------------------------------------------------------
+# -----------------------------------------------------------------
 
 # resource "azurerm_windows_virtual_machine" "bastion" {
 #   name                  = module.naming.windows_virtual_machine.name_unique
@@ -167,14 +158,15 @@ resource "azurerm_public_ip" "public_ip" {
 #     primary = true
 
 #     ip_configuration {
-#       name      = "internal"
-#       primary   = true
-#       subnet_id = azurerm_subnet.workload.id
+#       name                                         = "internal"
+#       primary                                      = true
+#       subnet_id                                    = azurerm_subnet.workload.id
+#       application_gateway_backend_address_pool_ids = module.application-gateway.backend_address_pools[*].id
 #     }
 #   }
 #   custom_data = base64encode(local.webvm_custom_data)
-
 # }
+
 
 # # Create Network Security Group (NSG)
 # resource "azurerm_network_security_group" "ag_subnet_nsg" {
@@ -200,6 +192,31 @@ resource "azurerm_public_ip" "public_ip" {
 #       destination_port = "80",
 #       source_address   = "*" # Add the source address prefix here
 #       access           = "Allow"
+#     },
+#     "140" : {
+#       destination_port = "81",
+#       source_address   = "*" # Add the source address prefix here
+#       access           = "Allow"
+#     },
+#     "110" : {
+#       destination_port = "443",
+#       source_address   = "*" # Add the source address prefix here
+#       access           = "Allow"
+#     },
+#     "130" : {
+#       destination_port = "65200-65535",
+#       source_address   = "GatewayManager" # Add the source address prefix here
+#       access           = "Allow"
+#     }
+#     "150" : {
+#       destination_port = "8080",
+#       source_address   = "AzureLoadBalancer" # Add the source address prefix here
+#       access           = "Allow"
+#     }
+#     "4096" : {
+#       destination_port = "8080",
+#       source_address   = "Internet" # Add the source address prefix here
+#       access           = "Deny"
 #     }
 #   }
 # }

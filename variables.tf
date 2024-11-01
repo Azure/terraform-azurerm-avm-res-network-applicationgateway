@@ -92,15 +92,15 @@ DESCRIPTION
 
 variable "http_listeners" {
   type = map(object({
-    name               = string
-    frontend_port_name = string
-
-    firewall_policy_id   = optional(string)
-    require_sni          = optional(bool)
-    host_name            = optional(string)
-    host_names           = optional(list(string))
-    ssl_certificate_name = optional(string)
-    ssl_profile_name     = optional(string)
+    name                           = string
+    frontend_port_name             = string
+    frontend_ip_configuration_name = optional(string)
+    firewall_policy_id             = optional(string)
+    require_sni                    = optional(bool)
+    host_name                      = optional(string)
+    host_names                     = optional(list(string))
+    ssl_certificate_name           = optional(string)
+    ssl_profile_name               = optional(string)
     custom_error_configuration = optional(list(object({
       status_code           = string
       custom_error_page_url = string
@@ -408,7 +408,7 @@ DESCRIPTION
 variable "probe_configurations" {
   type = map(object({
     name                                      = string
-    host                                      = string
+    host                                      = optional(string)
     interval                                  = number
     timeout                                   = number
     unhealthy_threshold                       = number
@@ -781,3 +781,11 @@ variable "zones" {
   default     = ["1", "2", "3"] #["1", "2", "3"]
   description = "(Optional) Specifies a list of Availability Zones in which this Application Gateway should be located. Changing this forces a new Application Gateway to be created."
 }
+
+# Variable for optional external public IP resource ID
+variable "public_ip_resource_id" {
+  type        = string
+  description = "Optional public IP resource ID. If provided, the module will not create a public IP."
+  default     = null
+}
+

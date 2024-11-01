@@ -155,6 +155,8 @@ module "application_gateway" {
     }
   }
 
+  ssl_policy = {}
+
   # HTTP to HTTPS Redirection Configuration for
   redirect_configuration = {
     redirect_config_1 = {
