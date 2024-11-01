@@ -92,15 +92,15 @@ DESCRIPTION
 
 variable "http_listeners" {
   type = map(object({
-    name               = string
-    frontend_port_name = string
-
-    firewall_policy_id   = optional(string)
-    require_sni          = optional(bool)
-    host_name            = optional(string)
-    host_names           = optional(list(string))
-    ssl_certificate_name = optional(string)
-    ssl_profile_name     = optional(string)
+    name                           = string
+    frontend_port_name             = string
+    frontend_ip_configuration_name = optional(string)
+    firewall_policy_id             = optional(string)
+    require_sni                    = optional(bool)
+    host_name                      = optional(string)
+    host_names                     = optional(list(string))
+    ssl_certificate_name           = optional(string)
+    ssl_profile_name               = optional(string)
     custom_error_configuration = optional(list(object({
       status_code           = string
       custom_error_page_url = string
@@ -114,7 +114,6 @@ variable "http_listeners" {
  - `host_name` - (Optional) The Hostname which should be used for this HTTP Listener. Setting this value changes Listener Type to 'Multi site'.
  - `host_names` - (Optional) A list of Hostname(s) should be used for this HTTP Listener. It allows special wildcard characters.
  - `name` - (Required) The Name of the HTTP Listener.
- - `protocol` - (Required) The Protocol to use for this HTTP Listener. Possible values are `Http` and `Https`.
  - `require_sni` - (Optional) Should Server Name Indication be Required? Defaults to `false`.
  - `ssl_certificate_name` - (Optional) The name of the associated SSL Certificate which should be used for this HTTP Listener.
  - `ssl_profile_name` - (Optional) The name of the associated SSL Profile which should be used for this HTTP Listener.
