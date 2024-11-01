@@ -129,6 +129,7 @@ module "application_gateway" {
       host_name            = null
       frontend_port_name   = "frontend-port-443"
       ssl_certificate_name = "app-gateway-cert"
+      ssl_profile_name     = "example-ssl-profile"
     }
     # # Add more http listeners as needed
   }
@@ -159,6 +160,23 @@ module "application_gateway" {
       name                = "app-gateway-cert"
       key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
     }
+  }
+
+  ssl_profile = {
+    profile1 = {
+      name = "example-ssl-profile"
+      ssl_policy = {
+        cipher_suites        = ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"]
+        min_protocol_version = "TLSv1_2"
+        policy_name          = "AppGwSslPolicy20220101"
+        policy_type          = "Predefined"
+      }
+    }
+  }
+  ssl_policy = {
+
+    policy_name = "AppGwSslPolicy20220101"
+    policy_type = "Predefined"
   }
 
   # HTTP to HTTPS Redirection Configuration for

@@ -61,7 +61,7 @@ module "application_gateway" {
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
 
   # pre-requisites resources input required for the module
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry

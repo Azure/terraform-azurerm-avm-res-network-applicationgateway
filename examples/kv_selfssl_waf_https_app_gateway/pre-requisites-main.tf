@@ -46,6 +46,9 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
+
+
+
 #-----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS 
 #  Enable these code to test private IP endpoint via bastion host  

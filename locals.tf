@@ -2,7 +2,6 @@ locals {
   frontend_ip_configuration_name         = "${var.name}-feip"
   frontend_ip_configuration_private_name = "${var.name}-fepvt-ip"
   gateway_ip_configuration_name          = "${var.name}-gwipc"
-
   managed_identities = {
     user_assigned = length(var.managed_identities.user_assigned_resource_ids) > 0 ? {
       this = {
@@ -11,5 +10,6 @@ locals {
       }
     } : {}
   }
+  public_ip_name                     = "pip-${var.name}"
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }

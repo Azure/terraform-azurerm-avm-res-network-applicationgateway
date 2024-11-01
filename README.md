@@ -63,13 +63,13 @@ Please ensure that you have a clear plan and architecture for your Azure Applica
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (~> 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 3.71)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71)
 
-- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
+- <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (>= 0.3)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (~> 3.5.0)
+- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0)
 
 ## Resources
 
@@ -204,15 +204,15 @@ Type:
 
 ```hcl
 map(object({
-    name               = string
-    frontend_port_name = string
-
-    firewall_policy_id   = optional(string)
-    require_sni          = optional(bool)
-    host_name            = optional(string)
-    host_names           = optional(list(string))
-    ssl_certificate_name = optional(string)
-    ssl_profile_name     = optional(string)
+    name                           = string
+    frontend_port_name             = string
+    frontend_ip_configuration_name = optional(string)
+    firewall_policy_id             = optional(string)
+    require_sni                    = optional(bool)
+    host_name                      = optional(string)
+    host_names                     = optional(list(string))
+    ssl_certificate_name           = optional(string)
+    ssl_profile_name               = optional(string)
     custom_error_configuration = optional(list(object({
       status_code           = string
       custom_error_page_url = string
@@ -228,12 +228,6 @@ Description: The Azure regional location where the resources will be deployed.
 Type: `string`
 
 ### <a name="input_name"></a> [name](#input\_name)
-
-Description: The name of the application gateway.
-
-Type: `string`
-
-### <a name="input_public_ip_name"></a> [public\_ip\_name](#input\_public\_ip\_name)
 
 Description: The name of the application gateway.
 
@@ -317,6 +311,14 @@ object({
 ```
 
 Default: `null`
+
+### <a name="input_create_public_ip"></a> [create\_public\_ip](#input\_create\_public\_ip)
+
+Description: Optional public IP to auto create public id
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_custom_error_configuration"></a> [custom\_error\_configuration](#input\_custom\_error\_configuration)
 
@@ -528,7 +530,7 @@ Type:
 ```hcl
 map(object({
     name                                      = string
-    host                                      = string
+    host                                      = optional(string)
     interval                                  = number
     timeout                                   = number
     unhealthy_threshold                       = number
@@ -543,6 +545,22 @@ map(object({
     }))
   }))
 ```
+
+Default: `null`
+
+### <a name="input_public_ip_name"></a> [public\_ip\_name](#input\_public\_ip\_name)
+
+Description: The name of the application gateway.
+
+Type: `string`
+
+Default: `null`
+
+### <a name="input_public_ip_resource_id"></a> [public\_ip\_resource\_id](#input\_public\_ip\_resource\_id)
+
+Description: Optional public IP resource ID. If provided, the module will not create a public IP.
+
+Type: `string`
 
 Default: `null`
 
@@ -740,10 +758,6 @@ Default: `null`
 ### <a name="input_ssl_profile"></a> [ssl\_profile](#input\_ssl\_profile)
 
 Description: - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
-- `trusted_client_certificate_names` - (Optional) The name of the Trusted Client Certificate that will be used to authenticate requests from clients.
-- `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to `false`.
-- `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible value is `OCSP`.
-
 ---
 `ssl_policy` block supports the following:
 - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
@@ -756,10 +770,7 @@ Type:
 
 ```hcl
 map(object({
-    name                                 = string
-    trusted_client_certificate_names     = optional(list(string))
-    verify_client_cert_issuer_dn         = optional(bool)
-    verify_client_certificate_revocation = optional(string)
+    name = string
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))

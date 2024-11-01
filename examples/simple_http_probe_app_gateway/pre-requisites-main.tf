@@ -47,7 +47,7 @@ resource "azurerm_subnet" "private_ip_test" {
 }
 
 resource "azurerm_public_ip" "public_ip" {
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.public_ip.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name

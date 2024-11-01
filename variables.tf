@@ -150,17 +150,6 @@ variable "name" {
   }
 }
 
-variable "public_ip_name" {
-  type        = string
-  description = "The name of the application gateway."
-
-  validation {
-    #58 Updated the regex to allow for longer names to char 80
-    condition     = can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
-    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers and dashes."
-  }
-}
-
 variable "request_routing_rules" {
   type = map(object({
     name                        = string
@@ -227,6 +216,12 @@ variable "autoscale_configuration" {
  - `max_capacity` - (Optional) Maximum capacity for autoscaling. Accepted values are in the range `2` to `125`.
  - `min_capacity` - (Required) Minimum capacity for autoscaling. Accepted values are in the range `0` to `100`.
 DESCRIPTION
+}
+
+variable "create_public_ip" {
+  type        = bool
+  default     = true
+  description = "Optional public IP to auto create public id"
 }
 
 variable "custom_error_configuration" {
@@ -442,6 +437,25 @@ variable "probe_configurations" {
 DESCRIPTION
 }
 
+variable "public_ip_name" {
+  type        = string
+  default     = null
+  description = "The name of the application gateway."
+
+  validation {
+    # Check if public_ip_name is null or matches the regex for a valid name
+    condition     = var.public_ip_name == null || can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
+    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers, and dashes."
+  }
+}
+
+# Variable for optional external public IP resource ID
+variable "public_ip_resource_id" {
+  type        = string
+  default     = null
+  description = "Optional public IP resource ID. If provided, the module will not create a public IP."
+}
+
 variable "redirect_configuration" {
   type = map(object({
     include_path         = optional(bool)
@@ -619,10 +633,7 @@ DESCRIPTION
 
 variable "ssl_profile" {
   type = map(object({
-    name                                 = string
-    trusted_client_certificate_names     = optional(list(string))
-    verify_client_cert_issuer_dn         = optional(bool)
-    verify_client_certificate_revocation = optional(string)
+    name = string
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
@@ -634,10 +645,6 @@ variable "ssl_profile" {
   default     = null
   description = <<-DESCRIPTION
  - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
- - `trusted_client_certificate_names` - (Optional) The name of the Trusted Client Certificate that will be used to authenticate requests from clients.
- - `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to `false`.
- - `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible value is `OCSP`.
-
  ---
  `ssl_policy` block supports the following:
  - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
@@ -781,11 +788,3 @@ variable "zones" {
   default     = ["1", "2", "3"] #["1", "2", "3"]
   description = "(Optional) Specifies a list of Availability Zones in which this Application Gateway should be located. Changing this forces a new Application Gateway to be created."
 }
-
-# Variable for optional external public IP resource ID
-variable "public_ip_resource_id" {
-  type        = string
-  description = "Optional public IP resource ID. If provided, the module will not create a public IP."
-  default     = null
-}
-
