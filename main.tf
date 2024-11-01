@@ -83,6 +83,7 @@ resource "azurerm_application_gateway" "this" {
   # Private Frontend IP configuration
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
+
     content {
       name                            = coalesce(frontend_ip_configuration.value.name, local.frontend_ip_configuration_private_name)
       private_ip_address              = frontend_ip_configuration.value.private_ip_address
@@ -340,6 +341,7 @@ resource "azurerm_application_gateway" "this" {
 
       dynamic "ssl_policy" {
         for_each = ssl_profile.value.ssl_policy == null ? [] : [ssl_profile.value.ssl_policy]
+
         content {
           cipher_suites        = ssl_policy.value.cipher_suites
           disabled_protocols   = ssl_policy.value.disabled_protocols
