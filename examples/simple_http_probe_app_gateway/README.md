@@ -60,10 +60,13 @@ module "application_gateway" {
   # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
 
   # pre-requisites resources input required for the module
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
+
+  #88 Option to create a new public IP or use an existing one
+  public_ip_resource_id = azurerm_public_ip.public_ip.id
+  create_public_ip      = false
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
@@ -112,7 +115,7 @@ module "application_gateway" {
   # Mandatory Input
   backend_address_pools = {
     appGatewayBackendPool = {
-      name         = "appGatewayBackendPool"
+      name         = "app-Gateway-Backend-Pool"
       ip_addresses = ["100.64.2.6", "100.64.2.5"]
       #fqdns        = ["example1.com", "example2.com"]
     }
@@ -123,7 +126,7 @@ module "application_gateway" {
   backend_http_settings = {
 
     appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
+      name                  = "app-Gateway-Backend-Http-Settings"
       port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
@@ -142,7 +145,7 @@ module "application_gateway" {
   # Mandatory Input
   http_listeners = {
     appGatewayHttpListener = {
-      name               = "appGatewayHttpListener"
+      name               = "app-Gateway-Http-Listener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
     }
@@ -155,9 +158,9 @@ module "application_gateway" {
     routing-rule-1 = {
       name                       = "rule-1"
       rule_type                  = "Basic"
-      http_listener_name         = "appGatewayHttpListener"
-      backend_address_pool_name  = "appGatewayBackendPool"
-      backend_http_settings_name = "appGatewayBackendHttpSettings"
+      http_listener_name         = "app-Gateway-Http-Listener"
+      backend_address_pool_name  = "app-Gateway-Backend-Pool"
+      backend_http_settings_name = "app-Gateway-Backend-Http-Settings"
       priority                   = 100
     }
     # Add more rules as needed
@@ -168,14 +171,21 @@ module "application_gateway" {
   # # Optional Input
   probe_configurations = {
     probe1 = {
-      name                = "Probe1"
-      host                = "127.0.0.1"
-      interval            = 30
-      timeout             = 10
-      unhealthy_threshold = 3
-      protocol            = "Http"
-      port                = 80
-      path                = "/health"
+      name                                      = "Probe1"
+      interval                                  = 30
+      timeout                                   = 10
+      unhealthy_threshold                       = 3
+      protocol                                  = "Http"
+      port                                      = 80
+      path                                      = "/health"
+      host                                      = "127.0.0.1"
+      pick_host_name_from_backend_http_settings = false
+
+      # Note on host : The Hostname used for this Probe. If the Application Gateway is configured for a single site, 
+      # by default the Host name should be specified as 127.0.0.1, 
+      # unless otherwise configured in custom probe. 
+      # Cannot be set if pick_host_name_from_backend_http_settings is set to true.
+      # You must provide host value if pick_host_name_from_backend_http_settings is set to false.
       match = {
         status_code = ["200-399"]
       }
@@ -205,6 +215,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azurerm_public_ip.public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
