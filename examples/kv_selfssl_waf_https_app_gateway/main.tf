@@ -160,10 +160,8 @@ module "application_gateway" {
     profile1 = {
       name = "example-ssl-profile"
       ssl_policy = {
-        cipher_suites        = ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"]
-        min_protocol_version = "TLSv1_2"
-        policy_name          = "AppGwSslPolicy20220101"
-        policy_type          = "Predefined"
+        policy_name = "AppGwSslPolicy20220101"
+        policy_type = "Predefined"
       }
     }
   }
