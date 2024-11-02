@@ -35,12 +35,12 @@ output "probes" {
 
 output "public_ip_address" {
   description = "The actual public IP address associated with the Public IP resource."
-  value       = azurerm_public_ip.this.ip_address
+  value       = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
 }
 
 output "public_ip_id" {
   description = "The ID of the Azure Public IP address associated with the Application Gateway."
-  value       = azurerm_public_ip.this.id
+  value       = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
 }
 
 output "request_routing_rules" {

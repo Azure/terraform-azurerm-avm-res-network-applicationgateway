@@ -1,7 +1,6 @@
 <!-- BEGIN_TF_DOCS -->
-#Application Gateway monitors the health probes
-
-Azure Application Gateway monitors the health of all the servers in its backend pool and automatically stops sending traffic to any server it considers unhealthy. The probes continue to monitor such an unhealthy server, and the gateway starts routing the traffic to it once again as soon as the probes detect it as healthy.
+# Simple HTTP Application Gateway
+This scenario sets up a straightforward HTTP Application Gateway, typically for basic web applications or services.
 
 # Default example
 
@@ -11,8 +10,9 @@ This deploys the module in its simplest form.
 
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application. 
-# Add a custom health probe to application gateway
-
+# Assume that your Application runing the scale set contains two virtual machine instances. 
+# The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
+# The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
 
 #----------All Required Provider Section----------- 
 terraform {
@@ -57,16 +57,11 @@ resource "random_integer" "region_index" {
 
 module "application_gateway" {
   source = "../../"
-  # source             = "Azure/terraform-azurerm-avm-res-network-applicationgateway"
 
   # pre-requisites resources input required for the module
+  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  enable_telemetry    = var.enable_telemetry
-
-  #88 Option to create a new public IP or use an existing one
-  public_ip_resource_id = azurerm_public_ip.public_ip.id
-  create_public_ip      = false
 
   # provide Application gateway name 
   name = module.naming.application_gateway.name_unique
@@ -75,39 +70,13 @@ module "application_gateway" {
     subnet_id = azurerm_subnet.backend.id
   }
 
-  tags = {
-    environment = "dev"
-    owner       = "application_gateway"
-    project     = "AVM"
-  }
-
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
-
-  # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
-  sku = {
-    # Accpected value for names Standard_v2 and WAF_v2
-    name = "Standard_v2"
-    # Accpected value for tier Standard_v2 and WAF_v2
-    tier = "Standard_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
-  }
-
-  autoscale_configuration = {
-    min_capacity = 1
-    max_capacity = 2
-  }
-
   # frontend port configuration block for the application gateway
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
   frontend_ports = {
     frontend-port-80 = {
       name = "frontend-port-80"
-      port = 80
+      port = 8080
     }
   }
 
@@ -115,7 +84,7 @@ module "application_gateway" {
   # Mandatory Input
   backend_address_pools = {
     appGatewayBackendPool = {
-      name         = "app-Gateway-Backend-Pool"
+      name         = "appGatewayBackendPool"
       ip_addresses = ["100.64.2.6", "100.64.2.5"]
       #fqdns        = ["example1.com", "example2.com"]
     }
@@ -124,14 +93,15 @@ module "application_gateway" {
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
-
     appGatewayBackendHttpSettings = {
-      name                  = "app-Gateway-Backend-Http-Settings"
+      name                  = "appGatewayBackendHttpSettings"
       port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
       request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
@@ -145,7 +115,7 @@ module "application_gateway" {
   # Mandatory Input
   http_listeners = {
     appGatewayHttpListener = {
-      name               = "app-Gateway-Http-Listener"
+      name               = "appGatewayHttpListener"
       host_name          = null
       frontend_port_name = "frontend-port-80"
     }
@@ -158,45 +128,19 @@ module "application_gateway" {
     routing-rule-1 = {
       name                       = "rule-1"
       rule_type                  = "Basic"
-      http_listener_name         = "app-Gateway-Http-Listener"
-      backend_address_pool_name  = "app-Gateway-Backend-Pool"
-      backend_http_settings_name = "app-Gateway-Backend-Http-Settings"
+      http_listener_name         = "appGatewayHttpListener"
+      backend_address_pool_name  = "appGatewayBackendPool"
+      backend_http_settings_name = "appGatewayBackendHttpSettings"
       priority                   = 100
     }
     # Add more rules as needed
   }
 
-  # probe configurations for the application gateway
-  # WAF : Use Health Probes to detect backend availability
-  # # Optional Input
-  probe_configurations = {
-    probe1 = {
-      name                                      = "Probe1"
-      interval                                  = 30
-      timeout                                   = 10
-      unhealthy_threshold                       = 3
-      protocol                                  = "Http"
-      port                                      = 80
-      path                                      = "/health"
-      host                                      = "127.0.0.1"
-      pick_host_name_from_backend_http_settings = false
-
-      # Note on host : The Hostname used for this Probe. If the Application Gateway is configured for a single site, 
-      # by default the Host name should be specified as 127.0.0.1, 
-      # unless otherwise configured in custom probe. 
-      # Cannot be set if pick_host_name_from_backend_http_settings is set to true.
-      # You must provide host value if pick_host_name_from_backend_http_settings is set to false.
-      match = {
-        status_code = ["200-399"]
-      }
-    }
+  tags = {
+    environment = "dev"
+    owner       = "application_gateway"
+    project     = "AVM"
   }
-
-  # Optional Input  
-  # WAF :  Deploy Application Gateway in a zone-redundant configuration
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
-  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
-
 }
 ```
 
@@ -215,8 +159,9 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_public_ip.public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
+- [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
+- [azurerm_resource_group.rg_vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -231,17 +176,7 @@ No required inputs.
 
 ## Optional Inputs
 
-The following input variables are optional (have default values):
-
-### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
-
-Description: This variable controls whether or not telemetry is enabled for the module.  
-For more information see https://aka.ms/avm/telemetryinfo.  
-If it is set to false, then no telemetry will be collected.
-
-Type: `bool`
-
-Default: `true`
+No optional inputs.
 
 ## Outputs
 
@@ -306,6 +241,12 @@ Source: ../../
 Version:
 
 ### <a name="module_naming"></a> [naming](#module\_naming)
+
+Source: Azure/naming/azurerm
+
+Version: 0.3.0
+
+### <a name="module_naming_rg_vnet"></a> [naming\_rg\_vnet](#module\_naming\_rg\_vnet)
 
 Source: Azure/naming/azurerm
 

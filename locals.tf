@@ -10,5 +10,6 @@ locals {
       }
     } : {}
   }
+  public_ip_name                     = "pip-${var.name}"
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }
