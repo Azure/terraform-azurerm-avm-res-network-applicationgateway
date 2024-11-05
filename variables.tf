@@ -92,15 +92,15 @@ DESCRIPTION
 
 variable "http_listeners" {
   type = map(object({
-    name               = string
-    frontend_port_name = string
-
-    firewall_policy_id   = optional(string)
-    require_sni          = optional(bool)
-    host_name            = optional(string)
-    host_names           = optional(list(string))
-    ssl_certificate_name = optional(string)
-    ssl_profile_name     = optional(string)
+    name                           = string
+    frontend_port_name             = string
+    frontend_ip_configuration_name = optional(string)
+    firewall_policy_id             = optional(string)
+    require_sni                    = optional(bool)
+    host_name                      = optional(string)
+    host_names                     = optional(list(string))
+    ssl_certificate_name           = optional(string)
+    ssl_profile_name               = optional(string)
     custom_error_configuration = optional(list(object({
       status_code           = string
       custom_error_page_url = string
@@ -114,7 +114,6 @@ variable "http_listeners" {
  - `host_name` - (Optional) The Hostname which should be used for this HTTP Listener. Setting this value changes Listener Type to 'Multi site'.
  - `host_names` - (Optional) A list of Hostname(s) should be used for this HTTP Listener. It allows special wildcard characters.
  - `name` - (Required) The Name of the HTTP Listener.
- - `protocol` - (Required) The Protocol to use for this HTTP Listener. Possible values are `Http` and `Https`.
  - `require_sni` - (Optional) Should Server Name Indication be Required? Defaults to `false`.
  - `ssl_certificate_name` - (Optional) The name of the associated SSL Certificate which should be used for this HTTP Listener.
  - `ssl_profile_name` - (Optional) The name of the associated SSL Profile which should be used for this HTTP Listener.
@@ -147,17 +146,6 @@ variable "name" {
   validation {
     condition     = can(regex("^[a-z0-9-]{3,24}$", var.name))
     error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
-  }
-}
-
-variable "public_ip_name" {
-  type        = string
-  description = "The name of the application gateway."
-
-  validation {
-    #58 Updated the regex to allow for longer names to char 80
-    condition     = can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
-    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers and dashes."
   }
 }
 
@@ -227,6 +215,12 @@ variable "autoscale_configuration" {
  - `max_capacity` - (Optional) Maximum capacity for autoscaling. Accepted values are in the range `2` to `125`.
  - `min_capacity` - (Required) Minimum capacity for autoscaling. Accepted values are in the range `0` to `100`.
 DESCRIPTION
+}
+
+variable "create_public_ip" {
+  type        = bool
+  default     = true
+  description = "Optional public IP to auto create public id"
 }
 
 variable "custom_error_configuration" {
@@ -311,7 +305,7 @@ variable "frontend_ip_configuration_private" {
   })
   default     = {}
   description = <<-DESCRIPTION
- - `private_name` - (Optional) The name of the private  Frontend IP Configuration. 
+ - `name` - (Optional) The name of the private  Frontend IP Configuration. 
  - `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
  - `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
  - `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
@@ -408,7 +402,7 @@ DESCRIPTION
 variable "probe_configurations" {
   type = map(object({
     name                                      = string
-    host                                      = string
+    host                                      = optional(string)
     interval                                  = number
     timeout                                   = number
     unhealthy_threshold                       = number
@@ -440,6 +434,25 @@ variable "probe_configurations" {
  - `body` - (Optional) A snippet from the Response Body which must be present in the Response.
  - `status_code` - (Required) A list of allowed status codes for this Health Probe.
 DESCRIPTION
+}
+
+variable "public_ip_name" {
+  type        = string
+  default     = null
+  description = "The name of the application gateway."
+
+  validation {
+    # Check if public_ip_name is null or matches the regex for a valid name
+    condition     = var.public_ip_name == null || can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
+    error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers, and dashes."
+  }
+}
+
+# Variable for optional external public IP resource ID
+variable "public_ip_resource_id" {
+  type        = string
+  default     = null
+  description = "Optional public IP resource ID. If provided, the module will not create a public IP."
 }
 
 variable "redirect_configuration" {
@@ -619,10 +632,7 @@ DESCRIPTION
 
 variable "ssl_profile" {
   type = map(object({
-    name                                 = string
-    trusted_client_certificate_names     = optional(list(string))
-    verify_client_cert_issuer_dn         = optional(bool)
-    verify_client_certificate_revocation = optional(string)
+    name = string
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
@@ -634,10 +644,6 @@ variable "ssl_profile" {
   default     = null
   description = <<-DESCRIPTION
  - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
- - `trusted_client_certificate_names` - (Optional) The name of the Trusted Client Certificate that will be used to authenticate requests from clients.
- - `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to `false`.
- - `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible value is `OCSP`.
-
  ---
  `ssl_policy` block supports the following:
  - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.

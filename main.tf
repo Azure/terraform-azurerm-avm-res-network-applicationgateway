@@ -8,9 +8,11 @@
 # In this instance, the public IP address resource is included to align with the experience in the Azure portal.
 # See decision noted here: https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/67
 resource "azurerm_public_ip" "this" {
+  count = var.create_public_ip == true ? 1 : 0
+
   allocation_method   = var.sku.tier == "Standard" ? "Dynamic" : "Static" # Allocation method for the public ip //var.public_ip_allocation_method
   location            = var.location
-  name                = var.public_ip_name
+  name                = var.public_ip_name == null ? local.public_ip_name : var.public_ip_name
   resource_group_name = var.resource_group_name
   sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
   tags                = var.tags
@@ -74,10 +76,9 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Public Frontend IP configuration
   frontend_ip_configuration {
     name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
-    public_ip_address_id = azurerm_public_ip.this.id
+    public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
   }
   # Private Frontend IP configuration
   dynamic "frontend_ip_configuration" {
@@ -90,7 +91,8 @@ resource "azurerm_application_gateway" "this" {
       private_link_configuration_name = frontend_ip_configuration.value.private_link_configuration_name
       subnet_id                       = var.gateway_ip_configuration.subnet_id
     }
-  } # Frontend IP Port configuration
+  }
+  # Frontend IP Port configuration
   dynamic "frontend_port" {
     for_each = var.frontend_ports
 
@@ -109,16 +111,17 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.http_listeners
 
     content {
-      frontend_ip_configuration_name = try(http_listener.value.frontend_ip_configuration_name, local.frontend_ip_configuration_name)
-      frontend_port_name             = http_listener.value.frontend_port_name
-      name                           = http_listener.value.name
-      protocol                       = http_listener.value.ssl_certificate_name == null ? "Http" : "Https"
-      firewall_policy_id             = http_listener.value.firewall_policy_id
-      host_name                      = http_listener.value.host_name
-      host_names                     = http_listener.value.host_names
-      require_sni                    = http_listener.value.require_sni
-      ssl_certificate_name           = http_listener.value.ssl_certificate_name
-      ssl_profile_name               = http_listener.value.ssl_profile_name
+      frontend_ip_configuration_name = coalesce(http_listener.value.frontend_ip_configuration_name, local.frontend_ip_configuration_name, local.frontend_ip_configuration_private_name)
+      #frontend_ip_configuration_name = coalesce(http_listener.value.frontend_ip_configuration_name, var.frontend_ip_configuration_public_name, var.frontend_ip_configuration_private.name)
+      frontend_port_name   = http_listener.value.frontend_port_name
+      name                 = http_listener.value.name
+      protocol             = http_listener.value.ssl_certificate_name == null ? "Http" : "Https"
+      firewall_policy_id   = http_listener.value.firewall_policy_id
+      host_name            = http_listener.value.host_name
+      host_names           = http_listener.value.host_names
+      require_sni          = http_listener.value.require_sni
+      ssl_certificate_name = http_listener.value.ssl_certificate_name
+      ssl_profile_name     = http_listener.value.ssl_profile_name
 
       dynamic "custom_error_configuration" {
         for_each = http_listener.value.custom_error_configuration != null ? lookup(http_listener.value, "custom_error_configuration", {}) : []
@@ -334,10 +337,7 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.ssl_profile == null ? {} : var.ssl_profile
 
     content {
-      name                                 = ssl_profile.value.name
-      trusted_client_certificate_names     = ssl_profile.value.trusted_client_certificate_names
-      verify_client_cert_issuer_dn         = ssl_profile.value.verify_client_cert_issuer_dn
-      verify_client_certificate_revocation = ssl_profile.value.verify_client_certificate_revocation
+      name = ssl_profile.value.name
 
       dynamic "ssl_policy" {
         for_each = ssl_profile.value.ssl_policy == null ? [] : [ssl_profile.value.ssl_policy]
@@ -441,6 +441,7 @@ resource "azurerm_application_gateway" "this" {
     }
   }
 }
+
 
 # Example resource implementation
 resource "azurerm_management_lock" "this" {
