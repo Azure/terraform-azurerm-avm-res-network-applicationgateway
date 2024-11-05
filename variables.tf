@@ -114,7 +114,6 @@ variable "http_listeners" {
  - `host_name` - (Optional) The Hostname which should be used for this HTTP Listener. Setting this value changes Listener Type to 'Multi site'.
  - `host_names` - (Optional) A list of Hostname(s) should be used for this HTTP Listener. It allows special wildcard characters.
  - `name` - (Required) The Name of the HTTP Listener.
- - `protocol` - (Required) The Protocol to use for this HTTP Listener. Possible values are `Http` and `Https`.
  - `require_sni` - (Optional) Should Server Name Indication be Required? Defaults to `false`.
  - `ssl_certificate_name` - (Optional) The name of the associated SSL Certificate which should be used for this HTTP Listener.
  - `ssl_profile_name` - (Optional) The name of the associated SSL Profile which should be used for this HTTP Listener.
@@ -306,7 +305,7 @@ variable "frontend_ip_configuration_private" {
   })
   default     = {}
   description = <<-DESCRIPTION
- - `private_name` - (Optional) The name of the private  Frontend IP Configuration. 
+ - `name` - (Optional) The name of the private  Frontend IP Configuration. 
  - `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
  - `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
  - `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
