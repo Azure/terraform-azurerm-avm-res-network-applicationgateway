@@ -12,7 +12,7 @@ For enhanced security, SSL certificates are managed using Azure Key Vault. This 
 
 #----------All Required Provider Section----------- 
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
@@ -230,7 +230,7 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.0, < 4.0)
 
