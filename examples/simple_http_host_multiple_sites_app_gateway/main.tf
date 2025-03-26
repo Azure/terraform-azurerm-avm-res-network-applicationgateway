@@ -4,7 +4,7 @@
 # The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-multiple-sites-cli
 #----------All Required Provider Section----------- 
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
