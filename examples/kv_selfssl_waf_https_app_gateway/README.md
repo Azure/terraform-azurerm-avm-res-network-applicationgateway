@@ -166,16 +166,16 @@ module "application_gateway" {
     profile1 = {
       name = "example-ssl-profile"
       ssl_policy = {
-        policy_name = "AppGwSslPolicy20220101"
-        policy_type = "Predefined"
+        policy_name          = "AppGwSslPolicy20220101"
+        policy_type          = "Predefined"
         min_protocol_version = "TLSv1_2"
       }
     }
   }
   ssl_policy = {
 
-    policy_name = "AppGwSslPolicy20220101"
-    policy_type = "Predefined"
+    policy_name          = "AppGwSslPolicy20220101"
+    policy_type          = "Predefined"
     min_protocol_version = "TLSv1_2"
   }
 
