@@ -55,6 +55,7 @@ output "resource_id" {
 
 output "ssl_certificates" {
   description = "Information about SSL certificates used by the Application Gateway, including their names and other details."
+  sensitive   = true
   value       = azurerm_application_gateway.this.ssl_certificate
   sensitive   = true
 }
