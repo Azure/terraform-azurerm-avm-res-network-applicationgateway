@@ -630,7 +630,13 @@ variable "ssl_policy" {
 DESCRIPTION
 
   validation {
-    condition     = var.ssl_policy == null || (var.ssl_policy != null && (var.ssl_policy.min_protocol_version == null || contains(["TLSv1_2", "TLSv1_3"], var.ssl_policy.min_protocol_version)))
+    condition = (
+      var.ssl_policy == null ||
+      length(var.ssl_policy) == 0 ||
+      lookup(var.ssl_policy, "min_protocol_version", "TLSv1_2") == null ||
+      contains(["TLSv1_2", "TLSv1_3"], lookup(var.ssl_policy, "min_protocol_version", "TLSv1_2"))
+    )
+
     error_message = "Invalid TLS version! Only TLSv1_2 or TLSv1_3 is allowed for security reasons."
   }
 }
