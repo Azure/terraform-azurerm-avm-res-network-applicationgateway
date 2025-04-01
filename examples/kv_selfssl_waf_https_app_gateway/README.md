@@ -5,12 +5,12 @@ For enhanced security, SSL certificates are managed using Azure Key Vault. This 
 
 ```hcl
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
+# Application Gateway + WAF Enable routing traffic from your application.
+# Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/configure-keyvault-ps
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
   required_version = ">= 1.9, < 2.0"
 
@@ -62,7 +62,7 @@ module "application_gateway" {
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   gateway_ip_configuration = {
@@ -168,6 +168,7 @@ module "application_gateway" {
       ssl_policy = {
         policy_name = "AppGwSslPolicy20220101"
         policy_type = "Predefined"
+        min_protocol_version = "TLSv1_2"
       }
     }
   }
@@ -175,6 +176,7 @@ module "application_gateway" {
 
     policy_name = "AppGwSslPolicy20220101"
     policy_type = "Predefined"
+    min_protocol_version = "TLSv1_2"
   }
 
   # HTTP to HTTPS Redirection Configuration for
@@ -188,8 +190,8 @@ module "application_gateway" {
     }
   }
 
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Optional Input
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 
   managed_identities = {
