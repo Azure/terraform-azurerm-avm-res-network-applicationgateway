@@ -628,17 +628,6 @@ variable "ssl_policy" {
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
-
-  validation {
-    condition = (
-      var.ssl_policy == null ||
-      length(var.ssl_policy) == 0 ||
-      lookup(var.ssl_policy, "min_protocol_version", "TLSv1_2") == null ||
-      contains(["TLSv1_2", "TLSv1_3"], lookup(var.ssl_policy, "min_protocol_version", "TLSv1_2"))
-    )
-
-    error_message = "Invalid TLS version! Only TLSv1_2 or TLSv1_3 is allowed for security reasons."
-  }
 }
 
 variable "ssl_profile" {
@@ -669,11 +658,6 @@ variable "ssl_profile" {
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
-
-  validation {
-    condition     = alltrue([for profile in var.ssl_profile != null ? values(var.ssl_profile) : [] : profile.ssl_policy == null || profile.ssl_policy.min_protocol_version == null || contains(["TLSv1_2", "TLSv1_3"], profile.ssl_policy.min_protocol_version)])
-    error_message = "Invalid TLS version! Only TLSv1_2 or TLSv1_3 is allowed for security reasons in SSL profiles."
-  }
 }
 
 variable "tags" {
