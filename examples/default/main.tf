@@ -92,7 +92,7 @@ module "application_gateway" {
       path                  = "/"
       request_timeout       = 30
       #Github issue #55 allow custom port for the backend
-      port = 8080
+      #  port = 8080
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
