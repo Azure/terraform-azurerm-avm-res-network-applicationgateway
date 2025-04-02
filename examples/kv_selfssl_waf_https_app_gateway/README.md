@@ -217,10 +217,10 @@ module "application_gateway" {
     project     = "AVM"
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
+  # lock = {
+  #   name = "lock-${module.naming.application_gateway.name_unique}" # optional
+  #   kind = "CanNotDelete"
+  # }
 
 }
 
