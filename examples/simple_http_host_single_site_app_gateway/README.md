@@ -94,8 +94,8 @@ module "application_gateway" {
   # Mandatory Input
   backend_http_settings = {
     appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
-      port                  = 80
+      name = "appGatewayBackendHttpSettings"
+      #port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
