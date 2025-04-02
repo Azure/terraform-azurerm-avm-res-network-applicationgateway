@@ -1,17 +1,17 @@
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
+# Application Gateway + WAF Enable routing traffic from your application.
+# Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -56,7 +56,7 @@ module "application_gateway" {
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id
@@ -167,8 +167,8 @@ module "application_gateway" {
     }
   }
 
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Optional Input
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 
   managed_identities = {
