@@ -35,7 +35,7 @@ output "probes" {
 
 output "public_ip_address" {
   description = "The actual public IP address associated with the Public IP resource."
-  value       = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
+  value       = var.create_public_ip == true ? azurerm_public_ip.this[0].ip_address : var.public_ip_resource_id
 }
 
 output "public_ip_id" {
@@ -56,7 +56,6 @@ output "resource_id" {
 output "ssl_certificates" {
   description = "Information about SSL certificates used by the Application Gateway, including their names and other details."
   value       = azurerm_application_gateway.this.ssl_certificate
-  sensitive   = true
 }
 
 output "tags" {

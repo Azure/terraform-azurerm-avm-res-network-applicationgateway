@@ -8,19 +8,19 @@ This deploys the module in its simplest form.
 
 ```hcl
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
+# Application Gateway + WAF Enable routing traffic from your application.
+# Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -65,7 +65,7 @@ module "application_gateway" {
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
   gateway_ip_configuration = {
     subnet_id = azurerm_subnet.backend.id
@@ -176,8 +176,8 @@ module "application_gateway" {
     }
   }
 
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Optional Input
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 
   managed_identities = {
@@ -219,9 +219,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.0, < 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
@@ -229,24 +229,16 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azurerm_bastion_host.bastion_host](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/bastion_host) (resource)
-- [azurerm_linux_virtual_machine_scale_set.app_gateway_web_vmss](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/linux_virtual_machine_scale_set) (resource)
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
-- [azurerm_network_interface.bastion_win_vm_nic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_interface) (resource)
-- [azurerm_network_security_group.ag_subnet_nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) (resource)
-- [azurerm_network_security_rule.ag_nsg_rule_inbound](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_rule) (resource)
-- [azurerm_public_ip.bastion_public_ip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.private_ip_test](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.workload](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
-- [azurerm_subnet_network_security_group_association.ag_subnet_nsg_associate](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) (resource)
 - [azurerm_user_assigned_identity.appag_umid](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/user_assigned_identity) (resource)
 - [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) (resource)
 - [azurerm_web_application_firewall_policy.azure_waf](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/web_application_firewall_policy) (resource)
-- [azurerm_windows_virtual_machine.bastion](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/windows_virtual_machine) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->

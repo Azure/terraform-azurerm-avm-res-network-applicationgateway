@@ -1,15 +1,15 @@
 #----------Testing Use Case  -------------
-# Create an application gateway that hosts multiple web sites. 
-# 
+# Create an application gateway that hosts multiple web sites.
+#
 # The input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-multiple-sites-cli
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -52,7 +52,7 @@ module "application_gateway" {
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   gateway_ip_configuration = {
@@ -163,8 +163,8 @@ module "application_gateway" {
     # Add more rules as needed
   }
 
-  # Optional Input 
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Optional Input
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 
   diagnostic_settings = {

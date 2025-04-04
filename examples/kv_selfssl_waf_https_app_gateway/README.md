@@ -1,23 +1,23 @@
 <!-- BEGIN_TF_DOCS -->
 # Application Gateway with SSL with Azure Key Vault
 
-For enhanced security, SSL certificates are managed using Azure Key Vault. This scenario involves setting up Key Vault and integrating it with the Application Gateway. Detailed configuration for Key Vault and SSL certificates is necessary.
+For enhanced security, SSL certificates are managed using Azure Key Vault. This scenario involves setting up Key Vault and integrating it with the Application Gateway. Detailed configuration for Key Vault and SSL certificates is necessary TLS version default value set to version 1.2.
 
 ```hcl
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
+# Application Gateway + WAF Enable routing traffic from your application.
+# Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/configure-keyvault-ps
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -62,7 +62,7 @@ module "application_gateway" {
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   gateway_ip_configuration = {
@@ -166,15 +166,25 @@ module "application_gateway" {
     profile1 = {
       name = "example-ssl-profile"
       ssl_policy = {
-        policy_name = "AppGwSslPolicy20220101"
-        policy_type = "Predefined"
+
+        policy_type          = "Custom"
+        min_protocol_version = "TLSv1_2"
+        cipher_suites = [
+          "TLS_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        ]
       }
     }
   }
   ssl_policy = {
 
-    policy_name = "AppGwSslPolicy20220101"
-    policy_type = "Predefined"
+    policy_type          = "Custom"
+    min_protocol_version = "TLSv1_2"
+    cipher_suites = [
+      "TLS_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    ]
+
   }
 
   # HTTP to HTTPS Redirection Configuration for
@@ -188,8 +198,8 @@ module "application_gateway" {
     }
   }
 
-  # Optional Input  
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Optional Input
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 
   managed_identities = {
@@ -215,10 +225,10 @@ module "application_gateway" {
     project     = "AVM"
   }
 
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
+  # lock = {
+  #   name = "lock-${module.naming.application_gateway.name_unique}" # optional
+  #   kind = "CanNotDelete"
+  # }
 
 }
 
@@ -230,9 +240,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.0, < 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 

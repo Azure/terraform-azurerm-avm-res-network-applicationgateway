@@ -9,19 +9,19 @@ This deploys the module in its simplest form.
 ```hcl
 
 #----------Testing Use Case  -------------
-# Application Gateway routing traffic from your application. 
+# Application Gateway routing traffic from your application.
 # Add a custom health probe to application gateway
 # This example demonstrates how to create an Application Gateway configure with custom name for public and private ip address.
 
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -67,7 +67,7 @@ module "application_gateway" {
   public_ip_resource_id = azurerm_public_ip.public_ip.id
   create_public_ip      = false
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   frontend_ip_configuration_public_name = "public-ip-custom-name"
@@ -206,9 +206,9 @@ module "application_gateway" {
   }
 
 
-  # Optional Input  
+  # Optional Input
   # WAF :  Deploy Application Gateway in a zone-redundant configuration
-  # Zone redundancy for the application gateway ["1", "2", "3"] 
+  # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
 }
@@ -219,9 +219,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.0, < 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
