@@ -616,7 +616,7 @@ variable "ssl_policy" {
   type = object({
     cipher_suites        = optional(list(string))
     disabled_protocols   = optional(list(string))
-    min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
+    min_protocol_version = optional(string) # Default to TLSv1_2
     policy_name          = optional(string)
     policy_type          = optional(string)
   })
@@ -628,6 +628,19 @@ variable "ssl_policy" {
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
+
+  validation {
+    condition = var.ssl_policy == null || (
+      can(var.ssl_policy.policy_type) ? contains(["Predefined", "Custom", "CustomV2"], var.ssl_policy.policy_type) : true
+    )
+    error_message = "policy_type must be one of: Predefined, Custom, or CustomV2."
+  }
+  validation {
+    condition = var.ssl_policy == null || (
+      can(var.ssl_policy.min_protocol_version) ? contains(["TLSv1_2", "TLSv1_3"], var.ssl_policy.min_protocol_version) : true
+    )
+    error_message = "min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
+  }
 }
 
 variable "ssl_profile" {
@@ -639,7 +652,7 @@ variable "ssl_profile" {
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
-      min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
+      min_protocol_version = optional(string) # Default to TLSv1_2
       policy_name          = optional(string)
       policy_type          = optional(string)
     }))
@@ -658,6 +671,25 @@ variable "ssl_profile" {
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
+
+  validation {
+    condition = var.ssl_profile == null ? true : alltrue([
+      for profile in values(var.ssl_profile) :
+      !can(profile.ssl_policy) || (
+        can(profile.ssl_policy.policy_type) ? contains(["Predefined", "Custom", "CustomV2"], profile.ssl_policy.policy_type) : true
+      )
+    ])
+    error_message = "Each ssl_profile's policy_type must be one of: Predefined, Custom, or CustomV2."
+  }
+  validation {
+    condition = var.ssl_profile == null ? true : alltrue([
+      for profile in values(var.ssl_profile) :
+      !can(profile.ssl_policy) || (
+        can(profile.ssl_policy.min_protocol_version) ? contains(["TLSv1_2", "TLSv1_3"], profile.ssl_policy.min_protocol_version) : true
+      )
+    ])
+    error_message = "Each ssl_profile's min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
+  }
 }
 
 variable "tags" {

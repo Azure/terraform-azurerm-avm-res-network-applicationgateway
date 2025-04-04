@@ -160,17 +160,25 @@ module "application_gateway" {
     profile1 = {
       name = "example-ssl-profile"
       ssl_policy = {
-        policy_name          = "AppGwSslPolicy20220101"
-        policy_type          = "Predefined"
+
+        policy_type          = "Custom"
         min_protocol_version = "TLSv1_2"
+        cipher_suites = [
+          "TLS_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+        ]
       }
     }
   }
   ssl_policy = {
 
-    policy_name          = "AppGwSslPolicy20220101"
-    policy_type          = "Predefined"
+    policy_type          = "Custom"
     min_protocol_version = "TLSv1_2"
+    cipher_suites = [
+      "TLS_RSA_WITH_AES_128_GCM_SHA256",
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+    ]
+
   }
 
   # HTTP to HTTPS Redirection Configuration for
