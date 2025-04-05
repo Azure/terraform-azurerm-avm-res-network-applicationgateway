@@ -7,14 +7,14 @@ Azure Application Gateway Standard v2 can be configured with an Internet-facing 
 This deploys the module in its simplest form.
 
 ```hcl
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -58,7 +58,7 @@ module "application_gateway" {
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   frontend_ip_configuration_private = {
@@ -111,7 +111,7 @@ module "application_gateway" {
   http_listeners = {
     http_listeners-for-80 = {
       name = "http_listeners-for-80"
-      # The frontend_port_name must be same as given frontend_port block 
+      # The frontend_port_name must be same as given frontend_port block
       frontend_port_name = "frontend-port-80"
       protocol           = "Http"
     }
@@ -149,7 +149,7 @@ module "application_gateway" {
     # Add more rules as needed
   }
 
-  # Optional Input  
+  # Optional Input
   zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
 
   tags = {
@@ -170,9 +170,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.5)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.0, < 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
 - <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
 
