@@ -1,18 +1,18 @@
 
 #----------Testing Use Case  -------------
-# Application Gateway routing traffic from your application. 
-# Assume that your Application runing the scale set contains two virtual machine instances. 
+# Application Gateway routing traffic from your application.
+# Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
 
-#----------All Required Provider Section----------- 
+#----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.9, < 2.0"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">= 3.0, < 4.0"
+      version = "~> 4.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -54,7 +54,7 @@ module "application_gateway" {
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
 
-  # provide Application gateway name 
+  # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
   gateway_ip_configuration = {
@@ -85,14 +85,15 @@ module "application_gateway" {
   # Mandatory Input
   backend_http_settings = {
     appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
+      name = "appGatewayBackendHttpSettings"
+      #Github issue #55 allow custom port for the backend
       port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
       request_timeout       = 30
-      #Github issue #55 allow custom port for the backend
-      port = 8080
+
+
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300

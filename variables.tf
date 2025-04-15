@@ -144,8 +144,8 @@ variable "name" {
   description = "The name of the application gateway."
 
   validation {
-    condition     = can(regex("^[a-z0-9-]{3,24}$", var.name))
-    error_message = "The name must be between 3 and 24 characters long and can only contain lowercase letters, numbers and dashes."
+    condition     = can(regex("^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,78}[a-zA-Z0-9_]$", var.name))
+    error_message = "The name must be 1-80 characters long, start with an alphanumeric character, end with an alphanumeric character or underscore, and contain only alphanumerics, underscores, periods, and hyphens."
   }
 }
 
@@ -305,7 +305,7 @@ variable "frontend_ip_configuration_private" {
   })
   default     = {}
   description = <<-DESCRIPTION
- - `name` - (Optional) The name of the private  Frontend IP Configuration. 
+ - `name` - (Optional) The name of the private  Frontend IP Configuration.
  - `private_ip_address` - (Optional) The Private IP Address to use for the Application Gateway.
  - `private_ip_address_allocation` - (Optional) The Allocation Method for the Private IP Address. Possible values are `Dynamic` and `Static`. Defaults to `Dynamic`.
  - `private_link_configuration_name` - (Optional) The name of the private link configuration to use for this frontend IP configuration.
@@ -347,7 +347,7 @@ variable "lock" {
   default     = null
   description = <<DESCRIPTION
   Controls the Resource Lock configuration for this resource. The following properties can be specified:
-  
+
   - `kind` - (Required) The type of lock. Possible values are `\"CanNotDelete\"` and `\"ReadOnly\"`.
   - `name` - (Optional) The name of the lock. If not specified, a name will be generated based on the `kind` value. Changing this forces the creation of a new resource.
   DESCRIPTION
@@ -552,7 +552,7 @@ variable "role_assignments" {
   default     = {}
   description = <<DESCRIPTION
   A map of role assignments to create on the <RESOURCE>. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-  
+
   - `role_definition_id_or_name` - The ID or name of the role definition to assign to the principal.
   - `principal_id` - The ID of the principal to assign the role to.
   - `description` - (Optional) The description of the role assignment.
@@ -561,7 +561,7 @@ variable "role_assignments" {
   - `condition_version` - (Optional) The version of the condition syntax. Leave as `null` if you are not using a condition, if you are then valid values are '2.0'.
   - `delegated_managed_identity_resource_id` - (Optional) The delegated Azure Resource Id which contains a Managed Identity. Changing this forces a new resource to be created. This field is only used in cross-tenant scenario.
   - `principal_type` - (Optional) The type of the `principal_id`. Possible values are `User`, `Group` and `ServicePrincipal`. It is necessary to explicitly set this attribute when creating role assignments if the principal creating the assignment is constrained by ABAC rules that filters on the PrincipalType attribute.
-  
+
   > Note: only set `skip_service_principal_aad_check` to true if you are assigning a role to a service principal.
   DESCRIPTION
   nullable    = false
@@ -616,7 +616,7 @@ variable "ssl_policy" {
   type = object({
     cipher_suites        = optional(list(string))
     disabled_protocols   = optional(list(string))
-    min_protocol_version = optional(string)
+    min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
     policy_name          = optional(string)
     policy_type          = optional(string)
   })
@@ -624,19 +624,32 @@ variable "ssl_policy" {
   description = <<-DESCRIPTION
  - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
  - `disabled_protocols` - (Optional) A list of SSL Protocols which should be disabled on this Application Gateway. Possible values are `TLSv1_0`, `TLSv1_1`, `TLSv1_2` and `TLSv1_3`.
- - `min_protocol_version` - (Optional) The minimal TLS version. Possible values are `TLSv1_0`, `TLSv1_1`, `TLSv1_2` and `TLSv1_3`.
+ - `min_protocol_version` - (Optional) The minimal TLS version. Possible values are `TLSv1_2` or `TLSv1_3`, Default to `TLSv1_2` .
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
+
+  validation {
+    condition     = try(var.ssl_policy.policy_type == null ? false : contains(["Predefined", "Custom", "CustomV2"], var.ssl_policy.policy_type), true)
+    error_message = "policy_type must be one of: Predefined, Custom, or CustomV2."
+  }
+  validation {
+
+    condition     = try(var.ssl_policy.min_protocol_version == null ? false : contains(["TLSv1_2", "TLSv1_3"], var.ssl_policy.min_protocol_version), true)
+    error_message = "min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
+  }
 }
 
 variable "ssl_profile" {
   type = map(object({
-    name = string
+    name                                 = string
+    trusted_client_certificate_names     = optional(list(string))
+    verify_client_cert_issuer_dn         = optional(bool, false)
+    verify_client_certificate_revocation = optional(string, "OCSP")
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
-      min_protocol_version = optional(string)
+      min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
       policy_name          = optional(string)
       policy_type          = optional(string)
     }))
@@ -644,14 +657,31 @@ variable "ssl_profile" {
   default     = null
   description = <<-DESCRIPTION
  - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
+ - `trusted_client_certificate_names` - (Optional) A list of Trusted Client Certificate names that will be used to authenticate requests from clients.
+ - `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to `false`.
+ - `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible values include:'OCSP'.
  ---
  `ssl_policy` block supports the following:
  - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
  - `disabled_protocols` - (Optional) A list of SSL Protocols which should be disabled on this Application Gateway. Possible values are `TLSv1_0`, `TLSv1_1`, `TLSv1_2` and `TLSv1_3`.
- - `min_protocol_version` - (Optional) The minimal TLS version. Possible values are `TLSv1_0`, `TLSv1_1`, `TLSv1_2` and `TLSv1_3`.
+ - `min_protocol_version` - (Optional) The minimal TLS version. Possible values are `TLSv1_2` or `TLSv1_3` Default to `TLSv1_2` .
  - `policy_name` - (Optional) The Name of the Policy e.g. AppGwSslPolicy20170401S. Required if `policy_type` is set to `Predefined`. Possible values can change over time and are published here <https://docs.microsoft.com/azure/application-gateway/application-gateway-ssl-policy-overview>. Not compatible with `disabled_protocols`.
  - `policy_type` - (Optional) The Type of the Policy. Possible values are `Predefined`, `Custom` and `CustomV2`.
 DESCRIPTION
+
+  validation {
+
+    condition = try(alltrue([
+      for _, profile in var.ssl_profile : try(profile.ssl_policy.policy_type == null ? false : contains(["Predefined", "Custom", "CustomV2"], profile.ssl_policy.policy_type), true)
+    ]), true)
+    error_message = "Each ssl_profile's policy_type must be one of: Predefined, Custom, or CustomV2."
+  }
+  validation {
+    condition = try(alltrue([
+      for _, profile in var.ssl_profile : try(profile.ssl_policy.min_protocol_version == null ? false : contains(["TLSv1_2", "TLSv1_3"], profile.ssl_policy.min_protocol_version), true)
+    ]), true)
+    error_message = "Each ssl_profile's min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
+  }
 }
 
 variable "tags" {

@@ -1,7 +1,7 @@
 #----------About Terraform Module  -------------
 # Azure Application Gateway Terraform Module
-# Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications. 
-#----------All Required Provider Section----------- 
+# Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications.
+#----------All Required Provider Section-----------
 
 #----------Public IP for application gateway-----------
 # The AVM specification generally recommends that resources outside the scope of the resource provider should be supplied by the user.
@@ -337,7 +337,10 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.ssl_profile == null ? {} : var.ssl_profile
 
     content {
-      name = ssl_profile.value.name
+      name                                 = ssl_profile.value.name
+      trusted_client_certificate_names     = ssl_profile.value.trusted_client_certificate_names
+      verify_client_cert_issuer_dn         = ssl_profile.value.verify_client_cert_issuer_dn
+      verify_client_certificate_revocation = ssl_profile.value.verify_client_certificate_revocation
 
       dynamic "ssl_policy" {
         for_each = ssl_profile.value.ssl_policy == null ? [] : [ssl_profile.value.ssl_policy]
