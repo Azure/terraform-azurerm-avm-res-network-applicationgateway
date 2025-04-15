@@ -28,14 +28,14 @@ output "http_listeners" {
   value       = azurerm_application_gateway.this.http_listener
 }
 
+output "new_public_ip_address" {
+  description = "The actual public IP address associated with the Public IP resource, if we create a new one."
+  value       = try(azurerm_public_ip.this[0].ip_address, "")
+}
+
 output "probes" {
   description = "Information about health probes configured for the Application Gateway, including their settings."
   value       = azurerm_application_gateway.this.probe
-}
-
-output "public_ip_address" {
-  description = "The actual public IP address associated with the Public IP resource."
-  value       = var.create_public_ip == true ? azurerm_public_ip.this[0].ip_address : var.public_ip_resource_id
 }
 
 output "public_ip_id" {
