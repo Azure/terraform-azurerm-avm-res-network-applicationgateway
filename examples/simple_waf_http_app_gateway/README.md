@@ -104,7 +104,6 @@ module "application_gateway" {
     appGatewayBackendPool = {
       name         = "appGatewayBackendPool"
       ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
     }
   }
 

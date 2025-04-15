@@ -65,7 +65,7 @@ The following requirements are needed by this module:
 
 - <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.71)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (>= 3.117, < 5.0)
 
 - <a name="requirement_modtm"></a> [modtm](#requirement\_modtm) (~> 0.3)
 
@@ -746,7 +746,7 @@ Type:
 object({
     cipher_suites        = optional(list(string))
     disabled_protocols   = optional(list(string))
-    min_protocol_version = optional(string) # Default to TLSv1_2
+    min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
     policy_name          = optional(string)
     policy_type          = optional(string)
   })
@@ -759,7 +759,7 @@ Default: `null`
 Description: - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
 - `trusted_client_certificate_names` - (Optional) A list of Trusted Client Certificate names that will be used to authenticate requests from clients.
 - `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to false.
-- `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible values include: 'None', 'OCSP'. Defaults to 'None'
+- `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible values include:'OCSP'.
 ---
 `ssl_policy` block supports the following:
 - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
@@ -779,7 +779,7 @@ map(object({
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
-      min_protocol_version = optional(string) # Default to TLSv1_2
+      min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
       policy_name          = optional(string)
       policy_type          = optional(string)
     }))

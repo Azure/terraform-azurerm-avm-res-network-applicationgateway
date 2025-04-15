@@ -616,7 +616,7 @@ variable "ssl_policy" {
   type = object({
     cipher_suites        = optional(list(string))
     disabled_protocols   = optional(list(string))
-    min_protocol_version = optional(string) # Default to TLSv1_2
+    min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
     policy_name          = optional(string)
     policy_type          = optional(string)
   })
@@ -630,15 +630,12 @@ variable "ssl_policy" {
 DESCRIPTION
 
   validation {
-    condition = var.ssl_policy == null || (
-      can(var.ssl_policy.policy_type) ? contains(["Predefined", "Custom", "CustomV2"], var.ssl_policy.policy_type) : true
-    )
+    condition     = try(var.ssl_policy.policy_type == null ? false : contains(["Predefined", "Custom", "CustomV2"], var.ssl_policy.policy_type), true)
     error_message = "policy_type must be one of: Predefined, Custom, or CustomV2."
   }
   validation {
-    condition = var.ssl_policy == null || (
-      can(var.ssl_policy.min_protocol_version) ? contains(["TLSv1_2", "TLSv1_3"], var.ssl_policy.min_protocol_version) : true
-    )
+
+    condition     = try(var.ssl_policy.min_protocol_version == null ? false : contains(["TLSv1_2", "TLSv1_3"], var.ssl_policy.min_protocol_version), true)
     error_message = "min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
   }
 }
@@ -652,7 +649,7 @@ variable "ssl_profile" {
     ssl_policy = optional(object({
       cipher_suites        = optional(list(string))
       disabled_protocols   = optional(list(string))
-      min_protocol_version = optional(string) # Default to TLSv1_2
+      min_protocol_version = optional(string, "TLSv1_2") # Default to TLSv1_2
       policy_name          = optional(string)
       policy_type          = optional(string)
     }))
@@ -662,7 +659,7 @@ variable "ssl_profile" {
  - `name` - (Required) The name of the SSL Profile that is unique within this Application Gateway.
  - `trusted_client_certificate_names` - (Optional) A list of Trusted Client Certificate names that will be used to authenticate requests from clients.
  - `verify_client_cert_issuer_dn` - (Optional) Should client certificate issuer DN be verified? Defaults to false.
- - `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible values include: 'None', 'OCSP'. Defaults to 'None'
+ - `verify_client_certificate_revocation` - (Optional) Specify the method to check client certificate revocation status. Possible values include:'OCSP'.
  ---
  `ssl_policy` block supports the following:
  - `cipher_suites` - (Optional) A List of accepted cipher suites. Possible values are: `TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_128_CBC_SHA256`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA`, `TLS_DHE_DSS_WITH_AES_256_CBC_SHA256`, `TLS_DHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_DHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_DHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256`, `TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA`, `TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384`, `TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384`, `TLS_RSA_WITH_3DES_EDE_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA`, `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_128_GCM_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA`, `TLS_RSA_WITH_AES_256_CBC_SHA256` and `TLS_RSA_WITH_AES_256_GCM_SHA384`.
@@ -673,21 +670,16 @@ variable "ssl_profile" {
 DESCRIPTION
 
   validation {
-    condition = var.ssl_profile == null ? true : alltrue([
-      for profile in values(var.ssl_profile) :
-      !can(profile.ssl_policy) || (
-        can(profile.ssl_policy.policy_type) ? contains(["Predefined", "Custom", "CustomV2"], profile.ssl_policy.policy_type) : true
-      )
-    ])
+
+    condition = try(alltrue([
+      for _, profile in var.ssl_profile : try(profile.ssl_policy.policy_type == null ? false : contains(["Predefined", "Custom", "CustomV2"], profile.ssl_policy.policy_type), true)
+    ]), true)
     error_message = "Each ssl_profile's policy_type must be one of: Predefined, Custom, or CustomV2."
   }
   validation {
-    condition = var.ssl_profile == null ? true : alltrue([
-      for profile in values(var.ssl_profile) :
-      !can(profile.ssl_policy) || (
-        can(profile.ssl_policy.min_protocol_version) ? contains(["TLSv1_2", "TLSv1_3"], profile.ssl_policy.min_protocol_version) : true
-      )
-    ])
+    condition = try(alltrue([
+      for _, profile in var.ssl_profile : try(profile.ssl_policy.min_protocol_version == null ? false : contains(["TLSv1_2", "TLSv1_3"], profile.ssl_policy.min_protocol_version), true)
+    ]), true)
     error_message = "Each ssl_profile's min_protocol_version must be TLSv1_2 or TLSv1_3 if specified."
   }
 }

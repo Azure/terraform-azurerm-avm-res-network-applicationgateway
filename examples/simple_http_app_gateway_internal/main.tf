@@ -91,8 +91,6 @@ module "application_gateway" {
   backend_address_pools = {
     pool-1 = {
       name = "Pool1"
-      # ip_addresses = ["100.64.2.4", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
     }
 
   }

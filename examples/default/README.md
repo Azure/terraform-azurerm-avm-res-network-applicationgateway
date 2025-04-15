@@ -94,14 +94,15 @@ module "application_gateway" {
   # Mandatory Input
   backend_http_settings = {
     appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
+      name = "appGatewayBackendHttpSettings"
+      #Github issue #55 allow custom port for the backend
       port                  = 80
       protocol              = "Http"
       cookie_based_affinity = "Disabled"
       path                  = "/"
       request_timeout       = 30
-      #Github issue #55 allow custom port for the backend
-      #  port = 8080
+
+
       connection_draining = {
         enable_connection_draining = true
         drain_timeout_sec          = 300
