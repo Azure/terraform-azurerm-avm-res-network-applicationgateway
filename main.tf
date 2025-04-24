@@ -76,9 +76,13 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  frontend_ip_configuration {
-    name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
-    public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
+  dynamic "frontend_ip_configuration" {
+    for_each = var.create_public_ip == false && var.public_ip_resource_id == null ? [] : [1]
+
+    content {
+      name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
+      public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
+    }
   }
   # Private Frontend IP configuration
   dynamic "frontend_ip_configuration" {
