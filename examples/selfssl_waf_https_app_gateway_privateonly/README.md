@@ -1,5 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
+
 # Application Gateway with Self-Signed SSL (HTTPS)
+
 In this scenario, self-signed SSL certificates are utilized to secure traffic to HTTPS. You'll need to configure SSL certificates and redirection rules.
 
 # Default example
@@ -8,7 +10,7 @@ This deploys the module in its simplest form.
 
 ```hcl
 #----------Testing Use Case  -------------
-# Application Gateway + WAF Enable routing traffic from your application.
+# Application Gateway + WAF Enable routing traffic from your application. Private IP Only.
 # Assume that your Application runing the scale set contains two virtual machine instances.
 # The scale set is added to the default backend pool need to updated with IP or FQDN of the application gateway.
 # The example input from https://learn.microsoft.com/en-us/azure/application-gateway/tutorial-manage-web-traffic-cli
@@ -58,7 +60,8 @@ module "application_gateway" {
   # version = "0.1.0"
 
   # pre-requisites resources input required for the module
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  #public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
+  create_public_ip    = false
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
 
@@ -67,8 +70,16 @@ module "application_gateway" {
 
   # provide Application gateway name
   name = module.naming.application_gateway.name_unique
+
+  # Required for Frontend Private IP endpoint testing
+  frontend_ip_configuration_private = {
+    name                          = "private-ip-custom-name"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "10.90.3.10"
+  }
+
   gateway_ip_configuration = {
-    subnet_id = azurerm_subnet.backend.id
+    subnet_id = azurerm_subnet.private_ip_test.id
   }
 
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
@@ -85,6 +96,7 @@ module "application_gateway" {
     min_capacity = 1
     max_capacity = 2
   }
+
 
   # frontend port configuration block for the application gateway
   # WAF : Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
@@ -126,10 +138,11 @@ module "application_gateway" {
   # Mandatory Input
   http_listeners = {
     appGatewayHttpListener = {
-      name                 = "appGatewayHttpListener"
-      host_name            = null
-      frontend_port_name   = "frontend-port-443"
-      ssl_certificate_name = "app-gateway-cert"
+      name                           = "appGatewayHttpListener"
+      frontend_ip_configuration_name = "private-ip-custom-name"
+      host_name                      = null
+      frontend_port_name             = "frontend-port-443"
+      ssl_certificate_name           = "app-gateway-cert"
     }
     # # Add more http listeners as needed
   }
@@ -210,18 +223,20 @@ module "application_gateway" {
 
 
 
+
 ```
 
 <!-- markdownlint-disable MD033 -->
+
 ## Requirements
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement_terraform) (>= 1.9, < 2.0)
 
-- <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
+- <a name="requirement_azurerm"></a> [azurerm](#requirement_azurerm) (~> 4.0)
 
-- <a name="requirement_random"></a> [random](#requirement\_random) (>= 3.5.0, < 4.0.0)
+- <a name="requirement_random"></a> [random](#requirement_random) (>= 3.5.0, < 4.0.0)
 
 ## Resources
 
@@ -240,6 +255,7 @@ The following resources are used by this module:
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 
 <!-- markdownlint-disable MD013 -->
+
 ## Required Inputs
 
 No required inputs.
@@ -248,7 +264,7 @@ No required inputs.
 
 The following input variables are optional (have default values):
 
-### <a name="input_enable_telemetry"></a> [enable\_telemetry](#input\_enable\_telemetry)
+### <a name="input_enable_telemetry"></a> [enable_telemetry](#input_enable_telemetry)
 
 Description: This variable controls whether or not telemetry is enabled for the module.  
 For more information see https://aka.ms/avm/telemetryinfo.  
@@ -262,59 +278,59 @@ Default: `true`
 
 The following outputs are exported:
 
-### <a name="output_backend_subnet_id"></a> [backend\_subnet\_id](#output\_backend\_subnet\_id)
+### <a name="output_backend_subnet_id"></a> [backend_subnet_id](#output_backend_subnet_id)
 
 Description: ID of the Backend Subnet
 
-### <a name="output_backend_subnet_name"></a> [backend\_subnet\_name](#output\_backend\_subnet\_name)
+### <a name="output_backend_subnet_name"></a> [backend_subnet_name](#output_backend_subnet_name)
 
 Description: Name of the Backend Subnet
 
-### <a name="output_frontend_subnet_id"></a> [frontend\_subnet\_id](#output\_frontend\_subnet\_id)
+### <a name="output_frontend_subnet_id"></a> [frontend_subnet_id](#output_frontend_subnet_id)
 
 Description: ID of the Frontend Subnet
 
-### <a name="output_frontend_subnet_name"></a> [frontend\_subnet\_name](#output\_frontend\_subnet\_name)
+### <a name="output_frontend_subnet_name"></a> [frontend_subnet_name](#output_frontend_subnet_name)
 
 Description: Name of the Frontend Subnet
 
-### <a name="output_log_analytics_workspace_id"></a> [log\_analytics\_workspace\_id](#output\_log\_analytics\_workspace\_id)
+### <a name="output_log_analytics_workspace_id"></a> [log_analytics_workspace_id](#output_log_analytics_workspace_id)
 
 Description: ID of the Azure Log Analytics Workspace
 
-### <a name="output_log_analytics_workspace_name"></a> [log\_analytics\_workspace\_name](#output\_log\_analytics\_workspace\_name)
+### <a name="output_log_analytics_workspace_name"></a> [log_analytics_workspace_name](#output_log_analytics_workspace_name)
 
 Description: Name of the Azure Log Analytics Workspace
 
-### <a name="output_private_ip_test_subnet_id"></a> [private\_ip\_test\_subnet\_id](#output\_private\_ip\_test\_subnet\_id)
+### <a name="output_private_ip_test_subnet_id"></a> [private_ip_test_subnet_id](#output_private_ip_test_subnet_id)
 
 Description: ID of the Private IP Test Subnet
 
-### <a name="output_private_ip_test_subnet_name"></a> [private\_ip\_test\_subnet\_name](#output\_private\_ip\_test\_subnet\_name)
+### <a name="output_private_ip_test_subnet_name"></a> [private_ip_test_subnet_name](#output_private_ip_test_subnet_name)
 
 Description: Name of the Private IP Test Subnet
 
-### <a name="output_resource_group_id"></a> [resource\_group\_id](#output\_resource\_group\_id)
+### <a name="output_resource_group_id"></a> [resource_group_id](#output_resource_group_id)
 
 Description: ID of the Azure Resource Group
 
-### <a name="output_resource_group_name"></a> [resource\_group\_name](#output\_resource\_group\_name)
+### <a name="output_resource_group_name"></a> [resource_group_name](#output_resource_group_name)
 
 Description: Name of the Azure Resource Group
 
-### <a name="output_virtual_network_id"></a> [virtual\_network\_id](#output\_virtual\_network\_id)
+### <a name="output_virtual_network_id"></a> [virtual_network_id](#output_virtual_network_id)
 
 Description: ID of the Azure Virtual Network
 
-### <a name="output_virtual_network_name"></a> [virtual\_network\_name](#output\_virtual\_network\_name)
+### <a name="output_virtual_network_name"></a> [virtual_network_name](#output_virtual_network_name)
 
 Description: Name of the Azure Virtual Network
 
-### <a name="output_workload_subnet_id"></a> [workload\_subnet\_id](#output\_workload\_subnet\_id)
+### <a name="output_workload_subnet_id"></a> [workload_subnet_id](#output_workload_subnet_id)
 
 Description: ID of the Workload Subnet
 
-### <a name="output_workload_subnet_name"></a> [workload\_subnet\_name](#output\_workload\_subnet\_name)
+### <a name="output_workload_subnet_name"></a> [workload_subnet_name](#output_workload_subnet_name)
 
 Description: Name of the Workload Subnet
 
@@ -322,26 +338,28 @@ Description: Name of the Workload Subnet
 
 The following Modules are called:
 
-### <a name="module_application_gateway"></a> [application\_gateway](#module\_application\_gateway)
+### <a name="module_application_gateway"></a> [application_gateway](#module_application_gateway)
 
 Source: ../../
 
 Version:
 
-### <a name="module_naming"></a> [naming](#module\_naming)
+### <a name="module_naming"></a> [naming](#module_naming)
 
 Source: Azure/naming/azurerm
 
 Version: 0.3.0
 
-### <a name="module_regions"></a> [regions](#module\_regions)
+### <a name="module_regions"></a> [regions](#module_regions)
 
 Source: Azure/regions/azurerm
 
 Version: >= 0.3.0
 
 <!-- markdownlint-disable-next-line MD041 -->
+
 ## Data Collection
 
 The software may collect information about you and your use of the software and send it to Microsoft. Microsoft may use this information to provide services and improve our products and services. You may turn off the telemetry as described in the repository. There are also some features in the software that may enable you and Microsoft to collect data from users of your applications. If you use these features, you must comply with applicable law, including providing appropriate notices to users of your applications together with a copy of Microsoft’s privacy statement. Our privacy statement is located at <https://go.microsoft.com/fwlink/?LinkID=824704>. You can learn more about data collection and use in the help documentation and our privacy statement. Your use of the software operates as your consent to these practices.
+
 <!-- END_TF_DOCS -->
