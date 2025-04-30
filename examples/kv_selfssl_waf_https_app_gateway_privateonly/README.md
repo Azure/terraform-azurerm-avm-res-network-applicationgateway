@@ -51,11 +51,7 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
   min = 0
 }
-# Private Link Configuration for Application Gateway
-data "azurerm_network_interface" "private_endpoint_nic" {
-  name                = azurerm_private_endpoint.example.network_interface[0].name
-  resource_group_name = azurerm_resource_group.rg_group.name
-}
+
 
 module "application_gateway" {
   source = "../../"
@@ -294,7 +290,6 @@ The following resources are used by this module:
 - [azurerm_web_application_firewall_policy.azure_waf](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/web_application_firewall_policy) (resource)
 - [random_integer.region_index](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/integer) (resource)
 - [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) (data source)
-- [azurerm_network_interface.private_endpoint_nic](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/network_interface) (data source)
 
 <!-- markdownlint-disable MD013 -->
 ## Required Inputs

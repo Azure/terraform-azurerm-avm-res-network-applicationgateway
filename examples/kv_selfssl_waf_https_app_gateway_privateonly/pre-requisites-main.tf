@@ -250,7 +250,8 @@ resource "azurerm_nat_gateway" "nat_gateway" {
   resource_group_name     = azurerm_resource_group.rg_group.name
   idle_timeout_in_minutes = 10
   sku_name                = "Standard"
-  zones                   = ["1"] //Only one zone can be specified for this resource.
+  #Only one zone can be specified for this resource.
+  zones = ["1"]
 }
 
 # Create a Public IP for NAT Gateway
@@ -260,7 +261,8 @@ resource "azurerm_public_ip" "nat_gateway_public_ip" {
   name                = module.naming.public_ip.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "Standard"
-  zones               = ["1"] //Public IP Prefix must have same zones. Standard SKU NAT Gateway
+  #Public IP Prefix must have same zones. Standard SKU NAT Gateway
+  zones = ["1"]
 }
 
 # Associate NAT Gateway with the nat_subnet

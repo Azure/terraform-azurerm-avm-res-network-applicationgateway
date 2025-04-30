@@ -45,11 +45,7 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
   min = 0
 }
-# Private Link Configuration for Application Gateway
-data "azurerm_network_interface" "private_endpoint_nic" {
-  name                = azurerm_private_endpoint.example.network_interface[0].name
-  resource_group_name = azurerm_resource_group.rg_group.name
-}
+
 
 module "application_gateway" {
   source = "../../"
