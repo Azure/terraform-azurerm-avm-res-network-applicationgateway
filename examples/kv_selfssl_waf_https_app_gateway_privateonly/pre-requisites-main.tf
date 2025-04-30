@@ -30,6 +30,13 @@ resource "azurerm_subnet" "backend" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
+resource "azurerm_subnet" "nat_subnet" {
+  address_prefixes     = ["10.90.6.0/24"]
+  name                 = "nat_subnet"
+  resource_group_name  = azurerm_resource_group.rg_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+}
+
 # Required for to deploy VMSS and Web Server to host application
 resource "azurerm_subnet" "workload" {
   address_prefixes     = ["10.90.2.0/24"]
@@ -45,206 +52,7 @@ resource "azurerm_subnet" "private_ip_test" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   service_endpoints    = ["Microsoft.KeyVault"]
-  # private_endpoint_network_policies = "Disabled"
 }
-
-
-
-
-#-----------------------------------------------------------------
-#  Enable these to deploy sample application to VMSS 
-#  Enable these code to test private IP endpoint via bastion host  
-#-----------------------------------------------------------------
-
-# # Required bastion host subnet to test private IP endpoint
-# resource "azurerm_subnet" "bastion" {
-#   name                 = "AzureBastionSubnet"
-#   resource_group_name  = azurerm_resource_group.rg_group.name
-#   virtual_network_name = azurerm_virtual_network.vnet.name
-#   address_prefixes     = ["10.90.4.0/24"] # Adjust the IP address prefix as needed
-# }
-
-resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
-  location            = azurerm_resource_group.rg_group.location
-  name                = module.naming.log_analytics_workspace.name_unique
-  resource_group_name = azurerm_resource_group.rg_group.name
-  sku                 = "PerGB2018"
-}
-
-#-----------------------------------------------------------------
-#  Enable these to deploy sample application to VMSS 
-#  Enable these code to test private IP endpoint via bastion host  
-#-----------------------------------------------------------------
-
-# resource "azurerm_windows_virtual_machine" "bastion" {
-#   name                  = module.naming.windows_virtual_machine.name_unique
-#   resource_group_name   = azurerm_resource_group.rg_group.name
-#   location              = azurerm_resource_group.rg_group.location
-#   network_interface_ids = [azurerm_network_interface.bastion_win_vm_nic.id]
-#   size                  = "Standard_DS1_v2"
-#   os_disk {
-#     # name              = "bastion-os-disk"
-#     caching              = "ReadWrite"
-#     storage_account_type = "Premium_LRS"
-#   }
-#   source_image_reference {
-#     publisher = "MicrosoftWindowsDesktop"
-#     offer     = "Windows-11"
-#     sku       = "win11-22h2-pro"
-#     version   = "latest"
-#     //version = "22621.2428.231001"
-#   }
-#   admin_username = "adminuser"
-#   admin_password = "YourPasswordHere123!" # Replace with your actual password
-# }
-
-# resource "azurerm_network_interface" "bastion_win_vm_nic" {
-#   name                = module.naming.network_interface.name_unique
-#   resource_group_name = azurerm_resource_group.rg_group.name
-#   location            = azurerm_resource_group.rg_group.location
-
-#   ip_configuration {
-#     name                          = module.naming.network_interface.name_unique
-#     subnet_id                     = azurerm_subnet.private_ip_test.id
-#     private_ip_address_allocation = "Dynamic"
-#   }
-# }
-
-# resource "azurerm_public_ip" "bastion_public_ip" {
-#   name                = module.naming.public_ip.name_unique
-#   location            = azurerm_resource_group.rg_group.location
-#   resource_group_name = azurerm_resource_group.rg_group.name
-#   allocation_method   = "Static" # You can choose Dynamic if preferred
-#   sku                 = "Standard"
-# }
-
-# # Create Azure Bastion Host
-# resource "azurerm_bastion_host" "bastion_host" {
-#   name                = module.naming.bastion_host.name_unique
-#   location            = azurerm_resource_group.rg_group.location
-#   resource_group_name = azurerm_resource_group.rg_group.name
-#   scale_units         = 2
-
-#   ip_configuration {
-#     name                 = "bastion-Ip-configuration"
-#     subnet_id            = azurerm_subnet.bastion.id
-#     public_ip_address_id = azurerm_public_ip.bastion_public_ip.id
-#   }
-# }
-
-
-# resource "azurerm_linux_virtual_machine_scale_set" "app_gateway_web_vmss" {
-#   name                            = module.naming.linux_virtual_machine_scale_set.name_unique
-#   resource_group_name             = azurerm_resource_group.rg_group.name
-#   location                        = azurerm_resource_group.rg_group.location
-#   sku                             = "Standard_DS1_v2"
-#   instances                       = 2
-#   admin_username                  = "azureuser"
-#   admin_password                  = "YourComplexPassword123!" # Set your desired password here
-#   disable_password_authentication = false
-
-#   #   admin_ssh_key {
-#   #     username   = "azureuser"
-#   #     public_key = file("${path.module}/ssh-keys/terraform-azure.pub")
-#   #   }
-
-#   source_image_reference {
-#     publisher = "RedHat"
-#     offer     = "RHEL"
-#     sku       = "83-gen2"
-#     version   = "latest"
-
-#   }
-
-#   os_disk {
-#     storage_account_type = "Premium_LRS"
-#     caching              = "ReadWrite"
-#   }
-
-#   # upgrade_mode = "Automatic"
-
-#   network_interface {
-#     name    = "app-vmss-nic"
-#     primary = true
-
-#     ip_configuration {
-#       name                                         = "internal"
-#       primary                                      = true
-#       subnet_id                                    = azurerm_subnet.workload.id
-#       application_gateway_backend_address_pool_ids = module.application-gateway.backend_address_pools[*].id
-#     }
-#   }
-#   custom_data = base64encode(local.webvm_custom_data)
-# }
-
-# # Create Network Security Group (NSG)
-# resource "azurerm_network_security_group" "ag_subnet_nsg" {
-#   name                = module.naming.network_security_group.name_unique
-#   resource_group_name = azurerm_resource_group.rg_group.name
-#   location            = azurerm_resource_group.rg_group.location
-# }
-
-# # Associate NSG and Subnet
-# resource "azurerm_subnet_network_security_group_association" "ag_subnet_nsg_associate" {
-#   # Every NSG Rule Association will disassociate NSG from Subnet and Associate it, so we associate it only after NSG is completely created 
-#   #- Azure Provider Bug https://github.com/terraform-providers/terraform-provider-azurerm/issues/354  
-#   subnet_id                 = azurerm_subnet.workload.id
-#   network_security_group_id = azurerm_network_security_group.ag_subnet_nsg.id
-
-# }
-
-# # Create NSG Rules
-# ## Locals Block for Security Rules
-# locals {
-#   ag_inbound_ports_map = {
-#     "100" : {
-#       destination_port = "80",
-#       source_address   = "*" # Add the source address prefix here
-#       access           = "Allow"
-#     },
-#     "140" : {
-#       destination_port = "81",
-#       source_address   = "*" # Add the source address prefix here
-#       access           = "Allow"
-#     },
-#     "110" : {
-#       destination_port = "443",
-#       source_address   = "*" # Add the source address prefix here
-#       access           = "Allow"
-#     },
-#     "130" : {
-#       destination_port = "65200-65535",
-#       source_address   = "GatewayManager" # Add the source address prefix here
-#       access           = "Allow"
-#     }
-#     "150" : {
-#       destination_port = "8080",
-#       source_address   = "AzureLoadBalancer" # Add the source address prefix here
-#       access           = "Allow"
-#     }
-#     "4096" : {
-#       destination_port = "8080",
-#       source_address   = "Internet" # Add the source address prefix here
-#       access           = "Deny"
-#     }
-#   }
-# }
-
-# ## NSG Inbound Rule for Azure Application Gateway Subnets
-# resource "azurerm_network_security_rule" "ag_nsg_rule_inbound" {
-#   for_each                    = local.ag_inbound_ports_map
-#   name                        = "Rule-Port-${each.value.destination_port}-${each.value.access}"
-#   priority                    = each.key
-#   direction                   = "Inbound"
-#   access                      = each.value.access
-#   protocol                    = "Tcp"
-#   source_port_range           = "*"
-#   destination_port_range      = each.value.destination_port
-#   source_address_prefix       = each.value.source_address
-#   destination_address_prefix  = "*"
-#   resource_group_name         = azurerm_resource_group.rg_group.name
-#   network_security_group_name = azurerm_network_security_group.ag_subnet_nsg.name
-# }
 
 # Datasource-1: To get Azure Tenant Id
 data "azurerm_client_config" "current" {}
@@ -419,4 +227,159 @@ resource "azurerm_web_application_firewall_policy" "azure_waf" {
     mode                        = "Prevention"
     request_body_check          = true
   }
+}
+
+resource "azurerm_private_endpoint" "example" {
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.private_endpoint.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+  subnet_id           = azurerm_subnet.backend.id
+
+  private_service_connection {
+    is_manual_connection           = false
+    name                           = "example-connection"
+    private_connection_resource_id = azurerm_key_vault.keyvault.id
+    subresource_names              = ["vault"]
+  }
+}
+
+# Deploy NAT Gateway
+resource "azurerm_nat_gateway" "nat_gateway" {
+  location                = azurerm_resource_group.rg_group.location
+  name                    = module.naming.nat_gateway.name_unique
+  resource_group_name     = azurerm_resource_group.rg_group.name
+  idle_timeout_in_minutes = 10
+  sku_name                = "Standard"
+  zones                   = ["1"] //Only one zone can be specified for this resource.
+}
+
+# Create a Public IP for NAT Gateway
+resource "azurerm_public_ip" "nat_gateway_public_ip" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.public_ip.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+  sku                 = "Standard"
+  zones               = ["1"] //Public IP Prefix must have same zones. Standard SKU NAT Gateway
+}
+
+# Associate NAT Gateway with the nat_subnet
+resource "azurerm_nat_gateway_public_ip_association" "nat_gateway_association" {
+  nat_gateway_id       = azurerm_nat_gateway.nat_gateway.id
+  public_ip_address_id = azurerm_public_ip.nat_gateway_public_ip.id
+}
+
+# Create a Network Security Group (NSG)
+resource "azurerm_network_security_group" "nat_subnet_nsg" {
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.network_security_group.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+}
+
+#Add an NSG Rule to Allow Outbound Internet Traffic
+
+# Create a Network Security Group (NSG) for the Application Gateway Subnet
+resource "azurerm_network_security_group" "private_ip_test_nsg" {
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.network_security_group.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+}
+
+# Inbound Rule: Allow Azure Load Balancer Probes
+resource "azurerm_network_security_rule" "allow_inbound_azure_load_balancer" {
+  access                      = "Allow"
+  direction                   = "Inbound"
+  name                        = "AllowInboundAzureLoadBalancer"
+  network_security_group_name = azurerm_network_security_group.private_ip_test_nsg.name
+  priority                    = 100
+  protocol                    = "*"
+  resource_group_name         = azurerm_resource_group.rg_group.name
+  destination_address_prefix  = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "AzureLoadBalancer"
+  source_port_range           = "*"
+
+  depends_on = [azurerm_network_security_group.private_ip_test_nsg]
+}
+
+# Inbound Rule: Allow Traffic from Trusted Sources
+resource "azurerm_network_security_rule" "allow_inbound_trusted_sources" {
+  access                      = "Allow"
+  direction                   = "Inbound"
+  name                        = "AllowInboundTrustedSources"
+  network_security_group_name = azurerm_network_security_group.private_ip_test_nsg.name
+  priority                    = 200
+  protocol                    = "*"
+  resource_group_name         = azurerm_resource_group.rg_group.name
+  destination_address_prefix  = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = azurerm_public_ip.nat_gateway_public_ip.ip_address # Replace with your trusted IP range
+  source_port_range           = "*"
+
+  depends_on = [azurerm_network_security_rule.allow_inbound_azure_load_balancer]
+}
+
+# Outbound Rule: Allow Outbound Internet Traffic
+resource "azurerm_network_security_rule" "allow_outbound_internet" {
+  access                      = "Allow"
+  direction                   = "Outbound"
+  name                        = "AllowOutboundInternet"
+  network_security_group_name = azurerm_network_security_group.private_ip_test_nsg.name
+  priority                    = 300
+  protocol                    = "*"
+  resource_group_name         = azurerm_resource_group.rg_group.name
+  destination_address_prefix  = "Internet"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  source_port_range           = "*"
+
+  depends_on = [azurerm_network_security_rule.allow_inbound_trusted_sources]
+}
+
+# Outbound Rule: Allow Outbound Traffic to Azure Services
+resource "azurerm_network_security_rule" "allow_outbound_azure_services" {
+  access                      = "Allow"
+  direction                   = "Outbound"
+  name                        = "AllowOutboundAzureServices"
+  network_security_group_name = azurerm_network_security_group.private_ip_test_nsg.name
+  priority                    = 400
+  protocol                    = "*"
+  resource_group_name         = azurerm_resource_group.rg_group.name
+  destination_address_prefix  = "AzureCloud"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  source_port_range           = "*"
+
+  depends_on = [azurerm_network_security_rule.allow_outbound_internet]
+}
+
+# Associate the NSG with the Application Gateway Subnet
+resource "azurerm_subnet_network_security_group_association" "private_ip_test_nsg_association" {
+  network_security_group_id = azurerm_network_security_group.private_ip_test_nsg.id
+  subnet_id                 = azurerm_subnet.private_ip_test.id
+
+  depends_on = [azurerm_network_security_rule.allow_outbound_azure_services]
+}
+
+# Create a Route Table
+resource "azurerm_route_table" "nat_gateway_route_table" {
+  location            = azurerm_resource_group.rg_group.location
+  name                = module.naming.route_table.name_unique
+  resource_group_name = azurerm_resource_group.rg_group.name
+}
+
+# Add a Route for Internet Traffic
+resource "azurerm_route" "nat_gateway_route" {
+  address_prefix         = "0.0.0.0/0"
+  name                   = "InternetRoute"
+  next_hop_type          = "VirtualAppliance"
+  resource_group_name    = azurerm_resource_group.rg_group.name
+  route_table_name       = azurerm_route_table.nat_gateway_route_table.name
+  next_hop_in_ip_address = "10.90.6.4"
+}
+
+# Associate Route Table with Application Gateway Subnet
+resource "azurerm_subnet_route_table_association" "private_ip_test_route_table_association" {
+  route_table_id = azurerm_route_table.nat_gateway_route_table.id
+  subnet_id      = azurerm_subnet.private_ip_test.id
 }

@@ -21,13 +21,15 @@ terraform {
 }
 
 provider "azurerm" {
+  resource_provider_registrations = "core"
   features {}
+
 }
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.0"
   suffix  = ["agw"]
 }
 
@@ -43,6 +45,11 @@ resource "random_integer" "region_index" {
   max = length(module.regions.regions) - 1
   min = 0
 }
+# Private Link Configuration for Application Gateway
+data "azurerm_network_interface" "private_endpoint_nic" {
+  name                = azurerm_private_endpoint.example.network_interface[0].name
+  resource_group_name = azurerm_resource_group.rg_group.name
+}
 
 module "application_gateway" {
   source = "../../"
@@ -50,15 +57,16 @@ module "application_gateway" {
   # version = "0.1.0"
 
   # pre-requisites resources input required for the module
-  #public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
   create_public_ip    = false
   resource_group_name = azurerm_resource_group.rg_group.name
   location            = azurerm_resource_group.rg_group.location
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
+
   enable_telemetry = var.enable_telemetry
 
   # provide Application gateway name
   name = module.naming.application_gateway.name_unique
+
+  #110 Frontend IP Configuration problem for AGW in private mode
 
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
@@ -136,7 +144,6 @@ module "application_gateway" {
     # # Add more http listeners as needed
   }
 
-
   # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
   # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
   # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
@@ -200,6 +207,22 @@ module "application_gateway" {
     }
   }
 
+  # Private Link Configuration for Application Gateway
+  #   private_link_configuration = [
+  #   {
+  #     name = "pl-config-1"
+  #     ip_configuration = [
+  #       {
+  #         name                          = "ipconfig1"
+  #         primary                       = true
+  #         private_ip_address_allocation = "Dynamic"
+  #         subnet_id                     = azurerm_subnet.backend.id
+  #         private_ip_address            = null
+  #       }
+  #     ]
+  #   }
+  # ]
+
   # Optional Input
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
@@ -210,24 +233,11 @@ module "application_gateway" {
     ]
   }
 
-  diagnostic_settings = {
-    example_setting = {
-      name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
-      workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
-      log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
-    }
-  }
-
   tags = {
     environment = "dev"
     owner       = "application_gateway"
     project     = "AVM"
   }
-
-
 
 }
 

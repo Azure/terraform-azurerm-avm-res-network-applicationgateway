@@ -22,13 +22,15 @@ terraform {
 }
 
 provider "azurerm" {
+  resource_provider_registrations = "core"
   features {}
+
 }
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.0"
   suffix  = ["agw"]
 }
 
@@ -55,14 +57,13 @@ module "application_gateway" {
   location            = azurerm_resource_group.rg_group.location
   enable_telemetry    = var.enable_telemetry
   #88 Option to create a new public IP or use an existing one
-  #public_ip_resource_id = azurerm_public_ip.public_ip.id
+  #110 Frontend IP Configuration problem for AGW in private mode
   create_public_ip = false
 
   # provide Application gateway name
   name = module.naming.application_gateway.name_unique
 
-  #frontend_ip_configuration_public_name = "public-ip-custom-name"
-
+  #110 Frontend IP Configuration problem for AGW in private mode
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
     private_ip_address_allocation = "Static"
