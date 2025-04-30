@@ -262,7 +262,7 @@ resource "azurerm_public_ip" "nat_gateway_public_ip" {
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "Standard"
   #Public IP Prefix must have same zones. Standard SKU NAT Gateway
-  zones = ["1"]
+  zones = [1]
 }
 
 # Associate NAT Gateway with the nat_subnet
