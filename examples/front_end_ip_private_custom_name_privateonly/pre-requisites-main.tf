@@ -53,12 +53,3 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-#To enroll into the public preview for the enhanced Application Gateway network controls via Azure CLI,
-resource "null_resource" "register_feature" {
-  provisioner "local-exec" {
-    command = <<EOT
-      az feature register --namespace Microsoft.Network --name EnableApplicationGatewayNetworkIsolation
-   
-    EOT
-  }
-}

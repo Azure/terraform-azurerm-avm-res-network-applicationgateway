@@ -242,13 +242,3 @@ resource "azurerm_private_endpoint" "example" {
     subresource_names              = ["vault"]
   }
 }
-
-#To enroll into the public preview for the enhanced Application Gateway network controls via Azure CLI,
-resource "null_resource" "register_feature" {
-  provisioner "local-exec" {
-    command = <<EOT
-      az feature register --namespace Microsoft.Network --name EnableApplicationGatewayNetworkIsolation
-   
-    EOT
-  }
-}
