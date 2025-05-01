@@ -26,6 +26,10 @@ For current general availability support, Application Gateway V2 supports the fo
 
 - Private IP and Public IP
 - Public IP only
+- Private Only 
+
+> [!IMPORTANT]  
+> Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private only gateway.
 
 ## Supported Scenarios
 

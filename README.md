@@ -27,6 +27,10 @@ For current general availability support, Application Gateway V2 supports the fo
 
 - Private IP and Public IP
 - Public IP only
+- Private Only
+
+> [!IMPORTANT]  
+> Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private only gateway.
 
 ## Supported Scenarios
 
@@ -234,11 +238,11 @@ Type: `string`
 
 ### <a name="input_request_routing_rules"></a> [request\_routing\_rules](#input\_request\_routing\_rules)
 
-Description: - `backend_address_pool_name` - (Optional) The Name of the Backend Address Pool which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
-- `backend_http_settings_name` - (Optional) The Name of the Backend HTTP Settings Collection which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
+Description: - `backend_address_pool_name` - (Required) The Name of the Backend Address Pool which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
+- `backend_http_settings_name` - (Required) The Name of the Backend HTTP Settings Collection which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
 - `http_listener_name` - (Required) The Name of the HTTP Listener which should be used for this Routing Rule.
 - `name` - (Required) The Name of this Request Routing Rule.
-- `priority` - (Optional) Rule evaluation order can be dictated by specifying an integer value from `1` to `20000` with `1` being the highest priority and `20000` being the lowest priority.
+- `priority` - (Required) Rule evaluation order can be dictated by specifying an integer value from `1` to `20000` with `1` being the highest priority and `20000` being the lowest priority.
 - `redirect_configuration_name` - (Optional) The Name of the Redirect Configuration which should be used for this Routing Rule. Cannot be set if either `backend_address_pool_name` or `backend_http_settings_name` is set.
 - `rewrite_rule_set_name` - (Optional) The Name of the Rewrite Rule Set which should be used for this Routing Rule. Only valid for v2 SKUs.
 - `rule_type` - (Required) The Type of Routing that should be used for this Rule. Possible values are `Basic` and `PathBasedRouting`.
@@ -251,10 +255,10 @@ map(object({
     name                        = string
     rule_type                   = string
     http_listener_name          = string
-    backend_address_pool_name   = optional(string)
-    priority                    = optional(number)
+    backend_address_pool_name   = string
+    priority                    = number
     url_path_map_name           = optional(string)
-    backend_http_settings_name  = optional(string)
+    backend_http_settings_name  = string
     redirect_configuration_name = optional(string)
     rewrite_rule_set_name       = optional(string)
     # Define other attributes as needed
