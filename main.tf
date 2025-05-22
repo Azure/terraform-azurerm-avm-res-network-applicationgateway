@@ -76,7 +76,8 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Private Frontend IP configuration
+  # Private Frontend IP configuration 
+  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public 
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
@@ -192,12 +193,22 @@ resource "azurerm_application_gateway" "this" {
       response_buffering_enabled = global.value.response_buffering_enabled
     }
   }
+  #138 To include System Assigned Managed Identity support along with User Assigned Managed Identities in the identity block
   dynamic "identity" {
-    for_each = local.managed_identities.user_assigned
+    for_each = (
+      var.managed_identities.system_assigned || length(var.managed_identities.user_assigned_resource_ids) > 0
+      ? [1] : []
+    )
 
     content {
-      type         = identity.value.type
-      identity_ids = identity.value.user_assigned_resource_ids
+      type = (
+        var.managed_identities.system_assigned && length(var.managed_identities.user_assigned_resource_ids) > 0 ? "SystemAssigned, UserAssigned" :
+        var.managed_identities.system_assigned ? "SystemAssigned" :
+        "UserAssigned"
+      )
+      identity_ids = (
+        length(var.managed_identities.user_assigned_resource_ids) > 0 ? var.managed_identities.user_assigned_resource_ids : null
+      )
     }
   }
   dynamic "private_link_configuration" {
