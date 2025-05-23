@@ -148,7 +148,8 @@ module "application_gateway" {
   }
 
   # Optional Input
-  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+  # Zone redundancy for the application gateway
+  zones = ["1", "2", "3"]
 
   tags = {
     environment = "dev"

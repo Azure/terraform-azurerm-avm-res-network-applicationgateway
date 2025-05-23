@@ -172,6 +172,9 @@ module "application_gateway" {
     }
   }
 
+  # Zone redundancy for the application gateway
+  zones = ["1", "2", "3"]
+
   tags = {
     environment = "dev"
     owner       = "application_gateway"
