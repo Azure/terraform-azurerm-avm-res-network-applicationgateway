@@ -38,14 +38,14 @@ provider "azurerm" {
 module "naming" {
   source  = "Azure/naming/azurerm"
   version = "0.3.0"
-  suffix  = ["agw"]
+
+  suffix = ["agw"]
 }
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
   source  = "Azure/regions/azurerm"
   version = ">= 0.3.0"
-
 }
 
 # This allows us to randomize the region for the resource group.
@@ -58,28 +58,6 @@ resource "random_integer" "region_index" {
 module "application_gateway" {
   source = "../../"
 
-  # pre-requisites resources input required for the module
-  public_ip_name      = "${module.naming.public_ip.name_unique}-pip"
-  resource_group_name = azurerm_resource_group.rg_group.name
-  location            = azurerm_resource_group.rg_group.location
-
-  # provide Application gateway name
-  name = module.naming.application_gateway.name_unique
-
-  gateway_ip_configuration = {
-    subnet_id = azurerm_subnet.backend.id
-  }
-
-  # frontend port configuration block for the application gateway
-  # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
-  # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
-  frontend_ports = {
-    frontend-port-80 = {
-      name = "frontend-port-80"
-      port = 8080
-    }
-  }
-
   # Backend address pool configuration for the application gateway
   # Mandatory Input
   backend_address_pools = {
@@ -89,7 +67,6 @@ module "application_gateway" {
       #fqdns        = ["example1.com", "example2.com"]
     }
   }
-
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings = {
@@ -111,7 +88,18 @@ module "application_gateway" {
     }
     # Add more http settings as needed
   }
-
+  # frontend port configuration block for the application gateway
+  # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
+  # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
+  frontend_ports = {
+    frontend-port-80 = {
+      name = "frontend-port-80"
+      port = 8080
+    }
+  }
+  gateway_ip_configuration = {
+    subnet_id = azurerm_subnet.backend.id
+  }
   # Http Listerners configuration for the application gateway
   # Mandatory Input
   http_listeners = {
@@ -122,7 +110,9 @@ module "application_gateway" {
     }
     # # Add more http listeners as needed
   }
-
+  location = azurerm_resource_group.rg_group.location
+  # provide Application gateway name
+  name = module.naming.application_gateway.name_unique
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = {
@@ -136,15 +126,16 @@ module "application_gateway" {
     }
     # Add more rules as needed
   }
-
-  # Zone redundancy for the application gateway
-  zones = ["1", "2", "3"]
-
+  resource_group_name = azurerm_resource_group.rg_group.name
+  # pre-requisites resources input required for the module
+  public_ip_name = "${module.naming.public_ip.name_unique}-pip"
   tags = {
     environment = "dev"
     owner       = "application_gateway"
     project     = "AVM"
   }
+  # Zone redundancy for the application gateway
+  zones = ["1", "2", "3"]
 }
 ```
 
