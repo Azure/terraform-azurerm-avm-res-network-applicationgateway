@@ -76,15 +76,8 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  dynamic "frontend_ip_configuration" {
-    for_each = var.create_public_ip == false && var.public_ip_resource_id == null ? [] : [1]
-
-    content {
-      name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
-      public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
-    }
-  }
-  # Private Frontend IP configuration
+  # Private Frontend IP configuration 
+  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public 
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
@@ -94,6 +87,14 @@ resource "azurerm_application_gateway" "this" {
       private_ip_address_allocation   = frontend_ip_configuration.value.private_ip_address_allocation
       private_link_configuration_name = frontend_ip_configuration.value.private_link_configuration_name
       subnet_id                       = var.gateway_ip_configuration.subnet_id
+    }
+  }
+  dynamic "frontend_ip_configuration" {
+    for_each = var.create_public_ip == false && var.public_ip_resource_id == null ? [] : [1]
+
+    content {
+      name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
+      public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
     }
   }
   # Frontend IP Port configuration
@@ -192,12 +193,13 @@ resource "azurerm_application_gateway" "this" {
       response_buffering_enabled = global.value.response_buffering_enabled
     }
   }
+  #138 To include System Assigned Managed Identity support along with User Assigned Managed Identities in the identity block
   dynamic "identity" {
-    for_each = local.managed_identities.user_assigned
+    for_each = local.identity_required ? [1] : []
 
     content {
-      type         = identity.value.type
-      identity_ids = identity.value.user_assigned_resource_ids
+      type         = local.managed_identities.type
+      identity_ids = local.managed_identities.identity_ids
     }
   }
   dynamic "private_link_configuration" {

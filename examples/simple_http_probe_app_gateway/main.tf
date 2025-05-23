@@ -180,6 +180,6 @@ module "application_gateway" {
   # Optional Input
   # WAF :  Deploy Application Gateway in a zone-redundant configuration
   # Zone redundancy for the application gateway ["1", "2", "3"]
-  zones = ["1", "2", "3"] #["1", "2", "3"] # Zone redundancy for the application gateway
+  zones = ["1", "2", "3"]
 
 }

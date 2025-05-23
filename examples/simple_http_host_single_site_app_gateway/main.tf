@@ -125,6 +125,8 @@ module "application_gateway" {
     }
     # Add more rules as needed
   }
+  # Zone redundancy for the application gateway ["1", "2", "3"]
+  zones = ["1", "2", "3"]
 
   tags = {
     environment = "dev"
