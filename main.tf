@@ -195,20 +195,11 @@ resource "azurerm_application_gateway" "this" {
   }
   #138 To include System Assigned Managed Identity support along with User Assigned Managed Identities in the identity block
   dynamic "identity" {
-    for_each = (
-      var.managed_identities.system_assigned || length(var.managed_identities.user_assigned_resource_ids) > 0
-      ? [1] : []
-    )
+    for_each = local.identity_required ? [1] : []
 
     content {
-      type = (
-        var.managed_identities.system_assigned && length(var.managed_identities.user_assigned_resource_ids) > 0 ? "SystemAssigned, UserAssigned" :
-        var.managed_identities.system_assigned ? "SystemAssigned" :
-        "UserAssigned"
-      )
-      identity_ids = (
-        length(var.managed_identities.user_assigned_resource_ids) > 0 ? var.managed_identities.user_assigned_resource_ids : null
-      )
+      type         = local.managed_identities.type
+      identity_ids = local.managed_identities.identity_ids
     }
   }
   dynamic "private_link_configuration" {
