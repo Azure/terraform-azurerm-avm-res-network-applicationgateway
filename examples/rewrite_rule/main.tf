@@ -118,6 +118,10 @@ module "application_gateway" {
     # Add more rules as needed
   }
   resource_group_name = azurerm_resource_group.rg_group.name
+  autoscale_configuration = {
+    min_capacity = 1
+    max_capacity = 2
+  }
   # pre-requisites resources input required for the module
   public_ip_name = "${module.naming.public_ip.name_unique}-pip"
   rewrite_rule_set = {
