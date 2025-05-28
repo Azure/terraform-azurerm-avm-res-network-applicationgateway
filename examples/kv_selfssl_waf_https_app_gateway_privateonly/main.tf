@@ -123,7 +123,7 @@ module "application_gateway" {
   app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
   autoscale_configuration = {
     min_capacity = 2
-    max_capacity = 2
+    max_capacity = 3
   }
   # pre-requisites resources input required for the module
   create_public_ip = false

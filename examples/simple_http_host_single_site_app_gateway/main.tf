@@ -118,7 +118,7 @@ module "application_gateway" {
   resource_group_name = azurerm_resource_group.rg_group.name
   autoscale_configuration = {
     min_capacity = 2
-    max_capacity = 2
+    max_capacity = 3
   }
   # pre-requisites resources input required for the module
   public_ip_name = "${module.naming.public_ip.name_unique}-pip"
