@@ -119,8 +119,8 @@ module "application_gateway" {
   # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
   app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
   autoscale_configuration = {
-    min_capacity = 1
-    max_capacity = 2
+    min_capacity = 2
+    max_capacity = 3
   }
   # WAF : Monitor and Log the configurations and traffic
   diagnostic_settings = {
