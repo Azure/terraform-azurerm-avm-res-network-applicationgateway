@@ -10,10 +10,10 @@ resource "azurerm_resource_group" "rg_group" {
 }
 
 resource "azurerm_virtual_network" "vnet" {
-  address_space       = ["100.64.0.0/16"] # address space for VNET 
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
+  address_space       = ["100.64.0.0/16"] # address space for VNET 
 }
 
 resource "azurerm_subnet" "frontend" {
