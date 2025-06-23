@@ -76,8 +76,8 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Private Frontend IP configuration 
-  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public 
+  # Private Frontend IP configuration
+  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
@@ -334,7 +334,7 @@ resource "azurerm_application_gateway" "this" {
     content {
       cipher_suites        = ssl_policy.value.cipher_suites
       disabled_protocols   = ssl_policy.value.disabled_protocols
-      min_protocol_version = ssl_policy.value.min_protocol_version
+      min_protocol_version = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.min_protocol_version
       policy_name          = ssl_policy.value.policy_name
       policy_type          = ssl_policy.value.policy_type
     }
@@ -354,7 +354,7 @@ resource "azurerm_application_gateway" "this" {
         content {
           cipher_suites        = ssl_policy.value.cipher_suites
           disabled_protocols   = ssl_policy.value.disabled_protocols
-          min_protocol_version = ssl_policy.value.min_protocol_version
+          min_protocol_version = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.min_protocol_version
           policy_name          = ssl_policy.value.policy_name
           policy_type          = ssl_policy.value.policy_type
         }
