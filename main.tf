@@ -76,8 +76,17 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Private Frontend IP configuration 
-  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public 
+  # Additional Public Frontend IP configurations
+  dynamic "frontend_ip_configuration" {
+    for_each = var.frontend_ip_configuration_additional_public_ips
+
+    content {
+      name                 = local.frontend_ip_configuration_additional_public_ip_names[frontend_ip_configuration.key]
+      public_ip_address_id = frontend_ip_configuration.value.public_ip_address_id
+    }
+  }
+  # Private Frontend IP configuration
+  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
