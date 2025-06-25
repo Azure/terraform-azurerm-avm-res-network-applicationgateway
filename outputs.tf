@@ -29,7 +29,7 @@ output "http_listeners" {
 }
 
 output "new_public_ip_address" {
-  description = "The actual public IP address associated with the Public IP resource, if we create a new one."
+  description = "The actual public IP address associated with the Public IP resource, if we create a new one.?"
   value       = try(azurerm_public_ip.this[0].ip_address, "")
 }
 

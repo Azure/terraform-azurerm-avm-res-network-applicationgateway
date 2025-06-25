@@ -987,7 +987,7 @@ Description: Information about the HTTP listeners configured for the Application
 
 ### <a name="output_new_public_ip_address"></a> [new\_public\_ip\_address](#output\_new\_public\_ip\_address)
 
-Description: The actual public IP address associated with the Public IP resource, if we create a new one.
+Description: The actual public IP address associated with the Public IP resource, if we create a new one.?
 
 ### <a name="output_probes"></a> [probes](#output\_probes)
 
