@@ -194,6 +194,12 @@ variable "app_gateway_waf_policy_resource_id" {
   description = "(Optional) The ID of the Web Application Firewall Policy."
 }
 
+variable "force_firewall_policy_association" {
+  type        = bool
+  default     = true
+  description = "(Optional) Is the Firewall Policy associated with the Application Gateway?"
+}
+
 variable "authentication_certificate" {
   type = map(object({
     data = string
