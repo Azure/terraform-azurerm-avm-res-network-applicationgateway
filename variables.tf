@@ -303,6 +303,20 @@ variable "fips_enabled" {
   description = "(Optional) Is FIPS enabled on the Application Gateway?"
 }
 
+variable "frontend_ip_configuration_additional_public_ips" {
+  type = map(object({
+    public_ip_address_id = string
+    name                 = optional(string)
+  }))
+  default     = {}
+  description = <<-DESCRIPTION
+A map of additional pre-created public IPs to be assigned to FW configurations. Useful when you need more than one IPv4 and/or IPv6 public IP.
+
+ - `name` - (Optional) Override generated name for Public Frontend IP Configuration.
+ - `public_ip_address_id` - The Public IP Address to use for the Application Gateway.
+DESCRIPTION
+}
+
 variable "frontend_ip_configuration_private" {
   type = object({
     name                            = optional(string)
@@ -325,7 +339,7 @@ DESCRIPTION
 variable "frontend_ip_configuration_public_name" {
   type        = string
   default     = null
-  description = "(Optional) The name of the public Frontend IP Configuration.  If not supplied will be inferred from the resource name."
+  description = "(Optional) The name of the public Frontend IP Configuration when `create_public_ip` is set to `true`.  If not supplied will be inferred from the resource name."
 }
 
 variable "global" {

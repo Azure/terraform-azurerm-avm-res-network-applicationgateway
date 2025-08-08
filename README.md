@@ -392,6 +392,24 @@ Type: `bool`
 
 Default: `null`
 
+### <a name="input_frontend_ip_configuration_additional_public_ips"></a> [frontend\_ip\_configuration\_additional\_public\_ips](#input\_frontend\_ip\_configuration\_additional\_public\_ips)
+
+Description: A map of additional pre-created public IPs to be assigned to FW configurations. Useful when you need more than one IPv4 and/or IPv6 public IP.
+
+ - `name` - (Optional) Override generated name for Public Frontend IP Configuration.
+ - `public_ip_address_id` - The Public IP Address to use for the Application Gateway.
+
+Type:
+
+```hcl
+map(object({
+    public_ip_address_id = string
+    name                 = optional(string)
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_frontend_ip_configuration_private"></a> [frontend\_ip\_configuration\_private](#input\_frontend\_ip\_configuration\_private)
 
 Description:  - `name` - (Optional) The name of the private  Frontend IP Configuration.
@@ -416,7 +434,7 @@ Default: `{}`
 
 ### <a name="input_frontend_ip_configuration_public_name"></a> [frontend\_ip\_configuration\_public\_name](#input\_frontend\_ip\_configuration\_public\_name)
 
-Description: (Optional) The name of the public Frontend IP Configuration.  If not supplied will be inferred from the resource name.
+Description: (Optional) The name of the public Frontend IP Configuration when `create_public_ip` is set to `true`.  If not supplied will be inferred from the resource name.
 
 Type: `string`
 
