@@ -28,7 +28,7 @@ resource "azurerm_application_gateway" "this" {
   enable_http2                      = var.http2_enable
   fips_enabled                      = var.fips_enabled
   firewall_policy_id                = var.app_gateway_waf_policy_resource_id
-  force_firewall_policy_association = true
+  force_firewall_policy_association = var.force_firewall_policy_association
   tags                              = var.tags
   zones                             = var.zones
 
