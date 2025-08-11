@@ -392,6 +392,14 @@ Type: `bool`
 
 Default: `null`
 
+### <a name="input_force_firewall_policy_association"></a> [force\_firewall\_policy\_association](#input\_force\_firewall\_policy\_association)
+
+Description: (Optional) Is the Firewall Policy associated with the Application Gateway?
+
+Type: `bool`
+
+Default: `true`
+
 ### <a name="input_frontend_ip_configuration_private"></a> [frontend\_ip\_configuration\_private](#input\_frontend\_ip\_configuration\_private)
 
 Description:  - `name` - (Optional) The name of the private  Frontend IP Configuration.
