@@ -155,10 +155,10 @@ variable "request_routing_rules" {
     name                        = string
     rule_type                   = string
     http_listener_name          = string
-    backend_address_pool_name   = string
+    backend_address_pool_name   = optional(string)
     priority                    = number
     url_path_map_name           = optional(string)
-    backend_http_settings_name  = string
+    backend_http_settings_name  = optional(string)
     redirect_configuration_name = optional(string)
     rewrite_rule_set_name       = optional(string)
     # Define other attributes as needed
