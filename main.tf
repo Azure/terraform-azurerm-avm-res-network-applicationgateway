@@ -456,7 +456,9 @@ resource "azurerm_application_gateway" "this" {
       frontend_ports,
       http_listeners,
       request_routing_rules,
-      backend_http_settings
+      backend_http_settings,
+      probe,
+      redirect_configuration
     ]
   }
 }
