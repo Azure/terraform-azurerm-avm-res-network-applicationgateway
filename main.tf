@@ -449,6 +449,16 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      backend_address_pools,
+      frontend_ports,
+      http_listeners,
+      request_routing_rules,
+      backend_http_settings
+    ]
+  }
 }
 
 
