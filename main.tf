@@ -95,6 +95,7 @@ resource "azurerm_application_gateway" "this" {
     content {
       name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
       public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
+      private_link_configuration_name = var.frontend_ip_configuration_public_private_link_configuration_name
     }
   }
   # Frontend IP Port configuration
