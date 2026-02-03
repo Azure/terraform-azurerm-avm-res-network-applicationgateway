@@ -161,7 +161,9 @@ module "application_gateway" {
   }
   #88 Option to create a new public IP or use an existing one
   #110 Frontend IP Configuration problem for AGW in private mode
-  create_public_ip = false
+  public_ip_address_configuration = {
+    create_public_ip = false
+  }
   enable_telemetry = var.enable_telemetry
   #110 Frontend IP Configuration problem for AGW in private mode
   frontend_ip_configuration_private = {

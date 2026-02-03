@@ -123,7 +123,9 @@ module "application_gateway" {
     max_capacity = 3
   }
   # pre-requisites resources input required for the module
-  public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  public_ip_address_configuration = {
+    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  }
   rewrite_rule_set = {
     ruleset1 = {
       name = "my-rewrite-rule-set"

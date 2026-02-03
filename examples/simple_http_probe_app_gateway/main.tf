@@ -120,7 +120,9 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  create_public_ip = false
+  public_ip_address_configuration = {
+    create_public_ip = false
+  }
   enable_telemetry = var.enable_telemetry
   # probe configurations for the application gateway
   # WAF : Use Health Probes to detect backend availability

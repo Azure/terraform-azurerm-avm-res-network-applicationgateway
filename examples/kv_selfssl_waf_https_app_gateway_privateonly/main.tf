@@ -126,7 +126,9 @@ module "application_gateway" {
     max_capacity = 3
   }
   # pre-requisites resources input required for the module
-  create_public_ip = false
+  public_ip_address_configuration = {
+    create_public_ip = false
+  }
   enable_telemetry = var.enable_telemetry
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"

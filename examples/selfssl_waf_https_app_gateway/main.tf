@@ -137,7 +137,9 @@ module "application_gateway" {
     ]
   }
   # pre-requisites resources input required for the module
-  public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  public_ip_address_configuration = {
+    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  }
   redirect_configuration = {
     redirect_config_1 = {
       name                 = "Redirect1"
