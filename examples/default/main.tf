@@ -125,6 +125,7 @@ module "application_gateway" {
   # pre-requisites resources input required for the module
   public_ip_address_configuration = {
     public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+    ddos_protection_mode = "Enabled"
   }
   tags = {
     environment = "dev"
