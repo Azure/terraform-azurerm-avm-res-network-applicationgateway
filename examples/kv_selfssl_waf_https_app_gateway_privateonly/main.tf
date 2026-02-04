@@ -125,10 +125,6 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  # pre-requisites resources input required for the module
-  public_ip_address_configuration = {
-    create_public_ip = false
-  }
   enable_telemetry = var.enable_telemetry
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
@@ -139,6 +135,10 @@ module "application_gateway" {
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
     ]
+  }
+  # pre-requisites resources input required for the module
+  public_ip_address_configuration = {
+    create_public_ip = false
   }
   # HTTP to HTTPS Redirection Configuration for
   redirect_configuration = {

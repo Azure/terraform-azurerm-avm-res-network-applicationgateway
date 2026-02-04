@@ -131,7 +131,6 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  create_public_ip = false
   enable_telemetry = var.enable_telemetry
   # probe configurations for the application gateway
   # WAF : Use Health Probes to detect backend availability
@@ -157,6 +156,9 @@ module "application_gateway" {
         status_code = ["200-399"]
       }
     }
+  }
+  public_ip_address_configuration = {
+    create_public_ip = false
   }
   #88 Option to create a new public IP or use an existing one
   public_ip_resource_id = azurerm_public_ip.public_ip.id

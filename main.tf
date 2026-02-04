@@ -10,23 +10,22 @@
 resource "azurerm_public_ip" "this" {
   count = var.public_ip_address_configuration.create_public_ip_enabled ? 1 : 0
 
-  resource_group_name = local.public_ip_address_configuration.resource_group_name
-  location            = local.public_ip_address_configuration.location
-  name                = local.public_ip_address_configuration.name
-  sku                 = local.public_ip_address_configuration.sku
-  sku_tier            = local.public_ip_address_configuration.sku_tier
+  allocation_method       = local.public_ip_configuration.allocation_method
+  location                = local.public_ip_address_configuration.location
+  name                    = local.public_ip_address_configuration.name
+  resource_group_name     = local.public_ip_address_configuration.resource_group_name
+  ddos_protection_mode    = local.public_ip_configuration.ddos_protection_mode
+  ddos_protection_plan_id = local.public_ip_configuration.ddos_protection_plan_resource_id
+  domain_name_label       = local.public_ip_configuration.domain_name_label
+  idle_timeout_in_minutes = local.public_ip_configuration.idle_timeout_in_minutes
+  ip_version              = local.public_ip_configuration.ip_version
+  public_ip_prefix_id     = local.public_ip_configuration.public_ip_prefix_id
+  reverse_fqdn            = local.public_ip_configuration.reverse_fqdn
+  sku                     = local.public_ip_address_configuration.sku
+  sku_tier                = local.public_ip_address_configuration.sku_tier
+  tags                    = var.tags
   # WAF : Deploy Application Gateway in a zone-redundant configuration
   zones = local.public_ip_configuration.zones
-  allocation_method   = local.public_ip_configuration.allocation_method
-  ip_version              = local.public_ip_configuration.ip_version
-  ddos_protection_mode = local.public_ip_configuration.ddos_protection_mode
-  ddos_protection_plan_id = local.public_ip_configuration.ddos_protection_plan_resource_id
-  public_ip_prefix_id = local.public_ip_configuration.public_ip_prefix_id
-  domain_name_label   = local.public_ip_configuration.domain_name_label
-  reverse_fqdn        = local.public_ip_configuration.reverse_fqdn
-  idle_timeout_in_minutes = local.public_ip_configuration.idle_timeout_in_minutes
-  tags                = var.tags
-
 }
 
 #----------Application Gateway resource creation provider block-----------

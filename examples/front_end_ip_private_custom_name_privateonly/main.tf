@@ -159,17 +159,17 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  #88 Option to create a new public IP or use an existing one
-  #110 Frontend IP Configuration problem for AGW in private mode
-  public_ip_address_configuration = {
-    create_public_ip = false
-  }
   enable_telemetry = var.enable_telemetry
   #110 Frontend IP Configuration problem for AGW in private mode
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
     private_ip_address_allocation = "Static"
     private_ip_address            = "100.64.1.5"
+  }
+  #88 Option to create a new public IP or use an existing one
+  #110 Frontend IP Configuration problem for AGW in private mode
+  public_ip_address_configuration = {
+    create_public_ip = false
   }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {

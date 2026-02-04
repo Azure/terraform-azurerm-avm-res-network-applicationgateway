@@ -75,9 +75,6 @@ module "application_gateway" {
     }
     # Add more http settings as needed
   }
-  public_ip_address_configuration = {
-    create_public_ip = false
-  }
   # frontend port configuration block for the application gateway
   # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
   # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
@@ -137,6 +134,9 @@ module "application_gateway" {
     }
   }
   enable_telemetry = var.enable_telemetry
+  public_ip_address_configuration = {
+    create_public_ip = false
+  }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
