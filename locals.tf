@@ -13,11 +13,7 @@ locals {
       length(var.managed_identities.user_assigned_resource_ids) > 0 ? var.managed_identities.user_assigned_resource_ids : null
     )
   }
-  public_ip_configuration = {
-
-
-
-
+  public_ip_address_configuration = {
     resource_group_name              = coalesce(var.public_ip_address_configuration.resource_group_name, var.resource_group_name)
     location                         = coalesce(var.public_ip_address_configuration.location, var.location)
     public_ip_resource_id            = try(var.public_ip_address_configuration.public_ip_resource_id, null)
