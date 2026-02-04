@@ -134,9 +134,13 @@ module "application_gateway" {
     }
   }
   enable_telemetry = var.enable_telemetry
+  frontend_ip_configuration_private = {
+    name                          = "private-ip-custom-name"
+    private_ip_address_allocation = "Static"
+    private_ip_address            = "10.90.1.10"
+  }
   public_ip_address_configuration = {
     create_public_ip_enabled = false
-    public_ip_resource_id    = azurerm_public_ip.public_ip.id
   }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
