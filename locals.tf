@@ -19,7 +19,7 @@ locals {
 
 
     resource_group_name              = coalesce(var.public_ip_address_configuration.resource_group_name, var.resource_group_name)
-    location                         = coalesce(var.public_ip_address_configuration.public_ip_location, var.location)
+    location                         = coalesce(var.public_ip_address_configuration.location, var.location)
     public_ip_resource_id            = try(var.public_ip_address_configuration.public_ip_resource_id, null)
     name                             = coalesce(var.public_ip_address_configuration.public_ip_name, "pip-${var.name}")
     sku                              = var.public_ip_address_configuration.sku

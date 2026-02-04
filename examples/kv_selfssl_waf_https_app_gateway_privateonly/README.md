@@ -145,7 +145,7 @@ module "application_gateway" {
   }
   # pre-requisites resources input required for the module
   public_ip_address_configuration = {
-    create_public_ip = false
+    create_public_ip_enabled = false
   }
   # HTTP to HTTPS Redirection Configuration for
   redirect_configuration = {

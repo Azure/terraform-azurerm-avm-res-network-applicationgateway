@@ -166,8 +166,8 @@ module "application_gateway" {
   frontend_ip_configuration_public_name = "public-ip-custom-name"
   #88 Option to create a new public IP or use an existing one
   public_ip_address_configuration = {
-    create_public_ip      = false
-    public_ip_resource_id = azurerm_public_ip.public_ip.id
+    create_public_ip_enabled = false
+    public_ip_resource_id    = azurerm_public_ip.public_ip.id
   }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {

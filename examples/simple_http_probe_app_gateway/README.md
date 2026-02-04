@@ -158,7 +158,7 @@ module "application_gateway" {
     }
   }
   public_ip_address_configuration = {
-    create_public_ip = false
+    create_public_ip_enabled = false
   }
   #88 Option to create a new public IP or use an existing one
   public_ip_resource_id = azurerm_public_ip.public_ip.id
