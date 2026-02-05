@@ -108,7 +108,7 @@ module "application_gateway" {
   }
   gateway_ip_configuration = {
     name      = "appGatewayIpConfig"
-    subnet_id = azurerm_subnet.backend.id
+    subnet_id = azurerm_subnet.frontend.id
   }
   # Http Listerners configuration for the application gateway
   # Mandatory Input

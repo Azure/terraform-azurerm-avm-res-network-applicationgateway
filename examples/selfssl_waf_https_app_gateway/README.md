@@ -137,10 +137,6 @@ module "application_gateway" {
   }
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
   managed_identities = {
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.

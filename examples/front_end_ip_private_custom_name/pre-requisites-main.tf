@@ -1,7 +1,7 @@
 #---------- All Required Pre-requisites Section-----------
 
-# Below code allow you to create Azure resource group for application gateway, 
-# Virtual network, subnets, log analytics workspace, virtual machine scale set, 
+# Below code allow you to create Azure resource group for application gateway,
+# Virtual network, subnets, log analytics workspace, virtual machine scale set,
 # network security group, storage account, key vault and user assigned identity.
 
 resource "azurerm_resource_group" "rg_group" {
@@ -13,7 +13,7 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-  address_space       = ["100.64.0.0/16"] # address space for VNET 
+  address_space       = ["100.64.0.0/16"] # address space for VNET
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -21,6 +21,20 @@ resource "azurerm_subnet" "frontend" {
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+
+  delegation {
+    name = "ApplicationGateways"
+
+    service_delegation {
+      name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/read",
+        "Microsoft.Network/virtualNetworks/subnets/action",
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/networkinterfaces/*"
+      ]
+    }
+  }
 }
 
 resource "azurerm_subnet" "backend" {
@@ -38,7 +52,7 @@ resource "azurerm_subnet" "workload" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-# Required for Frontend Private IP endpoint testing 
+# Required for Frontend Private IP endpoint testing
 resource "azurerm_subnet" "private_ip_test" {
   address_prefixes     = ["100.64.3.0/24"]
   name                 = "private_ip_test"
@@ -57,8 +71,8 @@ resource "azurerm_public_ip" "public_ip" {
 
 
 #-----------------------------------------------------------------
-#  Enable these to deploy sample application to VMSS 
-#  Enable these code to test private IP endpoint via bastion host  
+#  Enable these to deploy sample application to VMSS
+#  Enable these code to test private IP endpoint via bastion host
 #-----------------------------------------------------------------
 
 # Required bastion host subnet to test private IP endpoint
@@ -79,8 +93,8 @@ resource "azurerm_public_ip" "public_ip" {
 # }
 
 # -----------------------------------------------------------------
-#  Enable these to deploy sample application to VMSS 
-#  Enable these code to test private IP endpoint via bastion host  
+#  Enable these to deploy sample application to VMSS
+#  Enable these code to test private IP endpoint via bastion host
 # -----------------------------------------------------------------
 
 # resource "azurerm_windows_virtual_machine" "bastion" {
@@ -187,8 +201,8 @@ resource "azurerm_public_ip" "public_ip" {
 
 # # Associate NSG and Subnet
 # resource "azurerm_subnet_network_security_group_association" "ag_subnet_nsg_associate" {
-#   # Every NSG Rule Association will disassociate NSG from Subnet and Associate it, so we associate it only after NSG is completely created 
-#   #- Azure Provider Bug https://github.com/terraform-providers/terraform-provider-azurerm/issues/354  
+#   # Every NSG Rule Association will disassociate NSG from Subnet and Associate it, so we associate it only after NSG is completely created
+#   #- Azure Provider Bug https://github.com/terraform-providers/terraform-provider-azurerm/issues/354
 #   subnet_id                 = azurerm_subnet.workload.id
 #   network_security_group_id = azurerm_network_security_group.ag_subnet_nsg.id
 
