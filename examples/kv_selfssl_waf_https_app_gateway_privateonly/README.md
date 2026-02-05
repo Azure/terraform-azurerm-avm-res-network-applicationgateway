@@ -17,7 +17,7 @@ terraform {
 
   required_providers {
     azapi = {
-      source  = "hashicorp/azapi"
+      source  = "Azure/azapi"
       version = "~> 2.0"
     }
     azurerm = {
@@ -236,7 +236,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
-- [azapi_update_resource.allow_appgw_v2_network_isolation](https://registry.terraform.io/providers/hashicorp/azapi/latest/docs/resources/update_resource) (resource)
+- [azapi_update_resource.allow_appgw_v2_network_isolation](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/update_resource) (resource)
 - [azurerm_key_vault.keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault) (resource)
 - [azurerm_key_vault_access_policy.appag_key_vault_access_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_access_policy.key_vault_default_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
