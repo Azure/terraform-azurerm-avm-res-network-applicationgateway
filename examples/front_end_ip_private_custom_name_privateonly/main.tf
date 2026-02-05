@@ -10,6 +10,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "hashicorp/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -26,6 +30,8 @@ provider "azurerm" {
   features {}
 
 }
+
+provider "azapi" {}
 
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
