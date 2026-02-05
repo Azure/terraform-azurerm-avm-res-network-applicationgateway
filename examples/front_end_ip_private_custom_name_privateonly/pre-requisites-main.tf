@@ -34,12 +34,6 @@ resource "azurerm_subnet" "backend" {
 
     service_delegation {
       name = "Microsoft.Network/applicationGateways"
-      actions = [
-        "Microsoft.Network/virtualNetworks/read",
-        "Microsoft.Network/virtualNetworks/subnets/action",
-        "Microsoft.Network/virtualNetworks/subnets/join/action",
-        "Microsoft.Network/networkinterfaces/*"
-      ]
     }
   }
 }
