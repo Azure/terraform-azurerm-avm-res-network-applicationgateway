@@ -179,7 +179,7 @@ module "application_gateway" {
     # Accpected value for tier Standard and WAF
     tier = "Standard"
     # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
+    capacity = 1
   }
   tags = {
     environment = "dev"
