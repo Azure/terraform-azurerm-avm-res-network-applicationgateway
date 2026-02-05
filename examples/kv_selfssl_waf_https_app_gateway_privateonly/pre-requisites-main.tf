@@ -52,6 +52,20 @@ resource "azurerm_subnet" "private_ip_test" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   service_endpoints    = ["Microsoft.KeyVault"]
+
+  delegation {
+    name = "ApplicationGateways"
+
+    service_delegation {
+      name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/read",
+        "Microsoft.Network/virtualNetworks/subnets/action",
+        "Microsoft.Network/virtualNetworks/subnets/join/action",
+        "Microsoft.Network/networkinterfaces/*"
+      ]
+    }
+  }
 }
 
 # Datasource-1: To get Azure Tenant Id

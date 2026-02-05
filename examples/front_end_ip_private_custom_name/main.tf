@@ -161,7 +161,7 @@ module "application_gateway" {
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
     private_ip_address_allocation = "Static"
-    private_ip_address            = "100.64.1.5"
+    private_ip_address            = "100.64.0.5"
   }
   frontend_ip_configuration_public_name = "public-ip-custom-name"
   #88 Option to create a new public IP or use an existing one
