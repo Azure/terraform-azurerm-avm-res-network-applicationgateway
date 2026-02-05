@@ -53,6 +53,9 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
+# Datasource-1: To get Azure Tenant Id
+data "azurerm_client_config" "current" {}
+
 resource "azapi_update_resource" "allow_appgw_v2_network_isolation" {
   resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Features/featureProviders/Microsoft.Network/subscriptionFeatureRegistrations/EnableApplicationGatewayNetworkIsolation"
   type        = "Microsoft.Features/featureProviders/subscriptionFeatureRegistrations@2021-07-01"
