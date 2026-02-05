@@ -58,6 +58,9 @@ resource "azurerm_subnet" "private_ip_test" {
 
     service_delegation {
       name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
     }
   }
 }

@@ -27,6 +27,9 @@ resource "azurerm_subnet" "frontend" {
 
     service_delegation {
       name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
     }
   }
 }
