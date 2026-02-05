@@ -54,7 +54,7 @@ resource "azurerm_subnet" "private_ip_test" {
 }
 
 resource "azapi_update_resource" "allow_appgw_v2_network_isolation" {
-  resource_id = "/subscriptions/${var.subscription_id}/providers/Microsoft.Features/featureProviders/Microsoft.Network/subscriptionFeatureRegistrations/EnableApplicationGatewayNetworkIsolation"
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Features/featureProviders/Microsoft.Network/subscriptionFeatureRegistrations/EnableApplicationGatewayNetworkIsolation"
   type        = "Microsoft.Features/featureProviders/subscriptionFeatureRegistrations@2021-07-01"
   body = {
     properties = {}
