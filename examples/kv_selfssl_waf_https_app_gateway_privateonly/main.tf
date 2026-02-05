@@ -152,12 +152,10 @@ module "application_gateway" {
   }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
-    # Previous issue with provider pointing out private only must be Standard or WAF
-    # Accpected value for names Standard and WAF
-    name = "WAF"
-    # Accpected value for tier Standard and WAF
-    tier = "WAF"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
+
+    name = "WAF_v2"
+    tier = "WAF_v2"
+    # Accpected value for capacity 1 to 125 for a V2 SKU
     capacity = 1
   }
   # SSL Certificate Block
@@ -199,6 +197,10 @@ module "application_gateway" {
   # Optional Input
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
+
+  depends_on = [
+    azapi_update_resource.allow_appgw_v2_network_isolation
+  ]
 }
 
 
