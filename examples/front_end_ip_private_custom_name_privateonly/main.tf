@@ -10,6 +10,10 @@ terraform {
   required_version = ">= 1.9, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -27,6 +31,8 @@ provider "azurerm" {
 
 }
 
+provider "azapi" {}
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -37,8 +43,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.11.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -159,9 +165,6 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  #88 Option to create a new public IP or use an existing one
-  #110 Frontend IP Configuration problem for AGW in private mode
-  create_public_ip = false
   enable_telemetry = var.enable_telemetry
   #110 Frontend IP Configuration problem for AGW in private mode
   frontend_ip_configuration_private = {
@@ -169,14 +172,17 @@ module "application_gateway" {
     private_ip_address_allocation = "Static"
     private_ip_address            = "100.64.1.5"
   }
+  #88 Option to create a new public IP or use an existing one
+  #110 Frontend IP Configuration problem for AGW in private mode
+  public_ip_address_configuration = {
+    create_public_ip_enabled = false
+  }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
-    # Accpected value for names Standard_v2 and WAF_v2
     name = "Standard_v2"
-    # Accpected value for tier Standard_v2 and WAF_v2
     tier = "Standard_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
+    # Accpected value for capacity 1 to 125 for a V2 SKU
+    capacity = 1
   }
   tags = {
     environment = "dev"
@@ -187,4 +193,8 @@ module "application_gateway" {
   # WAF :  Deploy Application Gateway in a zone-redundant configuration
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
+
+  depends_on = [
+    azapi_update_resource.allow_appgw_v2_network_isolation
+  ]
 }

@@ -34,8 +34,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.11.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -127,17 +127,15 @@ module "application_gateway" {
   }
   # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}" # optional
-    kind = "CanNotDelete"
-  }
   managed_identities = {
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
     ]
   }
   # pre-requisites resources input required for the module
-  public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  public_ip_address_configuration = {
+    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  }
   redirect_configuration = {
     redirect_config_1 = {
       name                 = "Redirect1"

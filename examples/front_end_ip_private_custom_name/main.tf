@@ -35,8 +35,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.11.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -108,7 +108,7 @@ module "application_gateway" {
   }
   gateway_ip_configuration = {
     name      = "appGatewayIpConfig"
-    subnet_id = azurerm_subnet.backend.id
+    subnet_id = azurerm_subnet.frontend.id
   }
   # Http Listerners configuration for the application gateway
   # Mandatory Input
@@ -157,16 +157,18 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  create_public_ip = false
   enable_telemetry = var.enable_telemetry
   frontend_ip_configuration_private = {
     name                          = "private-ip-custom-name"
     private_ip_address_allocation = "Static"
-    private_ip_address            = "100.64.1.5"
+    private_ip_address            = "100.64.0.5"
   }
   frontend_ip_configuration_public_name = "public-ip-custom-name"
   #88 Option to create a new public IP or use an existing one
-  public_ip_resource_id = azurerm_public_ip.public_ip.id
+  public_ip_address_configuration = {
+    create_public_ip_enabled = false
+    public_ip_resource_id    = azurerm_public_ip.public_ip.id
+  }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2

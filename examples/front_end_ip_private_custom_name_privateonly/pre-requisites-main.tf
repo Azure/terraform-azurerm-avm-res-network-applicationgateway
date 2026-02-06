@@ -1,7 +1,7 @@
 #---------- All Required Pre-requisites Section-----------
 
-# Below code allow you to create Azure resource group for application gateway, 
-# Virtual network, subnets, log analytics workspace, virtual machine scale set, 
+# Below code allow you to create Azure resource group for application gateway,
+# Virtual network, subnets, log analytics workspace, virtual machine scale set,
 # network security group, storage account, key vault and user assigned identity.
 
 resource "azurerm_resource_group" "rg_group" {
@@ -13,7 +13,7 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-  address_space       = ["100.64.0.0/16"] # address space for VNET 
+  address_space       = ["100.64.0.0/16"] # address space for VNET
 }
 
 resource "azurerm_subnet" "frontend" {
@@ -28,6 +28,17 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+
+  delegation {
+    name = "ApplicationGateways"
+
+    service_delegation {
+      name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
+    }
+  }
 }
 
 resource "azurerm_subnet" "nat_subnet" {
@@ -45,7 +56,7 @@ resource "azurerm_subnet" "workload" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
-# Required for Frontend Private IP endpoint testing 
+# Required for Frontend Private IP endpoint testing
 resource "azurerm_subnet" "private_ip_test" {
   address_prefixes     = ["100.64.3.0/24"]
   name                 = "private_ip_test"
@@ -53,3 +64,13 @@ resource "azurerm_subnet" "private_ip_test" {
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
+# Datasource-1: To get Azure Tenant Id
+data "azurerm_client_config" "current" {}
+
+resource "azapi_update_resource" "allow_appgw_v2_network_isolation" {
+  resource_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/providers/Microsoft.Features/featureProviders/Microsoft.Network/subscriptionFeatureRegistrations/EnableApplicationGatewayNetworkIsolation"
+  type        = "Microsoft.Features/featureProviders/subscriptionFeatureRegistrations@2021-07-01"
+  body = {
+    properties = {}
+  }
+}

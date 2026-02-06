@@ -318,14 +318,6 @@ object({
 
 Default: `null`
 
-### <a name="input_create_public_ip"></a> [create\_public\_ip](#input\_create\_public\_ip)
-
-Description: Optional public IP to auto create public id
-
-Type: `bool`
-
-Default: `true`
-
 ### <a name="input_custom_error_configuration"></a> [custom\_error\_configuration](#input\_custom\_error\_configuration)
 
 Description: - `custom_error_page_url` - (Required) Error page URL of the application gateway customer error.
@@ -562,21 +554,67 @@ map(object({
 
 Default: `null`
 
-### <a name="input_public_ip_name"></a> [public\_ip\_name](#input\_public\_ip\_name)
+### <a name="input_public_ip_address_configuration"></a> [public\_ip\_address\_configuration](#input\_public\_ip\_address\_configuration)
 
-Description: The name of the application gateway.
+Description:   An object variable that configures the settings that will be the same for all public IPs for this Load Balancer
 
-Type: `string`
+  - `resource_group_name`: (Optional) Specifies the resource group to deploy all of the public IP addresses to be created
+  - `location`: (Optional) The Azure location where the public IP address should be created. If not specified, the module's variable location will be used.
+  - `create_public_ip_enabled`: (Optional) Whether to create the public IP address. Defaults to `true`.
+  - `public_ip_name`: (Optional) The name of the public IP address to create.
+  - `public_ip_resource_id`: (Optional) The ID of an existing public IP address to use. If this is specified, no new public IP address will be created.
+  - `allocation_method`: (Optional) The allocation method for this IP address. Possible valuse are `Static` or `Dynamic`
+  - `ddos_protection_mode`: (Optional) The DDoS protection mode of the public IP. Possible values are `Disabled`, `Enabled`, and `VirtualNetworkInherited`. Defaults to `VirtualNetworkInherited`. If you wish to protect the public IP with an individual DDOS IP Protection Plan, set this to enabled and `ddos_protection_plan_resource_id` to `null`.
+  - `ddos_protection_plan_resource_id`: (Optional) The ID of DDoS protection plan associated with the public IP. If you wish to protect the public IP with an individual DDOS IP Protection Plan, set this to `null` and set `ddos_protection_mode` to `Enabled`.
+  - `domain_name_label`: (Optional) The label for the Domain Name. This will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
+  - `idle_timeout_in_minutes`: (Optional) Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
+  - `ip_tags`: (Optional) A mapping of IP tags to assign to the public IP. Changing this forces a new resource to be created.
+  - `ip_version`: (Optional) The version of IP to use for the Public IPs. Possible valuse are `IPv4` or `IPv6`. Changing this forces a new resource to be created.
+  - `public_ip_prefix_resource_id`: (Optional) If specified then public IP address allocated will be provided from the public IP prefix resource. Changing this forces a new resource to be created.
+  - `reverse_fqdn`: (Optional) A fully qualified domain name that resolves to this public IP address. If the reverseFqdn is specified, then a PTR DNS record is created pointing from the IP address in the in-addr.arpa domain to the reverse FQDN.
+  - `sku`: (Optional) The SKU of the Public IP. Accepted values are `Basic` and `Standard`. Defaults to `Standard`. Changing this forces a new resource to be created.
+  - `sku_tier`: (Optional) The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global`. Defaults to `Regional`. Changing this forces a new resource to be created.
+  - `tags`: (Optional) The collection of tags to be assigned to all every Public IP.
+  - `zones`: (Optional) The zones to create the Public IP in. Possible values are `1`, `2`, and `3`. Changing this forces a new resource to be created. If this is not provided the zones for the appgw instance will be used.
 
-Default: `null`
+  Example Input:
+  ```terraform
+  # Standard Regional IPv4 Public IP address Configuration
+  public_ip_address_configuration = {
+    name                = "example-public-ip"
+    allocation_method = "Static"
+    ddos_protection_mode = "VirtualNetworkInherited"
+    idle_timeout_in_minutes = 30
+    ip_version = "IPv4"
+    sku_tier = "Regional"
+  }
+```
 
-### <a name="input_public_ip_resource_id"></a> [public\_ip\_resource\_id](#input\_public\_ip\_resource\_id)
+Type:
 
-Description: Optional public IP resource ID. If provided, the module will not create a public IP.
+```hcl
+object({
+    resource_group_name              = optional(string)
+    location                         = optional(string)
+    create_public_ip_enabled         = optional(bool, true)
+    public_ip_name                   = optional(string)
+    public_ip_resource_id            = optional(string)
+    allocation_method                = optional(string, "Static")
+    ddos_protection_mode             = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_resource_id = optional(string)
+    domain_name_label                = optional(string)
+    idle_timeout_in_minutes          = optional(number, 4)
+    ip_version                       = optional(string, "IPv4")
+    public_ip_prefix_resource_id     = optional(string)
+    reverse_fqdn                     = optional(string)
+    sku                              = optional(string, "Standard")
+    sku_tier                         = optional(string, "Regional")
+    tags                             = optional(map(any), {})
+    zones                            = optional(list(string))
+  })
+```
 
-Type: `string`
-
-Default: `null`
+Default: `{}`
 
 ### <a name="input_redirect_configuration"></a> [redirect\_configuration](#input\_redirect\_configuration)
 
@@ -703,9 +741,9 @@ Default: `{}`
 
 ### <a name="input_sku"></a> [sku](#input\_sku)
 
-Description: - `name` - (Required) The Name of the SKU to use for this Application Gateway. Possible values are `Standard_Small`, `Standard_Medium`, `Standard_Large`, `Standard_v2`, `WAF_Medium`, `WAF_Large`, and `WAF_v2`.
-- `tier` - (Required) The Tier of the SKU to use for this Application Gateway. Possible values are `Standard`, `Standard_v2`, `WAF` and `WAF_v2`.
-- `capacity` - (Optional) The Capacity of the SKU to use for this Application Gateway. When using a V1 SKU this value must be between `1` and `32`, and `1` to `125` for a V2 SKU. This property is optional if `autoscale_configuration` is set.
+Description: - `name` - (Required) The Name of the SKU to use for this Application Gateway. Possible values are `Standard_v2` and `WAF_v2`.
+- `tier` - (Required) The Tier of the SKU to use for this Application Gateway. Possible values are `Standard_v2` and `WAF_v2`.
+- `capacity` - (Optional) The Capacity of the SKU to use for this Application Gateway. When using a V2 SKU this value must be between `1` and `125`. This property is optional if `autoscale_configuration` is set.
 
 Type:
 

@@ -28,8 +28,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.11.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -119,7 +119,9 @@ module "application_gateway" {
     kind = "CanNotDelete"
   }
   # pre-requisites resources input required for the module
-  public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  public_ip_address_configuration = {
+    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
+  }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2

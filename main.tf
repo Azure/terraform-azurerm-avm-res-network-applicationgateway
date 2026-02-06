@@ -8,16 +8,24 @@
 # In this instance, the public IP address resource is included to align with the experience in the Azure portal.
 # See decision noted here: https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/67
 resource "azurerm_public_ip" "this" {
-  count = var.create_public_ip == true ? 1 : 0
+  count = var.public_ip_address_configuration.create_public_ip_enabled ? 1 : 0
 
-  allocation_method   = var.sku.tier == "Standard" ? "Dynamic" : "Static" # Allocation method for the public ip //var.public_ip_allocation_method
-  location            = var.location
-  name                = var.public_ip_name == null ? local.public_ip_name : var.public_ip_name
-  resource_group_name = var.resource_group_name
-  sku                 = var.sku.tier == "Standard" ? "Basic" : "Standard" # SKU for the public ip //var.public_ip_sku_tier
-  tags                = var.tags
+  allocation_method       = local.public_ip_address_configuration.allocation_method
+  location                = local.public_ip_address_configuration.location
+  name                    = local.public_ip_address_configuration.name
+  resource_group_name     = local.public_ip_address_configuration.resource_group_name
+  ddos_protection_mode    = local.public_ip_address_configuration.ddos_protection_mode
+  ddos_protection_plan_id = local.public_ip_address_configuration.ddos_protection_plan_resource_id
+  domain_name_label       = local.public_ip_address_configuration.domain_name_label
+  idle_timeout_in_minutes = local.public_ip_address_configuration.idle_timeout_in_minutes
+  ip_version              = local.public_ip_address_configuration.ip_version
+  public_ip_prefix_id     = local.public_ip_address_configuration.public_ip_prefix_id
+  reverse_fqdn            = local.public_ip_address_configuration.reverse_fqdn
+  sku                     = local.public_ip_address_configuration.sku
+  sku_tier                = local.public_ip_address_configuration.sku_tier
+  tags                    = var.tags
   # WAF : Deploy Application Gateway in a zone-redundant configuration
-  zones = var.zones
+  zones = local.public_ip_address_configuration.zones
 }
 
 #----------Application Gateway resource creation provider block-----------
@@ -76,8 +84,8 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
-  # Private Frontend IP configuration 
-  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public 
+  # Private Frontend IP configuration
+  # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public
   dynamic "frontend_ip_configuration" {
     for_each = var.frontend_ip_configuration_private.private_ip_address == null ? [] : [var.frontend_ip_configuration_private]
 
@@ -90,11 +98,11 @@ resource "azurerm_application_gateway" "this" {
     }
   }
   dynamic "frontend_ip_configuration" {
-    for_each = var.create_public_ip == false && var.public_ip_resource_id == null ? [] : [1]
+    for_each = var.public_ip_address_configuration.create_public_ip_enabled == false && local.public_ip_address_configuration.public_ip_resource_id == null ? [] : [1]
 
     content {
       name                 = coalesce(var.frontend_ip_configuration_public_name, local.frontend_ip_configuration_name)
-      public_ip_address_id = var.create_public_ip == true ? azurerm_public_ip.this[0].id : var.public_ip_resource_id
+      public_ip_address_id = var.public_ip_address_configuration.create_public_ip_enabled == true ? azurerm_public_ip.this[0].id : local.public_ip_address_configuration.public_ip_resource_id
     }
   }
   # Frontend IP Port configuration

@@ -45,8 +45,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/regions/azurerm"
-  version = ">= 0.3.0"
+  source  = "Azure/avm-utl-regions/azurerm"
+  version = "0.11.0"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -131,7 +131,6 @@ module "application_gateway" {
     min_capacity = 2
     max_capacity = 3
   }
-  create_public_ip = false
   enable_telemetry = var.enable_telemetry
   # probe configurations for the application gateway
   # WAF : Use Health Probes to detect backend availability
@@ -158,8 +157,11 @@ module "application_gateway" {
       }
     }
   }
-  #88 Option to create a new public IP or use an existing one
-  public_ip_resource_id = azurerm_public_ip.public_ip.id
+  public_ip_address_configuration = {
+    create_public_ip_enabled = false
+    #88 Option to create a new public IP or use an existing one
+    public_ip_resource_id = azurerm_public_ip.public_ip.id
+  }
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
@@ -294,9 +296,9 @@ Version: 0.3.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
-Source: Azure/regions/azurerm
+Source: Azure/avm-utl-regions/azurerm
 
-Version: >= 0.3.0
+Version: 0.11.0
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

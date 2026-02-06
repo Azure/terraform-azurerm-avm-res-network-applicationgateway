@@ -218,12 +218,6 @@ variable "autoscale_configuration" {
 DESCRIPTION
 }
 
-variable "create_public_ip" {
-  type        = bool
-  default     = true
-  description = "Optional public IP to auto create public id"
-}
-
 variable "custom_error_configuration" {
   type = map(object({
     custom_error_page_url = string
@@ -444,23 +438,107 @@ variable "probe_configurations" {
 DESCRIPTION
 }
 
-variable "public_ip_name" {
-  type        = string
-  default     = null
-  description = "The name of the application gateway."
+# Public Ip Configuration - 1 per LB and (N) Ip Configurations
+variable "public_ip_address_configuration" {
+  type = object({
+    resource_group_name              = optional(string)
+    location                         = optional(string)
+    create_public_ip_enabled         = optional(bool, true)
+    public_ip_name                   = optional(string)
+    public_ip_resource_id            = optional(string)
+    allocation_method                = optional(string, "Static")
+    ddos_protection_mode             = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_resource_id = optional(string)
+    domain_name_label                = optional(string)
+    idle_timeout_in_minutes          = optional(number, 4)
+    ip_version                       = optional(string, "IPv4")
+    public_ip_prefix_resource_id     = optional(string)
+    reverse_fqdn                     = optional(string)
+    sku                              = optional(string, "Standard")
+    sku_tier                         = optional(string, "Regional")
+    tags                             = optional(map(any), {})
+    zones                            = optional(list(string))
+  })
+  default     = {}
+  description = <<DESCRIPTION
+  An object variable that configures the settings that will be the same for all public IPs for this Load Balancer
+
+  - `resource_group_name`: (Optional) Specifies the resource group to deploy all of the public IP addresses to be created
+  - `location`: (Optional) The Azure location where the public IP address should be created. If not specified, the module's variable location will be used.
+  - `create_public_ip_enabled`: (Optional) Whether to create the public IP address. Defaults to `true`.
+  - `public_ip_name`: (Optional) The name of the public IP address to create.
+  - `public_ip_resource_id`: (Optional) The ID of an existing public IP address to use. If this is specified, no new public IP address will be created.
+  - `allocation_method`: (Optional) The allocation method for this IP address. Possible valuse are `Static` or `Dynamic`
+  - `ddos_protection_mode`: (Optional) The DDoS protection mode of the public IP. Possible values are `Disabled`, `Enabled`, and `VirtualNetworkInherited`. Defaults to `VirtualNetworkInherited`. If you wish to protect the public IP with an individual DDOS IP Protection Plan, set this to enabled and `ddos_protection_plan_resource_id` to `null`.
+  - `ddos_protection_plan_resource_id`: (Optional) The ID of DDoS protection plan associated with the public IP. If you wish to protect the public IP with an individual DDOS IP Protection Plan, set this to `null` and set `ddos_protection_mode` to `Enabled`.
+  - `domain_name_label`: (Optional) The label for the Domain Name. This will be used to make up the FQDN. If a domain name label is specified, an A DNS record is created for the public IP in the Microsoft Azure DNS system.
+  - `idle_timeout_in_minutes`: (Optional) Specifies the timeout for the TCP idle connection. The value can be set between 4 and 30 minutes.
+  - `ip_tags`: (Optional) A mapping of IP tags to assign to the public IP. Changing this forces a new resource to be created.
+  - `ip_version`: (Optional) The version of IP to use for the Public IPs. Possible valuse are `IPv4` or `IPv6`. Changing this forces a new resource to be created.
+  - `public_ip_prefix_resource_id`: (Optional) If specified then public IP address allocated will be provided from the public IP prefix resource. Changing this forces a new resource to be created.
+  - `reverse_fqdn`: (Optional) A fully qualified domain name that resolves to this public IP address. If the reverseFqdn is specified, then a PTR DNS record is created pointing from the IP address in the in-addr.arpa domain to the reverse FQDN.
+  - `sku`: (Optional) The SKU of the Public IP. Accepted values are `Basic` and `Standard`. Defaults to `Standard`. Changing this forces a new resource to be created.
+  - `sku_tier`: (Optional) The SKU Tier that should be used for the Public IP. Possible values are `Regional` and `Global`. Defaults to `Regional`. Changing this forces a new resource to be created.
+  - `tags`: (Optional) The collection of tags to be assigned to all every Public IP.
+  - `zones`: (Optional) The zones to create the Public IP in. Possible values are `1`, `2`, and `3`. Changing this forces a new resource to be created. If this is not provided the zones for the appgw instance will be used.
+
+  Example Input:
+  ```terraform
+  # Standard Regional IPv4 Public IP address Configuration
+  public_ip_address_configuration = {
+    name                = "example-public-ip"
+    allocation_method = "Static"
+    ddos_protection_mode = "VirtualNetworkInherited"
+    idle_timeout_in_minutes = 30
+    ip_version = "IPv4"
+    sku_tier = "Regional"
+  }
+  ```
+  DESCRIPTION
 
   validation {
+    condition     = contains(["Dynamic", "Static"], var.public_ip_address_configuration.allocation_method)
+    error_message = "The acceptable value for `allocation_method` are `Dynamic` or `Static`"
+  }
+  validation {
+    condition     = contains(["Disabled", "Enabled", "VirtualNetworkInherited"], var.public_ip_address_configuration.ddos_protection_mode)
+    error_message = "The acceptable value for `ddos_protection_mode` are `Disabled`, `Enabled` or `VirtualNetworkInherited`"
+  }
+  validation {
+    condition     = var.public_ip_address_configuration.idle_timeout_in_minutes >= 4 && var.public_ip_address_configuration.idle_timeout_in_minutes <= 30
+    error_message = "The value for `idle_timeout_in_minutes` must be between 4 and 30"
+  }
+  validation {
+    condition     = contains(["IPv4", "IPv6"], var.public_ip_address_configuration.ip_version)
+    error_message = "The accepted values for `ip_version` are `IPv4` or `IPv6`"
+  }
+  validation {
+    condition     = (contains(["IPv4", "IPv6"], var.public_ip_address_configuration.ip_version) && var.public_ip_address_configuration.allocation_method == "Static") || (contains(["IPv4"], var.public_ip_address_configuration.ip_version) && var.public_ip_address_configuration.allocation_method == "Dynamic")
+    error_message = "Only Static `allocation_method` supported for `IPv6`"
+  }
+  validation {
+    condition     = contains(["Basic", "Standard"], var.public_ip_address_configuration.sku)
+    error_message = "The acceptable values for `sku` are `Basic` or `Standard`"
+  }
+  validation {
+    condition     = contains(["Global", "Regional"], var.public_ip_address_configuration.sku_tier)
+    error_message = "The acceptable values for `sku_tier` are `Global` or `Regional`"
+  }
+  validation {
     # Check if public_ip_name is null or matches the regex for a valid name
-    condition     = var.public_ip_name == null || can(regex("^[a-z0-9-]{3,80}$", var.public_ip_name))
+    condition     = var.public_ip_address_configuration.public_ip_name == null || can(regex("^[a-z0-9-]{3,80}$", var.public_ip_address_configuration.public_ip_name))
     error_message = "The name must be between 3 and 80 characters long and can only contain lowercase letters, numbers, and dashes."
   }
-}
-
-# Variable for optional external public IP resource ID
-variable "public_ip_resource_id" {
-  type        = string
-  default     = null
-  description = "Optional public IP resource ID. If provided, the module will not create a public IP."
+  validation {
+    # If create_public_ip_enabled is true, public_ip_name must be provided
+    condition     = var.public_ip_address_configuration.create_public_ip_enabled == false || var.public_ip_address_configuration.public_ip_name != null
+    error_message = "When `create_public_ip_enabled` is true, `public_ip_name` must be provided."
+  }
+  validation {
+    # If create_public_ip_enabled is false, either public_ip_resource_id or frontend_ip_configuration_private must be provided (private IP only mode)
+    condition     = var.public_ip_address_configuration.create_public_ip_enabled == true || var.public_ip_address_configuration.public_ip_resource_id != null || var.frontend_ip_configuration_private.name != null
+    error_message = "When `create_public_ip_enabled` is false, either `public_ip_resource_id` must be provided or `frontend_ip_configuration_private` must be configured (private IP only mode)."
+  }
 }
 
 variable "redirect_configuration" {
@@ -588,9 +666,9 @@ variable "sku" {
     capacity = 2
   }
   description = <<-DESCRIPTION
- - `name` - (Required) The Name of the SKU to use for this Application Gateway. Possible values are `Standard_Small`, `Standard_Medium`, `Standard_Large`, `Standard_v2`, `WAF_Medium`, `WAF_Large`, and `WAF_v2`.
- - `tier` - (Required) The Tier of the SKU to use for this Application Gateway. Possible values are `Standard`, `Standard_v2`, `WAF` and `WAF_v2`.
- - `capacity` - (Optional) The Capacity of the SKU to use for this Application Gateway. When using a V1 SKU this value must be between `1` and `32`, and `1` to `125` for a V2 SKU. This property is optional if `autoscale_configuration` is set.
+ - `name` - (Required) The Name of the SKU to use for this Application Gateway. Possible values are `Standard_v2` and `WAF_v2`.
+ - `tier` - (Required) The Tier of the SKU to use for this Application Gateway. Possible values are `Standard_v2` and `WAF_v2`.
+ - `capacity` - (Optional) The Capacity of the SKU to use for this Application Gateway. When using a V2 SKU this value must be between `1` and `125`. This property is optional if `autoscale_configuration` is set.
 DESCRIPTION
   nullable    = false
 
