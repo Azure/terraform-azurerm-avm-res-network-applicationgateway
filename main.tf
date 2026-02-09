@@ -340,9 +340,9 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.ssl_policy == null ? [] : [var.ssl_policy]
 
     content {
-      cipher_suites        = ssl_policy.value.cipher_suites
-      disabled_protocols   = ssl_policy.value.disabled_protocols
-      min_protocol_version = ssl_policy.value.min_protocol_version
+      cipher_suites        = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.cipher_suites
+      disabled_protocols   = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.disabled_protocols
+      min_protocol_version = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.min_protocol_version
       policy_name          = ssl_policy.value.policy_name
       policy_type          = ssl_policy.value.policy_type
     }
@@ -360,9 +360,9 @@ resource "azurerm_application_gateway" "this" {
         for_each = ssl_profile.value.ssl_policy == null ? [] : [ssl_profile.value.ssl_policy]
 
         content {
-          cipher_suites        = ssl_policy.value.cipher_suites
-          disabled_protocols   = ssl_policy.value.disabled_protocols
-          min_protocol_version = ssl_policy.value.min_protocol_version
+          cipher_suites        = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.cipher_suites
+          disabled_protocols   = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.disabled_protocols
+          min_protocol_version = ssl_policy.value.policy_type == "Predefined" ? null : ssl_policy.value.min_protocol_version
           policy_name          = ssl_policy.value.policy_name
           policy_type          = ssl_policy.value.policy_type
         }
