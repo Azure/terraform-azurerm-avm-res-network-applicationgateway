@@ -63,12 +63,13 @@ module "application_gateway" {
   # Mandatory Input
   backend_http_settings = {
     port80 = {
-      name                  = "backend_http_settings-port-80"
-      port                  = 80
-      protocol              = "Http"
-      cookie_based_affinity = "Disabled"
-      enable_https          = false
-      request_timeout       = 30
+      name                                 = "backend_http_settings-port-80"
+      port                                 = 80
+      protocol                             = "Http"
+      cookie_based_affinity                = "Disabled"
+      dedicated_backend_connection_enabled = true
+      enable_https                         = false
+      request_timeout                      = 30
     }
     # Add more http settings as needed
   }

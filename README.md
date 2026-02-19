@@ -116,6 +116,7 @@ map(object({
 ### <a name="input_backend_http_settings"></a> [backend\_http\_settings](#input\_backend\_http\_settings)
 
 Description: - `cookie_based_affinity` - (Required) Is Cookie-Based Affinity enabled? Possible values are `Enabled` and `Disabled`.
+- `dedicated_backend_connection_enabled` - (Optional) Whether to use a dedicated backend connection. Defaults to `false`.
 - `name` - (Required) The name of the Backend HTTP Settings Collection.
 - `port` - (Required) The port which should be used for this Backend HTTP Settings Collection.
 - `protocol` - (Required) The Protocol which should be used. Possible values are `Http` and `Https`.
@@ -140,17 +141,18 @@ Type:
 
 ```hcl
 map(object({
-    cookie_based_affinity               = optional(string, "Disabled")
-    name                                = string
-    port                                = number
-    protocol                            = string
-    affinity_cookie_name                = optional(string)
-    host_name                           = optional(string)
-    path                                = optional(string)
-    pick_host_name_from_backend_address = optional(bool)
-    probe_name                          = optional(string)
-    request_timeout                     = optional(number)
-    trusted_root_certificate_names      = optional(list(string))
+    cookie_based_affinity                = optional(string, "Disabled")
+    dedicated_backend_connection_enabled = optional(bool, false)
+    name                                 = string
+    port                                 = number
+    protocol                             = string
+    affinity_cookie_name                 = optional(string)
+    host_name                            = optional(string)
+    path                                 = optional(string)
+    pick_host_name_from_backend_address  = optional(bool)
+    probe_name                           = optional(string)
+    request_timeout                      = optional(number)
+    trusted_root_certificate_names       = optional(list(string))
     authentication_certificate = optional(list(object({
       name = string
     })))
