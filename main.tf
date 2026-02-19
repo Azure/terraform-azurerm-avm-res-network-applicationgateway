@@ -56,11 +56,11 @@ resource "azurerm_application_gateway" "this" {
 
     content {
       cookie_based_affinity                = backend_http_settings.value.cookie_based_affinity
-      dedicated_backend_connection_enabled = backend_http_settings.value.dedicated_backend_connection_enabled
       name                                 = backend_http_settings.value.name
       port                                 = backend_http_settings.value.port
       protocol                             = backend_http_settings.value.protocol
       affinity_cookie_name                 = backend_http_settings.value.affinity_cookie_name
+      dedicated_backend_connection_enabled = backend_http_settings.value.dedicated_backend_connection_enabled
       host_name                            = backend_http_settings.value.host_name
       path                                 = backend_http_settings.value.path
       pick_host_name_from_backend_address  = backend_http_settings.value.pick_host_name_from_backend_address
