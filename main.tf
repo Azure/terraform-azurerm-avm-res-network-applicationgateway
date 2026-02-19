@@ -55,17 +55,18 @@ resource "azurerm_application_gateway" "this" {
     for_each = var.backend_http_settings
 
     content {
-      cookie_based_affinity               = backend_http_settings.value.cookie_based_affinity
-      name                                = backend_http_settings.value.name
-      port                                = backend_http_settings.value.port
-      protocol                            = backend_http_settings.value.protocol
-      affinity_cookie_name                = backend_http_settings.value.affinity_cookie_name
-      host_name                           = backend_http_settings.value.host_name
-      path                                = backend_http_settings.value.path
-      pick_host_name_from_backend_address = backend_http_settings.value.pick_host_name_from_backend_address
-      probe_name                          = backend_http_settings.value.probe_name
-      request_timeout                     = backend_http_settings.value.request_timeout
-      trusted_root_certificate_names      = backend_http_settings.value.trusted_root_certificate_names
+      cookie_based_affinity                = backend_http_settings.value.cookie_based_affinity
+      dedicated_backend_connection_enabled = backend_http_settings.value.dedicated_backend_connection_enabled
+      name                                 = backend_http_settings.value.name
+      port                                 = backend_http_settings.value.port
+      protocol                             = backend_http_settings.value.protocol
+      affinity_cookie_name                 = backend_http_settings.value.affinity_cookie_name
+      host_name                            = backend_http_settings.value.host_name
+      path                                 = backend_http_settings.value.path
+      pick_host_name_from_backend_address  = backend_http_settings.value.pick_host_name_from_backend_address
+      probe_name                           = backend_http_settings.value.probe_name
+      request_timeout                      = backend_http_settings.value.request_timeout
+      trusted_root_certificate_names       = backend_http_settings.value.trusted_root_certificate_names
 
       dynamic "authentication_certificate" {
         for_each = backend_http_settings.value.authentication_certificate == null ? [] : backend_http_settings.value.authentication_certificate
