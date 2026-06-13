@@ -25,6 +25,9 @@ diagnostic settings.
 - **AzAPI provider**: `~> 2.7` required.
 - **azurerm provider**: `>= 3.117, < 5.0` required.
 - **Zones**: changed from `set(number)` to `list(string)`.
+- **Autoscale + SKU capacity**: when `autoscale_configuration` is set,
+  omit `sku.capacity`. The ARM API now rejects `capacity = 0` for v2
+  SKUs.
 
 ## Variable mapping
 
@@ -56,7 +59,7 @@ diagnostic settings.
 | `public_ip_resource_id` | Removed | Pass the ID into `frontend_ip_configurations` |
 | `waf_configuration` | `web_application_firewall_configuration` | Renamed |
 | `zones` (`set(number)`) | `zones` (`list(string)`) | Type changed |
-| `sku_name` / `sku_tier` / `sku_capacity` | `sku` (object) | Combined into a single object |
+| `sku_name` / `sku_tier` / `sku_capacity` | `sku` (object) | Combined into a single object; omit `capacity` when `autoscale_configuration` is set |
 | `autoscale_configuration` | `autoscale_configuration` | Unchanged shape |
 | `ssl_policy` | `ssl_policy` | Unchanged shape |
 | N/A | `listeners` | New — TCP/TLS listener support |
@@ -254,6 +257,33 @@ zones = [1, 2, 3]
 
 # New
 zones = ["1", "2", "3"]
+```
+
+### Autoscale with v2 SKUs
+
+```hcl
+# Old / invalid with the AzAPI module
+autoscale_configuration = {
+  min_capacity = 2
+  max_capacity = 10
+}
+
+sku = {
+  name     = "Standard_v2"
+  tier     = "Standard_v2"
+  capacity = 0
+}
+
+# New
+autoscale_configuration = {
+  min_capacity = 2
+  max_capacity = 10
+}
+
+sku = {
+  name = "Standard_v2"
+  tier = "Standard_v2"
+}
 ```
 
 ## New features

@@ -210,8 +210,7 @@ module "application_gateway" {
     # Accpected value for names Standard_v2 and WAF_v2
     name = "WAF_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier     = "WAF_v2"
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
+    tier = "WAF_v2"
   }
   # SSL Certificate Block
   ssl_certificates = [
@@ -254,7 +253,6 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 }
-
 
 ```
 

@@ -28,6 +28,17 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+
+  delegation {
+    name = "ApplicationGateways"
+
+    service_delegation {
+      name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
+    }
+  }
 }
 
 resource "azurerm_subnet" "nat_subnet" {
@@ -52,17 +63,6 @@ resource "azurerm_subnet" "private_ip_test" {
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   service_endpoints    = ["Microsoft.KeyVault"]
-
-  delegation {
-    name = "ApplicationGateways"
-
-    service_delegation {
-      name = "Microsoft.Network/applicationGateways"
-      actions = [
-        "Microsoft.Network/virtualNetworks/subnets/join/action"
-      ]
-    }
-  }
 }
 
 # Datasource-1: To get Azure Tenant Id
@@ -244,7 +244,7 @@ resource "azurerm_private_endpoint" "example" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.private_endpoint.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-  subnet_id           = azurerm_subnet.backend.id
+  subnet_id           = azurerm_subnet.private_ip_test.id
 
   private_service_connection {
     is_manual_connection           = false
