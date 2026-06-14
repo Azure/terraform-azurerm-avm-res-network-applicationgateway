@@ -222,9 +222,8 @@ module "application_gateway" {
     }
   ]
   sku = {
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
-    capacity = 0
+    name = "Standard_v2"
+    tier = "Standard_v2"
   }
   tags = {
     environment = "dev"

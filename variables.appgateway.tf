@@ -514,6 +514,19 @@ variable "sku" {
   description = <<DESCRIPTION
 SKU of an application gateway.
 DESCRIPTION
+
+  validation {
+    condition = (
+      var.sku == null ||
+      var.sku.capacity == null ||
+      (var.sku.capacity >= 1 && var.sku.capacity <= 125)
+    )
+    error_message = "When set, sku.capacity must be between 1 and 125. Omit sku.capacity when using autoscale_configuration."
+  }
+  validation {
+    condition     = var.sku == null || var.autoscale_configuration == null || var.sku.capacity == null
+    error_message = "sku.capacity must be omitted when autoscale_configuration is set."
+  }
 }
 
 variable "ssl_certificates" {

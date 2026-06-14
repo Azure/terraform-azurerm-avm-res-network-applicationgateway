@@ -241,8 +241,7 @@ module "application_gateway" {
     # Accpected value for names Standard_v2 and WAF_v2
     name = "Standard_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
-    tier     = "Standard_v2"
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
+    tier = "Standard_v2"
   }
   tags = {
     environment = "dev"
