@@ -1,8 +1,10 @@
 # AzAPI Provider
 
-All Azure resources in AVM modules MUST be deployed using the **AzAPI provider** (`Azure/azapi`).
+AVM Terraform modules implement Azure resources with the **AzAPI provider** (`Azure/azapi`). This is required by `TFFR3`. The only legitimate reason to fall back to `azurerm` is when AzAPI has no equivalent resource or data source for the capability you need — when that happens, leave a short comment in the code explaining why, and prefer an `azurerm` *data source* over an `azurerm` *resource* where possible.
 
-## Provider Configuration
+Look up the current text of `TFFR3` (and the rationale for AzAPI-first) via `https://azure.github.io/Azure-Verified-Modules/llms.txt`.
+
+## Provider configuration
 
 ```hcl
 terraform {
