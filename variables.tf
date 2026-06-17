@@ -157,10 +157,10 @@ variable "request_routing_rules" {
     name                        = string
     rule_type                   = string
     http_listener_name          = string
-    backend_address_pool_name   = string
+    backend_address_pool_name   = optional(string)
     priority                    = number
     url_path_map_name           = optional(string)
-    backend_http_settings_name  = string
+    backend_http_settings_name  = optional(string)
     redirect_configuration_name = optional(string)
     rewrite_rule_set_name       = optional(string)
     # Define other attributes as needed
@@ -177,6 +177,28 @@ variable "request_routing_rules" {
  - `url_path_map_name` - (Optional) The Name of the URL Path Map which should be associated with this Routing Rule.
 DESCRIPTION
   nullable    = false
+
+  validation {
+    condition = alltrue([
+      for rule in values(var.request_routing_rules) :
+      (
+        # Option A: backend pair provided, redirect not set
+        (
+          rule.backend_address_pool_name != null &&
+          rule.backend_http_settings_name != null &&
+          rule.redirect_configuration_name == null
+        )
+        ||
+        # Option B: redirect provided, backend pair not set
+        (
+          rule.redirect_configuration_name != null &&
+          rule.backend_address_pool_name == null &&
+          rule.backend_http_settings_name == null
+        )
+      )
+    ])
+    error_message = "Each request_routing_rule must specify either (backend_address_pool_name AND backend_http_settings_name) OR redirect_configuration_name, but not both."
+  }
 }
 
 # This is required for most resource modules
