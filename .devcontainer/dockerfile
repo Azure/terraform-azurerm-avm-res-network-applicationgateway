@@ -1,0 +1,23 @@
+# Pull Ubuntu image
+FROM mcr.microsoft.com/devcontainers/base:jammy
+
+# Install GitHub CLI, PowerShell, Azure CLI, Terraform, Bicep, and Az PowerShell module
+RUN (type -p wget >/dev/null || (sudo apt update && sudo apt-get install wget apt-transport-https software-properties-common ca-certificates curl lsb-release gnupg -y)) \
+    && sudo mkdir -p -m 755 /etc/apt/keyrings \
+	&& wget -qO- https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null \
+	&& curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/trusted.gpg.d/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ jammy main" | sudo tee /etc/apt/sources.list.d/azure-cli.list \
+	&& sudo chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+	&& wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb \
+	&& sudo dpkg -i packages-microsoft-prod.deb \
+	&& wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/share/keyrings/hashicorp-archive-keyring.gpg > /dev/null \
+	&& gpg --no-default-keyring --keyring /usr/share/keyrings/hashicorp-archive-keyring.gpg --fingerprint \
+	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(grep -oP '(?<=UBUNTU_CODENAME=).*' /etc/os-release || lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list \
+    && sudo apt update \
+	# && sudo apt install -y gh powershell azure-cli terraform \
+	&& sudo apt install -y gh azure-cli terraform \
+	# && pwsh -NoProfile -Command "Install-PSResource -Scope AllUsers -TrustRepository -AcceptLicense -Name 'Az' -Verbose" \
+	&& curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 \
+	&& chmod +x bicep \
+	&& sudo mv ./bicep /usr/local/bin/bicep
