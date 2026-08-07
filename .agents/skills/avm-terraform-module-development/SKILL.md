@@ -113,9 +113,11 @@ git checkout -b fix/<issue-number>-<short-description>
 
 ### Step 3: Implement the change
 
-Make the necessary code changes, keeping the composition checklist above in mind.
+All Azure resources MUST be deployed using the **AzAPI provider** (`Azure/azapi`). For AzAPI resource patterns, schema lookups, and the `azure-schema` CLI tool, read [AzAPI.md](references/AzAPI.md).
 
-For AzAPI resource patterns, schema lookups, and the `Get-AzureSchema` CLI tool, read [AzAPI.md](references/AzAPI.md). To query Terraform provider schemas (resources, data sources, functions, ephemeral resources), use the `tfpluginschema` CLI — see [tfpluginschema.md](references/tfpluginschema.md).
+To query Terraform provider schemas (resources, data sources, functions, ephemeral resources), use the `tfpluginschema` CLI. See [tfpluginschema.md](references/tfpluginschema.md).
+
+Make the necessary code changes to add the feature or fix the issue.
 
 ### Step 4: Add unit tests (if justified)
 
@@ -180,34 +182,31 @@ git push -u origin HEAD
 
 When creating the PR, include:
 
-- A summary of the change.
-- The issue number(s) the PR closes.
-- Any relevant context for reviewers.
+- A clear description of what was changed and why
+- References to related issues (e.g., `Closes #123`)
 
-## Common mistakes to avoid
+## Troubleshooting Test Failures
 
-- **Citing a spec from memory.** AVM specs change. Always fetch the current text via `llms.txt`. Several spec IDs are easy to mix up (e.g. `TFFR4` is `response_export_values`, `TFFR5` is `replace_triggers_refs`, `TFFR6` is `resource_types`, `TFFR7` is `retry`/`timeouts`).
-- **Reaching for `azurerm`.** `TFFR3` requires AzAPI; only fall back to `azurerm` for genuinely missing capabilities, and document why.
-- **Naming the primary resource anything other than `this`** (`TFRMNFR2`), or naming a satellite resource `this`. The primary `azapi_resource` MUST be `this`; satellites MUST be named after what they represent (`lock`, `role_assignments`, `diagnostic_settings`, ...).
-- **Exposing `resource_group_name` (or any other parent-scope-specific variable) instead of `parent_id`** (`TFRMFR1`), or validating `parent_id` with hand-rolled regex/startswith instead of `can(provider::azapi::parse_resource_id("<ExpectedParentType>", var.parent_id))` (`TFNFR38`).
-- **Creating the parent scope inside the module** (e.g. a `Microsoft.Resources/resourceGroups` `azapi_resource` for the resource group the module deploys into) — `TFRMFR1` forbids this; the consumer supplies an existing scope's ARM ID.
-- **Hard-coding the `type` argument on an `azapi_resource`** instead of sourcing it from `var.resource_types` (`TFFR6`), or forgetting to cascade the relevant subset to each submodule.
-- **Omitting `response_export_values` (`TFFR4`) or `replace_triggers_refs` (`TFFR5`)** — both are MUST on every `azapi_resource`, even when the value is `[]`.
-- **Editing `README.md`, `main.telemetry.tf`, or `terraform.tf` provider versions by hand.** These are generated/enforced — edit `_header.md`, the `modtm` source via mapotf configs, and so on.
-- **Defaulting collection variables to `null`** instead of `{}` / `[]` with `nullable = false` (`TFNFR20`).
-- **Outputting whole resource objects by default** instead of discrete computed attributes (`TFFR2`), or missing required outputs (`RMFR7`).
-- **Implementing an ARM subresource inline in the parent module** instead of as a submodule under `modules/<singular-name>/` (`TFRMNFR1`), or declaring `count`/`for_each` on a submodule's primary resource.
-- **Adding a new interface (locks, diagnostic settings, role assignments, etc.) without re-using `Azure/avm-utl-interfaces/azure`**. See [interfaces.md](references/interfaces.md).
-- **Using the legacy `diagnostic_settings` shape** instead of the v2 schema. The utility module's `diagnostic_settings_v2` input is the required entry point.
-- **Omitting `retry`, `timeouts`, or `resource_types` from an `azapi_resource`** — or failing to cascade them unchanged into submodules. All three are MUST-level AVM interfaces.
-- **Treating `timeouts` as an attribute.** It is a block; use `dynamic "timeouts"` so the `null` default works.
-- **Skipping `./avm pre-commit` before commit, or `./avm pr-check` after commit.** Both are mandatory.
+If any issues arise during testing or PR checks, refer to the official AVM testing documentation:
 
-## Specifications
+<https://raw.githubusercontent.com/Azure/Azure-Verified-Modules/refs/heads/main/docs/content/contributing/terraform/testing.md>
 
-The canonical source of every AVM rule is the spec index:
+## Reference
 
-- **Index of all specs and docs:** <https://azure.github.io/Azure-Verified-Modules/llms.txt>
-- **Rendered docs site:** <https://azure.github.io/Azure-Verified-Modules/>
+### Code Quality
 
-Fetch `llms.txt` first, locate the raw markdown URL for the spec ID you care about, then fetch that markdown. Do not hard-code spec URLs into module source.
+- Always run `terraform fmt` after making changes
+- Always run `terraform validate` after making changes
+- Use meaningful variable names and descriptions
+- Use snake_case
+- Add proper tags and metadata
+- Document complex configurations
+
+### Tool Integration
+
+- **AzAPI Provider & Schema Lookup**: See [AzAPI.md](references/AzAPI.md) for resource patterns and the `azure-schema` CLI tool
+- **Terraform Provider Schemas**: See [tfpluginschema.md](references/tfpluginschema.md) for querying resource, data source, function, and ephemeral schemas from any provider
+- **Terraform Tests**: See [terraform-test.md](references/terraform-test.md) for writing unit and integration tests
+- **Example Testing**: See [example-test.md](references/example-test.md) for manually testing examples against real Azure infrastructure
+- **Deployment Guidance**: Use `azure_get_deployment_best_practices` tool
+- **Service Documentation**: Use `microsoft.docs.mcp` tool for Azure service-specific guidance
