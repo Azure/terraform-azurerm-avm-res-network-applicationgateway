@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Azure Application Gateway Terraform Module
 
-Azure Application Gateway is a load balancer that enables you to manage and optimize the traffic to your web applications. When using Terraform to deploy Azure resources, you can make use of a Terraform module to define and configure the Azure Application Gateway. Here is a summary page about using an Azure Application Gateway Terraform module:
+This module deploys an Azure Application Gateway using the [AzAPI provider](https://registry.terraform.io/providers/Azure/azapi/latest), providing day-zero support for new ARM API features, a 1:1 mapping with the ARM schema, and `list_unique_id_property` support for clean plans on shared gateways.
 
 > [!IMPORTANT]
 > As the overall AVM framework is not GA (generally available) yet - the CI framework and test automation is not fully functional and implemented across all supported languages yet - breaking changes are expected, and additional customer feedback is yet to be gathered and incorporated. Hence, modules **MUST NOT** be published at version `1.0.0` or higher at this time.
@@ -10,53 +10,72 @@ Azure Application Gateway is a load balancer that enables you to manage and opti
 >
 > However, it is important to note that this **DOES NOT** mean that the modules cannot be consumed and utilized. They **CAN** be leveraged in all types of environments (dev, test, prod etc.). Consumers can treat them just like any other IaC module and raise issues or feature requests against them as they learn from the usage of the module. Consumers should also read the release notes for each version, if considering updating to a more recent version of a module to see if there are any considerations or breaking changes etc.
 
-## What is Azure Application Gateway?
+## Breaking changes — AzAPI migration
 
-Azure Application Gateway is a Layer-7 load balancer service provided by Microsoft Azure. It enables you to manage traffic to your web applications by providing features like SSL termination, routing, and session affinity. Using Terraform, you can automate the provisioning and configuration of an Azure Application Gateway.
+This module has been rewritten from `azurerm_application_gateway` to `azapi_resource`. A `moved` block is included to preserve Terraform state for existing deployments. Key breaking changes:
 
-## Terraform Module for Azure Application Gateway
+- **`resource_group_name` removed** — replaced by `parent_id` (full ARM resource ID of the resource group).
+- **Variable shape** — variables changed from `map(object)` with flat fields to `list(object)` with nested `properties` blocks matching the ARM schema.
+- **Cross-references** — name-based references (e.g. `probe_name = "my-probe"`) are replaced by ARM resource ID references (e.g. `probe = { id = "..." }`).
+- **Public IP** — no longer managed by the module. Create and manage your public IP externally and pass its ID into `frontend_ip_configurations`.
+- **Zones** — changed from `set(number)` to `list(string)`.
+- **SKU capacity** — when `autoscale_configuration` is set, omit `sku.capacity`.
 
-A Terraform module is a reusable and shareable configuration for defining and deploying Azure resources. To create an Azure Application Gateway using Terraform, you can use a pre-built module. This module simplifies the configuration process and allows you to create and manage an Application Gateway efficiently.
+### Requirements
 
-The terraform module supports following scenarios.
+| Dependency | Version |
+|---|---|
+| Terraform | `>= 1.9` |
+| AzAPI provider | `~> 2.12` |
+| azurerm provider | `>= 3.117, < 5.0` |
+
+For the full migration guide including variable mapping and code examples, see [UPGRADE.md](UPGRADE.md).
 
 ## Supported frontend IP configuration
 
-For current general availability support, Application Gateway V2 supports the following combinations
+Application Gateway V2 supports the following combinations:
 
 - Private IP and Public IP
 - Public IP only
-- Private Only 
+- Private only
 
-> [!IMPORTANT]  
-> Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private only gateway.
+> [!IMPORTANT]
+> Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private-only gateways.
 
 ## Supported Scenarios
 
-The Terraform module for Azure Application Gateway is versatile and adaptable, accommodating various deployment scenarios. These scenarios dictate distinct input requirements. Here's an overview of the supported scenarios, each offering a unique configuration:
+**[Default — Simple HTTP Application Gateway](examples/default/README.md)**
+A straightforward HTTP Application Gateway for basic web applications or services.
 
-Each of these scenarios has its own set of input requirements, which can be tailored to meet your specific use case. The module provides the flexibility to deploy Azure Application Gateways for a wide range of applications and security needs.
+**[Single-site HTTP Application Gateway](examples/simple_http_host_single_site_app_gateway/README.md)**
+Routes traffic for a single site behind the gateway.
 
-**[Simple HTTP Application Gateway](examples/simple_http_host_single_site_app_gateway/README.md)**
-This scenario sets up a straightforward HTTP Application Gateway, typically for basic web applications or services.
-
-**[Multi-site HTTP Application Gateway](examples/simple_http_host_multiple_sites_app_gateway/README.md)** Multi-site hosting enables you to configure more than one web application on the same port of application gateways using public-facing listeners. It allows you to configure a more efficient topology for your deployments by adding up to 100+ websites to one application gateway. Each website can be directed to its own backend pool. For example, three domains, contoso.com, fabrikam.com, and adatum.com, point to the IP address of the application gateway. You'd create three multi-site listeners and configure each listener for the respective port and protocol setting.
+**[Multi-site HTTP Application Gateway](examples/simple_http_host_multiple_sites_app_gateway/README.md)**
+Multi-site hosting enables you to configure more than one web application on the same port using public-facing listeners, directing each website to its own backend pool.
 
 **[Application Gateway Internal](examples/simple_http_app_gateway_internal/README.md)**
-Azure Application Gateway Standard v2 can be configured with an Internet-facing VIP or with an internal endpoint that isn't exposed to the Internet. An internal endpoint uses a private IP address for the frontend, which is also known as an internal load balancer (ILB) endpoint.
+Configured with an internal endpoint using a private IP address for the frontend (ILB endpoint).
+
+**[Application Gateway Internal — Private only](examples/front_end_ip_private_custom_name_privateonly/README.md)**
+A private-only frontend configuration with a custom frontend IP name.
+
+**[Application Gateway — Private + Public with custom name](examples/front_end_ip_private_custom_name/README.md)**
+Dual frontend (private and public) with custom frontend IP configuration names.
 
 **[Web Application Firewall (WAF)](examples/simple_waf_http_app_gateway/README.md)**
-A Web Application Firewall is employed to enhance security by inspecting and filtering traffic. Configuration entails defining custom rules and policies to protect against common web application vulnerabilities.
+Enhances security by inspecting and filtering traffic with custom rules and policies.
 
 **[Application Gateway with Self-Signed SSL (HTTPS)](examples/selfssl_waf_https_app_gateway/README.md)**
-In this scenario, self-signed SSL certificates are utilized to secure traffic to HTTPS. You'll need to configure SSL certificates and redirection rules.
+Uses self-signed SSL certificates to secure traffic over HTTPS with redirection rules.
 
-**[Application Gateway with SSL with Azure Key Vault](examples/kv_selfssl_waf_https_app_gateway/README.md)**
-For enhanced security, SSL certificates are managed using Azure Key Vault. This scenario involves setting up Key Vault and integrating it with the Application Gateway. Detailed configuration for Key Vault and SSL certificates is necessary.
+**[Application Gateway with SSL via Azure Key Vault](examples/kv_selfssl_waf_https_app_gateway/README.md)**
+SSL certificates managed using Azure Key Vault for enhanced security. TLS version defaults to 1.2.
 
-**[Application Gateway monitors the health probes](examples/simple_http_probe_app_gateway/README.md)**
-Azure Application Gateway monitors the health of all the servers in its backend pool and automatically stops sending traffic to any server it considers unhealthy. The probes continue to monitor such an unhealthy server, and the gateway starts routing the traffic to it once again as soon as the probes detect it as healthy.
+**[Application Gateway with SSL via Key Vault — Private only](examples/kv_selfssl_waf_https_app_gateway_privateonly/README.md)**
+Key Vault–integrated SSL on a private-only frontend.
 
-Before running the script, make sure you have logged in to your Azure subscription using the Azure CLI or Azure PowerShell, so Terraform can authenticate and interact with your Azure account.
+**[Health Probe monitoring](examples/simple_http_probe_app_gateway/README.md)**
+Monitors the health of backend servers and automatically stops sending traffic to unhealthy instances.
 
-Please ensure that you have a clear plan and architecture for your Azure Application Gateway, as the Terraform script should align with your specific requirements and network design.
+**[Rewrite Rules](examples/rewrite_rule/README.md)**
+Demonstrates URL and header rewrite rules on the Application Gateway.
