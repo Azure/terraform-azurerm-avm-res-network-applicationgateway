@@ -50,6 +50,7 @@ resource "azurerm_application_gateway" "this" {
       ip_addresses = backend_address_pool.value.ip_addresses != null ? backend_address_pool.value.ip_addresses : null
     }
   }
+
   #----------Backend Http Settings Configuration for the application gateway -----------
   dynamic "backend_http_settings" {
     for_each = var.backend_http_settings
@@ -85,6 +86,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   # Private Frontend IP configuration
   # 139 Importing configuration from protal and setting the default values the frontend_ip_configuration block should be private and public
   dynamic "frontend_ip_configuration" {
@@ -106,6 +108,7 @@ resource "azurerm_application_gateway" "this" {
       public_ip_address_id = var.public_ip_address_configuration.create_public_ip_enabled == true ? azurerm_public_ip.this[0].id : local.public_ip_address_configuration.public_ip_resource_id
     }
   }
+
   # Frontend IP Port configuration
   dynamic "frontend_port" {
     for_each = var.frontend_ports
@@ -115,11 +118,13 @@ resource "azurerm_application_gateway" "this" {
       port = lookup(frontend_port.value, "port", null)
     }
   }
+
   #----------Gateway configuration for the application gateway-----------
   gateway_ip_configuration {
     name      = coalesce(var.gateway_ip_configuration.name, local.gateway_ip_configuration_name)
     subnet_id = var.gateway_ip_configuration.subnet_id
   }
+
   #----------Http Listener Configuration for the application gateway -----------
   dynamic "http_listener" {
     for_each = var.http_listeners
@@ -147,6 +152,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   #----------Rules Configuration for the application gateway -----------
   dynamic "request_routing_rule" {
     for_each = var.request_routing_rules
@@ -163,6 +169,7 @@ resource "azurerm_application_gateway" "this" {
       url_path_map_name           = request_routing_rule.value.url_path_map_name
     }
   }
+
   #----------SKU and configuration for the application gateway-----------
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku {
@@ -170,6 +177,7 @@ resource "azurerm_application_gateway" "this" {
     tier     = var.sku.tier
     capacity = var.autoscale_configuration == null ? var.sku.capacity : null
   }
+
   dynamic "authentication_certificate" {
     for_each = var.authentication_certificate == null ? {} : var.authentication_certificate
 
@@ -178,6 +186,7 @@ resource "azurerm_application_gateway" "this" {
       name = authentication_certificate.value.name
     }
   }
+
   dynamic "autoscale_configuration" {
     for_each = var.autoscale_configuration != null ? [var.autoscale_configuration] : []
 
@@ -186,6 +195,7 @@ resource "azurerm_application_gateway" "this" {
       max_capacity = lookup(autoscale_configuration.value, "max_capacity", 2)
     }
   }
+
   dynamic "custom_error_configuration" {
     for_each = var.custom_error_configuration == null ? {} : var.custom_error_configuration
 
@@ -194,6 +204,7 @@ resource "azurerm_application_gateway" "this" {
       status_code           = custom_error_configuration.value.status_code
     }
   }
+
   dynamic "global" {
     for_each = var.global == null ? [] : [var.global]
 
@@ -202,6 +213,7 @@ resource "azurerm_application_gateway" "this" {
       response_buffering_enabled = global.value.response_buffering_enabled
     }
   }
+
   #138 To include System Assigned Managed Identity support along with User Assigned Managed Identities in the identity block
   dynamic "identity" {
     for_each = local.identity_required ? [1] : []
@@ -211,6 +223,7 @@ resource "azurerm_application_gateway" "this" {
       identity_ids = local.managed_identities.identity_ids
     }
   }
+
   dynamic "private_link_configuration" {
     for_each = var.private_link_configuration == null ? [] : var.private_link_configuration
 
@@ -230,6 +243,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   #----------Prod Rules Configuration for the application gateway -----------
   # WAF : Use Health Probes to detect backend availability
   #----------Optional Configuration  -----------
@@ -258,6 +272,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   #----------Redirect Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "redirect_configuration" {
@@ -272,6 +287,7 @@ resource "azurerm_application_gateway" "this" {
       target_url           = redirect_configuration.value.target_url
     }
   }
+
   dynamic "rewrite_rule_set" {
     for_each = var.rewrite_rule_set == null ? {} : var.rewrite_rule_set
 
@@ -325,6 +341,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   #----------SSL Certificate Configuration for the application gateway -----------
   #----------Optionl Configuration  -----------
   dynamic "ssl_certificate" {
@@ -337,6 +354,7 @@ resource "azurerm_application_gateway" "this" {
       password            = ssl_certificate.value.password
     }
   }
+
   dynamic "ssl_policy" {
     for_each = var.ssl_policy == null ? [] : [var.ssl_policy]
 
@@ -348,6 +366,7 @@ resource "azurerm_application_gateway" "this" {
       policy_type          = ssl_policy.value.policy_type
     }
   }
+
   dynamic "ssl_profile" {
     for_each = var.ssl_profile == null ? {} : var.ssl_profile
 
@@ -370,6 +389,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
 
@@ -380,6 +400,7 @@ resource "azurerm_application_gateway" "this" {
       update = timeouts.value.update
     }
   }
+
   dynamic "trusted_client_certificate" {
     for_each = var.trusted_client_certificate == null ? {} : var.trusted_client_certificate
 
@@ -388,6 +409,7 @@ resource "azurerm_application_gateway" "this" {
       name = trusted_client_certificate.value.name
     }
   }
+
   dynamic "trusted_root_certificate" {
     for_each = var.trusted_root_certificate == null ? {} : var.trusted_root_certificate
 
@@ -397,6 +419,7 @@ resource "azurerm_application_gateway" "this" {
       key_vault_secret_id = trusted_root_certificate.value.key_vault_secret_id
     }
   }
+
   dynamic "url_path_map" {
     for_each = var.url_path_map_configurations != null ? var.url_path_map_configurations : {}
 
@@ -423,6 +446,7 @@ resource "azurerm_application_gateway" "this" {
       }
     }
   }
+
   #----------Classic WAF Configuration for the application gateway -----------
   # A separate WAF configuration policy is recommended, this allows for the configuration 'classic' policy inline with the application gateway.
   # To Enable Web Application Firewall policies provide a the WAF configuration block.
@@ -460,7 +484,6 @@ resource "azurerm_application_gateway" "this" {
   }
 }
 
-
 # Example resource implementation
 resource "azurerm_management_lock" "this" {
   count = var.lock != null ? 1 : 0
@@ -470,7 +493,6 @@ resource "azurerm_management_lock" "this" {
   scope      = azurerm_application_gateway.this.id
   notes      = var.lock.kind == "CanNotDelete" ? "Cannot delete the resource or its child resources." : "Cannot delete or modify the resource or its child resources."
 }
-
 
 #----------role assignment settings for the application gateway -----------
 resource "azurerm_role_assignment" "this" {
@@ -486,6 +508,7 @@ resource "azurerm_role_assignment" "this" {
   role_definition_name                   = strcontains(lower(each.value.role_definition_id_or_name), lower(local.role_definition_resource_substring)) ? null : each.value.role_definition_id_or_name
   skip_service_principal_aad_check       = each.value.skip_service_principal_aad_check
 }
+
 #----------Diagnostic logs settings for the application gateway -----------
 # WAF : Monitor and Log the configurations and traffic
 resource "azurerm_monitor_diagnostic_setting" "this" {
@@ -514,6 +537,7 @@ resource "azurerm_monitor_diagnostic_setting" "this" {
       category_group = enabled_log.value
     }
   }
+
   dynamic "metric" {
     for_each = each.value.metric_categories
 
