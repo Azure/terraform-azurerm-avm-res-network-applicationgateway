@@ -12,14 +12,10 @@ This module deploys an Azure Application Gateway using the [AzAPI provider](http
 
 ## Breaking changes — AzAPI migration
 
-This module has been rewritten from `azurerm_application_gateway` to `azapi_resource`. A `moved` block is included to preserve Terraform state for existing deployments. Key breaking changes:
+This module has been rewritten from `azurerm_application_gateway` to `azapi_resource`. A `moved` block is included to preserve Terraform state for existing deployments; this block will be removed in a future release. Key breaking changes:
 
-- **`resource_group_name` removed** — replaced by `parent_id` (full ARM resource ID of the resource group).
-- **Variable shape** — variables changed from `map(object)` with flat fields to `list(object)` with nested `properties` blocks matching the ARM schema.
-- **Cross-references** — name-based references (e.g. `probe_name = "my-probe"`) are replaced by ARM resource ID references (e.g. `probe = { id = "..." }`).
+- **AzAPI provider** — the core resource now uses `azapi_resource` instead of `azurerm_application_gateway`
 - **Public IP** — no longer managed by the module. Create and manage your public IP externally and pass its ID into `frontend_ip_configurations`.
-- **Zones** — changed from `set(number)` to `list(string)`.
-- **SKU capacity** — when `autoscale_configuration` is set, omit `sku.capacity`.
 
 ### Requirements
 
