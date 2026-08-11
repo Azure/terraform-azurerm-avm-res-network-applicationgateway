@@ -31,6 +31,10 @@ resource "azapi_resource" "this" {
       identity_ids = identity.value.user_assigned_resource_ids
     }
   }
+
+  lifecycle {
+    ignore_changes = [body.properties.firewallPolicy]
+  }
 }
 
 moved {

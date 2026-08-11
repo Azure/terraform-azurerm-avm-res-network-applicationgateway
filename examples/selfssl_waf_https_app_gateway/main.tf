@@ -104,7 +104,7 @@ module "application_gateway" {
   # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
   # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
   firewall_policy = {
-    id = azurerm_web_application_firewall_policy.azure_waf.id
+    id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${azurerm_resource_group.rg_group.name}/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/${azurerm_web_application_firewall_policy.azure_waf.name}"
   }
   frontend_ip_configurations = [
     {
