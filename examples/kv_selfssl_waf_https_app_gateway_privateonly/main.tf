@@ -106,7 +106,7 @@ module "application_gateway" {
         private_ip_address           = "10.90.3.10"
         private_ip_allocation_method = "Static"
         subnet = {
-          id = azurerm_subnet.private_ip_test.id
+          id = azurerm_subnet.frontend.id
         }
       }
     }
@@ -126,7 +126,7 @@ module "application_gateway" {
       name = "appGatewayIpConfig"
       properties = {
         subnet = {
-          id = azurerm_subnet.private_ip_test.id
+          id = azurerm_subnet.frontend.id
         }
       }
     }

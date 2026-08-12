@@ -21,14 +21,6 @@ resource "azurerm_subnet" "frontend" {
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-}
-
-resource "azurerm_subnet" "backend" {
-  address_prefixes     = ["10.90.1.0/24"]
-  name                 = "backend"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-
   delegation {
     name = "ApplicationGateways"
 
@@ -39,21 +31,6 @@ resource "azurerm_subnet" "backend" {
       ]
     }
   }
-}
-
-resource "azurerm_subnet" "nat_subnet" {
-  address_prefixes     = ["10.90.6.0/24"]
-  name                 = "nat_subnet"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-}
-
-# Required for to deploy VMSS and Web Server to host application
-resource "azurerm_subnet" "workload" {
-  address_prefixes     = ["10.90.2.0/24"]
-  name                 = "workload"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
 # Required for Frontend Private IP endpoint testing
