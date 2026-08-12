@@ -69,6 +69,9 @@ Uses self-signed SSL certificates to secure traffic over HTTPS with redirection 
 **[Application Gateway with SSL via Azure Key Vault](examples/kv\_selfssl\_waf\_https\_app\_gateway/README.md)**
 SSL certificates managed using Azure Key Vault for enhanced security. TLS version defaults to 1.2.
 
+**[Application Gateway with SSL via Azure Key Vault — Private only](examples/kv\_selfssl\_waf\_https\_app\_gateway\_privateonly/README.md)**
+Private-only frontend with WAF and SSL certificates managed via Azure Key Vault. TLS version defaults to 1.2.
+
 **[Health Probe monitoring](examples/simple\_http\_probe\_app\_gateway/README.md)**
 Monitors the health of backend servers and automatically stops sending traffic to unhealthy instances.
 

@@ -110,10 +110,10 @@ module "application_gateway" {
     {
       name = "private-ip-custom-name"
       properties = {
-        private_ip_address           = "10.90.3.10"
+        private_ip_address           = "100.64.1.5"
         private_ip_allocation_method = "Static"
         subnet = {
-          id = azurerm_subnet.private_ip_test.id
+          id = azurerm_subnet.backend.id
         }
       }
     }
@@ -133,7 +133,7 @@ module "application_gateway" {
       name = "appGatewayIpConfig"
       properties = {
         subnet = {
-          id = azurerm_subnet.private_ip_test.id
+          id = azurerm_subnet.backend.id
         }
       }
     }
@@ -246,6 +246,8 @@ module "application_gateway" {
   # Optional Input
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.keyvault,
+  azurerm_private_endpoint.example]
 }
 
 ```
@@ -272,6 +274,8 @@ The following resources are used by this module:
 - [azurerm_key_vault_access_policy.appag_key_vault_access_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_access_policy.key_vault_default_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_certificate.ssl_cert_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
+- [azurerm_private_dns_zone.keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone) (resource)
+- [azurerm_private_dns_zone_virtual_network_link.keyvault](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_dns_zone_virtual_network_link) (resource)
 - [azurerm_private_endpoint.example](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/private_endpoint) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -359,14 +363,6 @@ Description: ID of the Azure Virtual Network
 ### <a name="output_virtual_network_name"></a> [virtual\_network\_name](#output\_virtual\_network\_name)
 
 Description: Name of the Azure Virtual Network
-
-### <a name="output_workload_subnet_id"></a> [workload\_subnet\_id](#output\_workload\_subnet\_id)
-
-Description: ID of the Workload Subnet
-
-### <a name="output_workload_subnet_name"></a> [workload\_subnet\_name](#output\_workload\_subnet\_name)
-
-Description: Name of the Workload Subnet
 
 ## Modules
 
