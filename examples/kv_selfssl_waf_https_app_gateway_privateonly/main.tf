@@ -238,7 +238,8 @@ module "application_gateway" {
   }
   # Optional Input
   # Zone redundancy for the application gateway ["1", "2", "3"]
-  zones      = ["1", "2", "3"]
-  depends_on = [azurerm_private_dns_zone_virtual_network_link.keyvault]
+  zones = ["1", "2", "3"]
+  depends_on = [azurerm_private_dns_zone_virtual_network_link.keyvault,
+  azurerm_private_endpoint.example]
 }
 

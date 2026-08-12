@@ -83,7 +83,7 @@ resource "azurerm_key_vault" "keyvault" {
   tenant_id                       = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption     = true
   enabled_for_template_deployment = true
-  public_network_access_enabled   = false
+  public_network_access_enabled   = true
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
 }
