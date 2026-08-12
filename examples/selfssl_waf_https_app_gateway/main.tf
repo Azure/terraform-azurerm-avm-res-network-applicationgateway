@@ -153,10 +153,6 @@ module "application_gateway" {
       }
     }
   ]
-  lock = {
-    name = "lock-${module.naming.application_gateway.name_unique}"
-    kind = "CanNotDelete"
-  }
   managed_identities = {
     user_assigned_resource_ids = [
       azurerm_user_assigned_identity.appag_umid.id
