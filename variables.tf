@@ -92,6 +92,52 @@ DESCRIPTION
   nullable    = false
 }
 
+variable "backend" {
+  type = map(object({
+    name                           = string
+    port                           = number
+    protocol                       = string
+    client_ip_preservation_enabled = optional(bool)
+    host_name                      = optional(string)
+    probe_name                     = optional(string)
+    timeout_in_seconds             = optional(number)
+    trusted_root_certificate_names = optional(list(string))
+    # Define other attributes as needed
+  }))
+  description = <<-DESCRIPTION
+ - `name` - (Required) The name of the backend.
+ - `port` - (Required) The port used for this backend.
+ - `protocol` - (Required) The protocol used for this backend.
+ - `client_ip_preservation_enabled` - (Optional) Whether client IP preservation is enabled.
+ - `host_name` - (Optional) The host name for the backend.
+ - `probe_name` - (Optional) The name of the probe associated with this backend.
+ - `timeout_in_seconds` - (Optional) The timeout in seconds for this backend.
+ - `trusted_root_certificate_names` - (Optional) A list of trusted root certificate names for this backend.
+DESCRIPTION
+  nullable    = false
+}
+variable "listeners" {
+  type = map(object({
+    name                           = string
+    frontend_port_name             = string
+    protocol                       = string
+    frontend_ip_configuration_name = optional(string)
+    host_names                     = optional(list(string))
+    ssl_certificate_name           = optional(string)
+    ssl_profile_name               = optional(string)
+    # Define other attributes as needed
+  }))
+  description = <<-DESCRIPTION
+ - `frontend_ip_configuration_name` - (Required) The Name of the Frontend IP Configuration used for this HTTP Listener.
+ - `frontend_port_name` - (Required) The Name of the Frontend Port use for this HTTP Listener.
+ - `host_names` - (Optional) A list of Hostname(s) should be used for this HTTP Listener. It allows special wildcard characters.
+ - `name` - (Required) The Name of the HTTP Listener.
+ - `ssl_certificate_name` - (Optional) The name of the associated SSL Certificate which should be used for this HTTP Listener.
+ - `ssl_profile_name` - (Optional) The name of the associated SSL Profile which should be used for this HTTP Listener.
+DESCRIPTION
+  nullable    = false
+}
+
 variable "http_listeners" {
   type = map(object({
     name                           = string
@@ -150,6 +196,27 @@ variable "name" {
     error_message = "The name must be 1-80 characters long, start with an alphanumeric character, end with an alphanumeric character or underscore, and contain only alphanumerics, underscores, periods, and hyphens."
   }
 }
+
+variable "routing_rules" {
+  type = map(object({
+    name                        = string
+    listener_name               = string
+    backend_name                = string
+    backend_address_pool_name   = string
+    priority                    = number
+    # Define other attributes as needed
+  }))
+  description = <<-DESCRIPTION
+ - `backend_address_pool_name` - (Required) The Name of the Backend Address Pool which should be used for this Routing Rule. Cannot be set if `redirect_configuration_name` is set.
+ - `backend_name` - (Required) The Name of the Backend which should be used for this Routing Rule.
+ - `listener_name` - (Required) The Name of the TCP or TLS Listener which should be used for this Routing Rule.
+ - `name` - (Required) The Name of this Request Routing Rule.
+ - `priority` - (Required) Rule evaluation order can be dictated by specifying an integer value from `1` to `20000` with `1` being the highest priority and `20000` being the lowest priority.
+DESCRIPTION
+  nullable    = false
+}
+
+
 
 #134 request_routing_rules change on mandatory variables priority, backend_http_settings_name, backend_address_pool_name
 variable "request_routing_rules" {

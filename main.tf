@@ -33,7 +33,7 @@ resource "azurerm_application_gateway" "this" {
   location                          = var.location
   name                              = var.name
   resource_group_name               = var.resource_group_name
-  enable_http2                      = var.http2_enable
+  http2_enabled                     = var.http2_enable
   fips_enabled                      = var.fips_enabled
   firewall_policy_id                = var.app_gateway_waf_policy_resource_id
   force_firewall_policy_association = var.force_firewall_policy_association
@@ -124,6 +124,49 @@ resource "azurerm_application_gateway" "this" {
     name      = coalesce(var.gateway_ip_configuration.name, local.gateway_ip_configuration_name)
     subnet_id = var.gateway_ip_configuration.subnet_id
   }
+
+  #----------TCP/TLS Listener Configuration for the application gateway-----------
+  dynamic "listener" {
+    for_each = var.listeners
+
+    content {
+      name                           = listener.value.name
+      frontend_ip_configuration_name = coalesce(listener.value.frontend_ip_configuration_name, local.frontend_ip_configuration_name, local.frontend_ip_configuration_private_name)
+      frontend_port_name             = listener.value.frontend_port_name
+      protocol                       = listener.value.protocol
+      host_names                     = listener.value.host_names
+      ssl_certificate_name           = listener.value.ssl_certificate_name
+      ssl_profile_name               = listener.value.ssl_profile_name
+    }
+  }
+
+  #----------Backend Configuration for the application gateway TCP/TLS listeners-----------
+  dynamic "backend" {
+    for_each = var.backend
+    content {
+      name                           = backend.value.name
+      port                           = backend.value.port
+      protocol                       = backend.value.protocol
+      client_ip_preservation_enabled = backend.value.client_ip_preservation_enabled
+      host_name                      = backend.value.host_name
+      probe_name                     = backend.value.probe_name
+      timeout_in_seconds             = backend.value.timeout_in_seconds
+      trusted_root_certificate_names = backend.value.trusted_root_certificate_names
+    }
+  }
+
+  dynamic "routing_rule" {
+    for_each = var.routing_rules
+
+    content {
+      name                       = routing_rule.value.name
+      priority                   = routing_rule.value.priority
+      listener_name              = routing_rule.value.listener_name
+      backend_address_pool_name  = routing_rule.value.backend_address_pool_name
+      backend_name               = routing_rule.value.backend_name
+    }
+  }
+
 
   #----------Http Listener Configuration for the application gateway -----------
   dynamic "http_listener" {
