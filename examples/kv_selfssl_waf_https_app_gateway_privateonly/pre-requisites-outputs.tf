@@ -67,13 +67,3 @@ output "virtual_network_name" {
   description = "Name of the Azure Virtual Network"
   value       = azurerm_virtual_network.vnet.name
 }
-
-output "workload_subnet_id" {
-  description = "ID of the Workload Subnet"
-  value       = azurerm_subnet.workload.id
-}
-
-output "workload_subnet_name" {
-  description = "Name of the Workload Subnet"
-  value       = azurerm_subnet.workload.name
-}

@@ -1,69 +1,49 @@
-output "application_gateway_id" {
-  description = "The ID of the Azure Application Gateway."
-  value       = azurerm_application_gateway.this.id
+output "default_predefined_ssl_policy" {
+  description = "Ssl predefined policy name enums."
+  value       = try(azapi_resource.this.output.properties.defaultPredefinedSslPolicy, null)
 }
 
-output "application_gateway_name" {
-  description = "The name of the Azure Application Gateway."
-  value       = azurerm_application_gateway.this.name
+output "identity_principal_id" {
+  description = "The principal id of the system assigned identity. This property will only be provided for a system assigned identity."
+  value       = try(azapi_resource.this.output.identity.principalId, null)
 }
 
-output "backend_address_pools" {
-  description = "Information about the backend address pools configured for the Application Gateway, including their names."
-  value       = azurerm_application_gateway.this.backend_address_pool
+output "identity_tenant_id" {
+  description = "The tenant id of the system assigned identity. This property will only be provided for a system assigned identity."
+  value       = try(azapi_resource.this.output.identity.tenantId, null)
 }
 
-output "backend_http_settings" {
-  description = "Information about the backend HTTP settings for the Application Gateway, including settings like port and protocol."
-  value       = azurerm_application_gateway.this.backend_http_settings
+output "name" {
+  description = "The name of the created resource."
+  value       = azapi_resource.this.name
 }
 
-output "frontend_port" {
-  description = "Information about the frontend ports used by the Application Gateway, including their names and port numbers."
-  value       = azurerm_application_gateway.this.frontend_port
+output "operational_state" {
+  description = "Operational state of the application gateway resource."
+  value       = try(azapi_resource.this.output.properties.operationalState, null)
 }
 
-output "http_listeners" {
-  description = "Information about the HTTP listeners configured for the Application Gateway, including their names and settings."
-  value       = azurerm_application_gateway.this.http_listener
+output "private_endpoint_connections" {
+  description = "Private Endpoint connections on application gateway."
+  value       = try(azapi_resource.this.output.properties.privateEndpointConnections, [])
 }
 
-output "new_public_ip_address" {
-  description = "The actual public IP address associated with the Public IP resource, if we create a new one."
-  value       = try(azurerm_public_ip.this[0].ip_address, "")
+output "provisioning_state" {
+  description = "The current provisioning state."
+  value       = try(azapi_resource.this.output.properties.provisioningState, null)
 }
 
-output "probes" {
-  description = "Information about health probes configured for the Application Gateway, including their settings."
-  value       = azurerm_application_gateway.this.probe
-}
-
-output "public_ip_id" {
-  description = "The ID of the Azure Public IP address associated with the Application Gateway."
-  value       = var.public_ip_address_configuration.create_public_ip_enabled == true ? azurerm_public_ip.this[0].id : var.public_ip_address_configuration.public_ip_resource_id
-}
-
-output "request_routing_rules" {
-  description = "Information about request routing rules defined for the Application Gateway, including their names and configurations."
-  value       = azurerm_application_gateway.this.request_routing_rule
+output "resource_guid" {
+  description = "The resource GUID property of the application gateway resource."
+  value       = try(azapi_resource.this.output.properties.resourceGuid, null)
 }
 
 output "resource_id" {
-  description = "Resource ID of Container Group Instance"
-  value       = azurerm_application_gateway.this.id
+  description = "The ID of the created resource."
+  value       = azapi_resource.this.id
 }
 
-output "ssl_certificates" {
-  description = "Information about SSL certificates used by the Application Gateway, including their names and other details."
-  value       = azurerm_application_gateway.this.ssl_certificate
-}
-
-output "tags" {
-  description = "The tags applied to the Application Gateway."
-  value       = azurerm_application_gateway.this.tags
-}
-
-output "waf_configuration" {
-  description = "Information about the Web Application Firewall (WAF) configuration, if applicable."
-  value       = azurerm_application_gateway.this.waf_configuration
+output "type" {
+  description = "Resource type."
+  value       = try(azapi_resource.this.output.type, null)
 }

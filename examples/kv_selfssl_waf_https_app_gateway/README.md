@@ -13,9 +13,13 @@ For enhanced security, SSL certificates are managed using Azure Key Vault. This 
 
 #----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.12, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.9"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -31,6 +35,8 @@ provider "azurerm" {
   features {}
 }
 
+provider "azapi" {}
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -41,8 +47,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.11.0"
+  source  = "Azure/regions/azurerm"
+  version = "0.8.2"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -51,154 +57,193 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
+locals {
+  agw_id = "${azurerm_resource_group.rg_group.id}/providers/Microsoft.Network/applicationGateways/${module.naming.application_gateway.name_unique}"
+}
+
 module "application_gateway" {
   source = "../../"
 
-  # Backend address pool configuration for the application gateway
-  # Mandatory Input
-  backend_address_pools = {
-    appGatewayBackendPool = {
-      name = "appGatewayBackendPool"
-      # ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
-    }
-  }
-  # Backend http settings configuration for the application gateway
-  # Mandatory Input
-  backend_http_settings = {
-    appGatewayBackendHttpSettings = {
-      name                  = "appGatewayBackendHttpSettings"
-      cookie_based_affinity = "Disabled"
-      path                  = "/"
-      port                  = 80
-      protocol              = "Http"
-      request_timeout       = 30
-      connection_draining = {
-        enable_connection_draining = true
-        drain_timeout_sec          = 300
-      }
-    }
-    # Add more http settings as needed
-  }
-  # frontend port configuration block for the application gateway
-  # WAF : Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
-  frontend_ports = {
-    frontend-port-443 = {
-      name = "frontend-port-443"
-      port = 443
-    }
-  }
-  gateway_ip_configuration = {
-    subnet_id = azurerm_subnet.backend.id
-  }
-  # Http Listerners configuration for the application gateway
-  # Mandatory Input
-  http_listeners = {
-    appGatewayHttpListener = {
-      name                 = "appGatewayHttpListener"
-      host_name            = null
-      frontend_port_name   = "frontend-port-443"
-      ssl_certificate_name = "app-gateway-cert"
-      ssl_profile_name     = "example-ssl-profile"
-    }
-    # # Add more http listeners as needed
-  }
   location = azurerm_resource_group.rg_group.location
   # provide Application gateway name
-  name = module.naming.application_gateway.name_unique
-  # Routing rules configuration for the backend pool
-  # Mandatory Input
-  request_routing_rules = {
-    routing-rule-1 = {
-      name                       = "rule-1"
-      rule_type                  = "Basic"
-      http_listener_name         = "appGatewayHttpListener"
-      backend_address_pool_name  = "appGatewayBackendPool"
-      backend_http_settings_name = "appGatewayBackendHttpSettings"
-      priority                   = 100
-    }
-    # Add more rules as needed
-  }
-  resource_group_name = azurerm_resource_group.rg_group.name
-  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
-  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
-  # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
-  app_gateway_waf_policy_resource_id = azurerm_web_application_firewall_policy.azure_waf.id
+  name      = module.naming.application_gateway.name_unique
+  parent_id = azurerm_resource_group.rg_group.id
   autoscale_configuration = {
     min_capacity = 2
     max_capacity = 3
   }
+  # Backend address pool configuration for the application gateway
+  # Mandatory Input
+  backend_address_pools = [
+    {
+      name       = "appGatewayBackendPool"
+      properties = {}
+    }
+  ]
+  # Backend http settings configuration for the application gateway
+  # Mandatory Input
+  backend_http_settings_collection = [
+    {
+      name = "appGatewayBackendHttpSettings"
+      properties = {
+        cookie_based_affinity = "Disabled"
+        path                  = "/"
+        port                  = 80
+        protocol              = "Http"
+        request_timeout       = 30
+        connection_draining = {
+          enabled              = true
+          drain_timeout_in_sec = 300
+        }
+      }
+    }
+  ]
   diagnostic_settings = {
     example_setting = {
       name                           = "${module.naming.application_gateway.name_unique}-diagnostic-setting"
       workspace_resource_id          = azurerm_log_analytics_workspace.log_analytics_workspace.id
       log_analytics_destination_type = "Dedicated" # Or "AzureDiagnostics"
-      # log_categories                 = ["Application Gateway Access Log", "Application Gateway Performance Log", "Application Gateway Firewall Log"]
-      log_groups        = ["allLogs"]
-      metric_categories = ["AllMetrics"]
+      log_groups                     = ["allLogs"]
+      metric_categories              = ["AllMetrics"]
     }
   }
-  # log_analytics_workspace_id = azurerm_log_analytics_workspace.log_analytics_workspace.id
   enable_telemetry = var.enable_telemetry
+  # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
+  # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
+  # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
+  firewall_policy = {
+    id = "${azurerm_resource_group.rg_group.id}/providers/Microsoft.Network/ApplicationGatewayWebApplicationFirewallPolicies/${azurerm_web_application_firewall_policy.azure_waf.name}"
+  }
+  frontend_ip_configurations = [
+    {
+      name = "appGatewayFrontendPublicIP"
+      properties = {
+        public_ip_address = {
+          id = azurerm_public_ip.pip.id
+        }
+      }
+    }
+  ]
+  # frontend port configuration block for the application gateway
+  # WAF : Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
+  frontend_ports = [
+    {
+      name = "frontend-port-443"
+      properties = {
+        port = 443
+      }
+    }
+  ]
+  gateway_ip_configurations = [
+    {
+      name = "appGatewayIpConfig"
+      properties = {
+        subnet = {
+          id = azurerm_subnet.backend.id
+        }
+      }
+    }
+  ]
+  # Http Listerners configuration for the application gateway
+  # Mandatory Input
+  http_listeners = [
+    {
+      name = "appGatewayHttpListener"
+      properties = {
+        frontend_ip_configuration = {
+          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+        }
+        frontend_port = {
+          id = "${local.agw_id}/frontendPorts/frontend-port-443"
+        }
+        protocol = "Https"
+        ssl_certificate = {
+          id = "${local.agw_id}/sslCertificates/app-gateway-cert"
+        }
+        ssl_profile = {
+          id = "${local.agw_id}/sslProfiles/example-ssl-profile"
+        }
+      }
+    }
+  ]
   managed_identities = {
     user_assigned_resource_ids = [
-      azurerm_user_assigned_identity.appag_umid.id # This should be a list of strings, not a list of objects.
+      azurerm_user_assigned_identity.appag_umid.id
     ]
   }
-  # pre-requisites resources input required for the module
-  public_ip_address_configuration = {
-    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
-  }
-  # HTTP to HTTPS Redirection Configuration for
-  redirect_configuration = {
-    redirect_config_1 = {
-      name                 = "Redirect1"
-      redirect_type        = "Permanent"
-      include_path         = true
-      include_query_string = true
-      target_listener_name = "appGatewayHttpListener"
+  # HTTP to HTTPS Redirection Configuration
+  redirect_configurations = [
+    {
+      name = "Redirect1"
+      properties = {
+        redirect_type        = "Permanent"
+        include_path         = true
+        include_query_string = true
+        target_listener = {
+          id = "${local.agw_id}/httpListeners/appGatewayHttpListener"
+        }
+      }
     }
-  }
+  ]
+  # Routing rules configuration for the backend pool
+  # Mandatory Input
+  request_routing_rules = [
+    {
+      name = "rule-1"
+      properties = {
+        rule_type = "Basic"
+        http_listener = {
+          id = "${local.agw_id}/httpListeners/appGatewayHttpListener"
+        }
+        backend_address_pool = {
+          id = "${local.agw_id}/backendAddressPools/appGatewayBackendPool"
+        }
+        backend_http_settings = {
+          id = "${local.agw_id}/backendHttpSettingsCollection/appGatewayBackendHttpSettings"
+        }
+        priority = 100
+      }
+    }
+  ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
   sku = {
     # Accpected value for names Standard_v2 and WAF_v2
     name = "WAF_v2"
     # Accpected value for tier Standard_v2 and WAF_v2
     tier = "WAF_v2"
-    # Accpected value for capacity 1 to 10 for a V1 SKU, 1 to 100 for a V2 SKU
-    capacity = 0 # Set the initial capacity to 0 for autoscaling
   }
   # SSL Certificate Block
-  ssl_certificates = {
-    "app-gateway-cert" = {
-      name                = "app-gateway-cert"
-      key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
+  ssl_certificates = [
+    {
+      name = "app-gateway-cert"
+      properties = {
+        key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
+      }
     }
-  }
+  ]
   ssl_policy = {
-
     policy_type          = "Custom"
     min_protocol_version = "TLSv1_2"
     cipher_suites = [
       "TLS_RSA_WITH_AES_128_GCM_SHA256",
-      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+      "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
     ]
-
   }
-  ssl_profile = {
-    profile1 = {
+  ssl_profiles = [
+    {
       name = "example-ssl-profile"
-      ssl_policy = {
-
-        policy_type          = "Custom"
-        min_protocol_version = "TLSv1_2"
-        cipher_suites = [
-          "TLS_RSA_WITH_AES_128_GCM_SHA256",
-          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-        ]
+      properties = {
+        ssl_policy = {
+          policy_type          = "Custom"
+          min_protocol_version = "TLSv1_2"
+          cipher_suites = [
+            "TLS_RSA_WITH_AES_128_GCM_SHA256",
+            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+          ]
+        }
       }
     }
-  }
+  ]
   tags = {
     environment = "dev"
     owner       = "application_gateway"
@@ -209,7 +254,6 @@ module "application_gateway" {
   zones = ["1", "2", "3"]
 }
 
-
 ```
 
 <!-- markdownlint-disable MD033 -->
@@ -217,7 +261,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.12, < 2.0)
+
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.9)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
@@ -232,6 +278,7 @@ The following resources are used by this module:
 - [azurerm_key_vault_access_policy.key_vault_default_policy](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_access_policy) (resource)
 - [azurerm_key_vault_certificate.ssl_cert_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/key_vault_certificate) (resource)
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
+- [azurerm_public_ip.pip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -298,6 +345,10 @@ Description: ID of the Private IP Test Subnet
 
 Description: Name of the Private IP Test Subnet
 
+### <a name="output_public_ip_id"></a> [public\_ip\_id](#output\_public\_ip\_id)
+
+Description: ID of the Public IP
+
 ### <a name="output_resource_group_id"></a> [resource\_group\_id](#output\_resource\_group\_id)
 
 Description: ID of the Azure Resource Group
@@ -344,9 +395,9 @@ Version: 0.3.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
-Source: Azure/avm-utl-regions/azurerm
+Source: Azure/regions/azurerm
 
-Version: 0.11.0
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

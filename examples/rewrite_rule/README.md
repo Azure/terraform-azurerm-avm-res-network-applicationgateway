@@ -14,9 +14,13 @@ This scenario tests re-write rules.
 
 #----------All Required Provider Section-----------
 terraform {
-  required_version = ">= 1.9, < 2.0"
+  required_version = ">= 1.12, < 2.0"
 
   required_providers {
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.9"
+    }
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
@@ -32,6 +36,8 @@ provider "azurerm" {
   features {}
 }
 
+provider "azapi" {}
+
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
@@ -42,8 +48,8 @@ module "naming" {
 
 # This allows us to randomize the region for the resource group.
 module "regions" {
-  source  = "Azure/avm-utl-regions/azurerm"
-  version = "0.11.0"
+  source  = "Azure/regions/azurerm"
+  version = "0.8.2"
 }
 
 # This allows us to randomize the region for the resource group.
@@ -52,129 +58,172 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
+locals {
+  agw_id = "${azurerm_resource_group.rg_group.id}/providers/Microsoft.Network/applicationGateways/${module.naming.application_gateway.name_unique}"
+}
 
 module "application_gateway" {
   source = "../../"
 
-  # Backend address pool configuration for the application gateway
-  # Mandatory Input
-  backend_address_pools = {
-    appGatewayBackendPool = {
-      name         = "appGatewayBackendPool"
-      ip_addresses = ["100.64.2.6", "100.64.2.5"]
-      #fqdns        = ["example1.com", "example2.com"]
-    }
-  }
-  # Backend http settings configuration for the application gateway
-  # Mandatory Input
-  backend_http_settings = {
-    appGatewayBackendHttpSettings = {
-      name = "appGatewayBackendHttpSettings"
-      #Github issue #55 allow custom port for the backend
-      port                  = 80
-      protocol              = "Http"
-      cookie_based_affinity = "Disabled"
-      request_timeout       = 30
-
-
-      connection_draining = {
-        enable_connection_draining = true
-        drain_timeout_sec          = 300
-
-      }
-    }
-    # Add more http settings as needed
-  }
-  # frontend port configuration block for the application gateway
-  # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
-  # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
-  frontend_ports = {
-    frontend-port-80 = {
-      name = "frontend-port-80"
-      port = 8080
-    }
-  }
-  gateway_ip_configuration = {
-    subnet_id = azurerm_subnet.backend.id
-  }
-  # Http Listerners configuration for the application gateway
-  # Mandatory Input
-  http_listeners = {
-    appGatewayHttpListener = {
-      name               = "appGatewayHttpListener"
-      host_name          = null
-      frontend_port_name = "frontend-port-80"
-    }
-    # # Add more http listeners as needed
-  }
   location = azurerm_resource_group.rg_group.location
   # provide Application gateway name
-  name = module.naming.application_gateway.name_unique
-  # Routing rules configuration for the backend pool
-  # Mandatory Input
-  request_routing_rules = {
-    routing-rule-1 = {
-      name                       = "rule-1"
-      rule_type                  = "Basic"
-      http_listener_name         = "appGatewayHttpListener"
-      backend_address_pool_name  = "appGatewayBackendPool"
-      backend_http_settings_name = "appGatewayBackendHttpSettings"
-      priority                   = 100
-      rewrite_rule_set_name      = "my-rewrite-rule-set"
-    }
-    # Add more rules as needed
-  }
-  resource_group_name = azurerm_resource_group.rg_group.name
+  name      = module.naming.application_gateway.name_unique
+  parent_id = azurerm_resource_group.rg_group.id
   autoscale_configuration = {
     min_capacity = 2
     max_capacity = 3
   }
-  # pre-requisites resources input required for the module
-  public_ip_address_configuration = {
-    public_ip_name = "${module.naming.public_ip.name_unique}-pip"
-  }
-  rewrite_rule_set = {
-    ruleset1 = {
-      name = "my-rewrite-rule-set"
-      rewrite_rules = {
-        rule_1 = {
-          name          = "rr-x-forwarded-for"
-          rule_sequence = 102
-          request_header_configurations = {
-            x-forwarded-for = {
-              header_name  = "X-Forwarded-For"
-              header_value = "{var_client_ip}"
-            }
-          }
-        }
-        rule_2 = {
-          name          = "rr-blog-post-rewrite"
-          rule_sequence = 103
-
-          # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
-          conditions = {
-            blog_path = {
-              variable    = "var_uri_path"
-              pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
-              ignore_case = false
-              negate      = false
-            }
-          }
-          response_header_configurations = {
-            # example frame embedding protection
-            x-frame-options = {
-              header_name  = "X-Frame-Options"
-              header_value = "DENY"
-            }
-          }
-
-          url = {
-            path    = "/blog/{var_uri_path_1}/{var_uri_path_2}"
-            reroute = false
-          }
+  # Backend address pool configuration for the application gateway
+  # Mandatory Input
+  backend_address_pools = [
+    {
+      name = "appGatewayBackendPool"
+      properties = {
+        backend_addresses = [
+          { ip_address = "100.64.2.6" },
+          { ip_address = "100.64.2.5" },
+        ]
+      }
+    }
+  ]
+  # Backend http settings configuration for the application gateway
+  # Mandatory Input
+  backend_http_settings_collection = [
+    {
+      name = "appGatewayBackendHttpSettings"
+      properties = {
+        #Github issue #55 allow custom port for the backend
+        port                  = 80
+        protocol              = "Http"
+        cookie_based_affinity = "Disabled"
+        request_timeout       = 30
+        connection_draining = {
+          enabled              = true
+          drain_timeout_in_sec = 300
         }
       }
     }
+  ]
+  frontend_ip_configurations = [
+    {
+      name = "appGatewayFrontendPublicIP"
+      properties = {
+        public_ip_address = {
+          id = azurerm_public_ip.pip.id
+        }
+      }
+    }
+  ]
+  # frontend port configuration block for the application gateway
+  # WAF : This example NO HTTPS, We recommend to  Secure all incoming connections using HTTPS for production services with end-to-end SSL/TLS or SSL/TLS termination at the Application Gateway to protect against attacks and ensure data remains private and encrypted between the web server and browsers.
+  # WAF : Please refer kv_selfssl_waf_https_app_gateway example for HTTPS configuration
+  frontend_ports = [
+    {
+      name = "frontend-port-80"
+      properties = {
+        port = 8080
+      }
+    }
+  ]
+  gateway_ip_configurations = [
+    {
+      name = "appGatewayIpConfig"
+      properties = {
+        subnet = {
+          id = azurerm_subnet.backend.id
+        }
+      }
+    }
+  ]
+  # Http Listerners configuration for the application gateway
+  # Mandatory Input
+  http_listeners = [
+    {
+      name = "appGatewayHttpListener"
+      properties = {
+        frontend_ip_configuration = {
+          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+        }
+        frontend_port = {
+          id = "${local.agw_id}/frontendPorts/frontend-port-80"
+        }
+        protocol = "Http"
+      }
+    }
+  ]
+  # Routing rules configuration for the backend pool
+  # Mandatory Input
+  request_routing_rules = [
+    {
+      name = "rule-1"
+      properties = {
+        rule_type = "Basic"
+        http_listener = {
+          id = "${local.agw_id}/httpListeners/appGatewayHttpListener"
+        }
+        backend_address_pool = {
+          id = "${local.agw_id}/backendAddressPools/appGatewayBackendPool"
+        }
+        backend_http_settings = {
+          id = "${local.agw_id}/backendHttpSettingsCollection/appGatewayBackendHttpSettings"
+        }
+        rewrite_rule_set = {
+          id = "${local.agw_id}/rewriteRuleSets/my-rewrite-rule-set"
+        }
+        priority = 100
+      }
+    }
+  ]
+  rewrite_rule_sets = [
+    {
+      name = "my-rewrite-rule-set"
+      properties = {
+        rewrite_rules = [
+          {
+            name          = "rr-x-forwarded-for"
+            rule_sequence = 102
+            action_set = {
+              request_header_configurations = [
+                {
+                  header_name  = "X-Forwarded-For"
+                  header_value = "{var_client_ip}"
+                }
+              ]
+            }
+          },
+          {
+            name          = "rr-blog-post-rewrite"
+            rule_sequence = 103
+            # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
+            conditions = [
+              {
+                variable    = "var_uri_path"
+                pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
+                ignore_case = false
+                negate      = false
+              }
+            ]
+            action_set = {
+              response_header_configurations = [
+                {
+                  # example frame embedding protection
+                  header_name  = "X-Frame-Options"
+                  header_value = "DENY"
+                }
+              ]
+              url_configuration = {
+                modified_path = "/blog/{var_uri_path_1}/{var_uri_path_2}"
+                reroute       = false
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+  sku = {
+    name = "Standard_v2"
+    tier = "Standard_v2"
   }
   tags = {
     environment = "dev"
@@ -191,7 +240,9 @@ module "application_gateway" {
 
 The following requirements are needed by this module:
 
-- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.9, < 2.0)
+- <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) (>= 1.12, < 2.0)
+
+- <a name="requirement_azapi"></a> [azapi](#requirement\_azapi) (~> 2.9)
 
 - <a name="requirement_azurerm"></a> [azurerm](#requirement\_azurerm) (~> 4.0)
 
@@ -202,6 +253,7 @@ The following requirements are needed by this module:
 The following resources are used by this module:
 
 - [azurerm_log_analytics_workspace.log_analytics_workspace](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/log_analytics_workspace) (resource)
+- [azurerm_public_ip.pip](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/public_ip) (resource)
 - [azurerm_resource_group.rg_group](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/resource_group) (resource)
 - [azurerm_subnet.backend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
 - [azurerm_subnet.frontend](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) (resource)
@@ -247,6 +299,10 @@ Description: ID of the Private IP Test Subnet
 
 Description: Name of the Private IP Test Subnet
 
+### <a name="output_public_ip_id"></a> [public\_ip\_id](#output\_public\_ip\_id)
+
+Description: ID of the Public IP
+
 ### <a name="output_resource_group_id"></a> [resource\_group\_id](#output\_resource\_group\_id)
 
 Description: ID of the Azure Resource Group
@@ -289,9 +345,9 @@ Version: 0.3.0
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
-Source: Azure/avm-utl-regions/azurerm
+Source: Azure/regions/azurerm
 
-Version: 0.11.0
+Version: 0.8.2
 
 <!-- markdownlint-disable-next-line MD041 -->
 ## Data Collection

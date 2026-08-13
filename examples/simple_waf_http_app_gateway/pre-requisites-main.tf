@@ -77,6 +77,15 @@ resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
   sku                 = "PerGB2018"
 }
 
+resource "azurerm_public_ip" "pip" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.rg_group.location
+  name                = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
+}
+
 #-----------------------------------------------------------------
 #  Enable these to deploy sample application to VMSS
 #  Enable these code to test private IP endpoint via bastion host

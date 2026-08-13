@@ -28,6 +28,17 @@ resource "azurerm_subnet" "backend" {
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+
+  delegation {
+    name = "ApplicationGateways"
+
+    service_delegation {
+      name = "Microsoft.Network/applicationGateways"
+      actions = [
+        "Microsoft.Network/virtualNetworks/subnets/join/action"
+      ]
+    }
+  }
 }
 
 # Required for to deploy VMSS and Web Server to host application
@@ -44,6 +55,15 @@ resource "azurerm_subnet" "private_ip_test" {
   name                 = "private_ip_test"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+}
+
+resource "azurerm_public_ip" "pip" {
+  allocation_method   = "Static"
+  location            = azurerm_resource_group.rg_group.location
+  name                = "${module.naming.public_ip.name_unique}-pip"
+  resource_group_name = azurerm_resource_group.rg_group.name
+  sku                 = "Standard"
+  zones               = ["1", "2", "3"]
 }
 
 #-----------------------------------------------------------------

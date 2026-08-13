@@ -13,45 +13,21 @@ resource "azurerm_virtual_network" "vnet" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.virtual_network.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-  address_space       = ["10.90.0.0/16"] # address space for VNET
+  address_space       = ["100.64.0.0/16"] # address space for VNET
 }
 
 resource "azurerm_subnet" "frontend" {
-  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
+  address_prefixes     = ["100.64.0.0/24"] #[local.subnet_range[0]]
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
 }
 
 resource "azurerm_subnet" "backend" {
-  address_prefixes     = ["10.90.1.0/24"]
+  address_prefixes     = ["100.64.1.0/24"]
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-}
-
-resource "azurerm_subnet" "nat_subnet" {
-  address_prefixes     = ["10.90.6.0/24"]
-  name                 = "nat_subnet"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-}
-
-# Required for to deploy VMSS and Web Server to host application
-resource "azurerm_subnet" "workload" {
-  address_prefixes     = ["10.90.2.0/24"]
-  name                 = "workload"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-}
-
-# Required for Frontend Private IP endpoint testing
-resource "azurerm_subnet" "private_ip_test" {
-  address_prefixes     = ["10.90.3.0/24"]
-  name                 = "private_ip_test"
-  resource_group_name  = azurerm_resource_group.rg_group.name
-  virtual_network_name = azurerm_virtual_network.vnet.name
-  service_endpoints    = ["Microsoft.KeyVault"]
 
   delegation {
     name = "ApplicationGateways"
@@ -63,6 +39,30 @@ resource "azurerm_subnet" "private_ip_test" {
       ]
     }
   }
+}
+
+resource "azurerm_subnet" "nat_subnet" {
+  address_prefixes     = ["100.64.6.0/24"]
+  name                 = "nat_subnet"
+  resource_group_name  = azurerm_resource_group.rg_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+}
+
+# Required for to deploy VMSS and Web Server to host application
+resource "azurerm_subnet" "workload" {
+  address_prefixes     = ["100.64.2.0/24"]
+  name                 = "workload"
+  resource_group_name  = azurerm_resource_group.rg_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+}
+
+# Required for Frontend Private IP endpoint testing
+resource "azurerm_subnet" "private_ip_test" {
+  address_prefixes     = ["100.64.3.0/24"]
+  name                 = "private_ip_test"
+  resource_group_name  = azurerm_resource_group.rg_group.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  service_endpoints    = ["Microsoft.KeyVault"]
 }
 
 # Datasource-1: To get Azure Tenant Id
@@ -83,6 +83,7 @@ resource "azurerm_key_vault" "keyvault" {
   tenant_id                       = data.azurerm_client_config.current.tenant_id
   enabled_for_disk_encryption     = true
   enabled_for_template_deployment = true
+  public_network_access_enabled   = true
   purge_protection_enabled        = false
   soft_delete_retention_days      = 7
 }
@@ -240,12 +241,28 @@ resource "azurerm_web_application_firewall_policy" "azure_waf" {
   }
 }
 
+resource "azurerm_private_dns_zone" "keyvault" {
+  name                = "privatelink.vaultcore.azure.net"
+  resource_group_name = azurerm_resource_group.rg_group.name
+}
+
+resource "azurerm_private_dns_zone_virtual_network_link" "keyvault" {
+  name                  = "keyvault-vnet-link"
+  private_dns_zone_name = azurerm_private_dns_zone.keyvault.name
+  resource_group_name   = azurerm_resource_group.rg_group.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+}
+
 resource "azurerm_private_endpoint" "example" {
   location            = azurerm_resource_group.rg_group.location
   name                = module.naming.private_endpoint.name_unique
   resource_group_name = azurerm_resource_group.rg_group.name
-  subnet_id           = azurerm_subnet.backend.id
+  subnet_id           = azurerm_subnet.private_ip_test.id
 
+  private_dns_zone_group {
+    name                 = "keyvault-dns-zone-group"
+    private_dns_zone_ids = [azurerm_private_dns_zone.keyvault.id]
+  }
   private_service_connection {
     is_manual_connection           = false
     name                           = "example-connection"
