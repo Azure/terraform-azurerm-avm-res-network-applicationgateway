@@ -1,4 +1,3 @@
-
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application.
 # Assume that your Application runing the scale set contains two virtual machine instances.

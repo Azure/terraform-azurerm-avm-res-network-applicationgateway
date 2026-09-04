@@ -4,8 +4,6 @@ resource "azapi_resource" "this" {
   parent_id            = var.parent_id
   type                 = "Microsoft.Network/applicationGateways@2025-03-01"
   body                 = local.resource_body
-  create_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
-  delete_headers       = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   ignore_null_property = true
   list_unique_id_property = {
     "properties.frontendIPConfigurations"                        = "name"
@@ -14,14 +12,12 @@ resource "azapi_resource" "this" {
     "properties.frontendPorts"                                   = "name"
     "properties.backendAddressPools.properties.backendAddresses" = "ipAddress"
   }
-  read_headers = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
   response_export_values = [
     "identity.principalId",
     "identity.tenantId",
   ]
   schema_validation_enabled = true
   tags                      = var.tags
-  update_headers            = var.enable_telemetry ? { "User-Agent" : local.avm_azapi_header } : null
 
   dynamic "identity" {
     for_each = local.managed_identities.system_assigned_user_assigned

@@ -1,4 +1,3 @@
-
 # locals {
 #   webvm_custom_data = <<CUSTOM_DATA
 # apt-get update

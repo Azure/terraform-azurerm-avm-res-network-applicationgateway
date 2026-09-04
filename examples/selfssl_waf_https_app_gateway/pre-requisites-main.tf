@@ -17,17 +17,17 @@ resource "azurerm_virtual_network" "vnet" {
 }
 
 resource "azurerm_subnet" "frontend" {
-  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
   name                 = "frontend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.90.0.0/24"] #[local.subnet_range[0]]
 }
 
 resource "azurerm_subnet" "backend" {
-  address_prefixes     = ["10.90.1.0/24"]
   name                 = "backend"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.90.1.0/24"]
 
   delegation {
     name = "ApplicationGateways"
@@ -43,18 +43,18 @@ resource "azurerm_subnet" "backend" {
 
 # Required for to deploy VMSS and Web Server to host application
 resource "azurerm_subnet" "workload" {
-  address_prefixes     = ["10.90.2.0/24"]
   name                 = "workload"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.90.2.0/24"]
 }
 
 # Required for Frontend Private IP endpoint testing
 resource "azurerm_subnet" "private_ip_test" {
-  address_prefixes     = ["10.90.3.0/24"]
   name                 = "private_ip_test"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.90.3.0/24"]
 }
 
 #-----------------------------------------------------------------
@@ -64,10 +64,10 @@ resource "azurerm_subnet" "private_ip_test" {
 
 # Required bastion host subnet to test private IP endpoint
 resource "azurerm_subnet" "bastion" {
-  address_prefixes     = ["10.90.4.0/24"] # Adjust the IP address prefix as needed
   name                 = "AzureBastionSubnet"
   resource_group_name  = azurerm_resource_group.rg_group.name
   virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.90.4.0/24"] # Adjust the IP address prefix as needed
 }
 
 resource "azurerm_log_analytics_workspace" "log_analytics_workspace" {
@@ -297,6 +297,7 @@ resource "azurerm_web_application_firewall_policy" "azure_waf" {
       selector_match_operator = "EndsWith"
     }
   }
+
   custom_rules {
     action    = "Block"
     priority  = 1
@@ -339,6 +340,7 @@ resource "azurerm_web_application_firewall_policy" "azure_waf" {
       }
     }
   }
+
   policy_settings {
     enabled                     = true
     file_upload_limit_in_mb     = 100

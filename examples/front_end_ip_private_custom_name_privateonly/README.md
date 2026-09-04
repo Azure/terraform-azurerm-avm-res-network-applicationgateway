@@ -8,7 +8,6 @@ Azure Application Gateway Standard v2 can be configured with an Internet-facing 
 This deploys the module in its simplest form.
 
 ```hcl
-
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application.
 # Add a custom health probe to application gateway
