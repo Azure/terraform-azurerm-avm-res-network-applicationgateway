@@ -9,7 +9,6 @@ Azure Application Gateway monitors the health of all the servers in its backend 
 This deploys the module in its simplest form.
 
 ```hcl
-
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application.
 # Add a custom health probe to application gateway

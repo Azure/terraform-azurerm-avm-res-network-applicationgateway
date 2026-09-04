@@ -253,7 +253,6 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 }
-
 ```
 
 <!-- markdownlint-disable MD033 -->

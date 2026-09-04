@@ -1,4 +1,3 @@
-
 #----------Testing Use Case  -------------
 # Application Gateway routing traffic from your application.
 # Add a custom health probe to application gateway

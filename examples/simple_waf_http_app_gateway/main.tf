@@ -1,5 +1,3 @@
-
-
 #----------Testing Use Case  -------------
 # Application Gateway + WAF Enable routing traffic from your application.
 # Assume that your Application runing the scale set contains two virtual machine instances.
@@ -197,5 +195,3 @@ module "application_gateway" {
   # Zone redundancy for the application gateway ["1", "2", "3"]
   zones = ["1", "2", "3"]
 }
-
-
