@@ -13,7 +13,7 @@ resource "azurerm_resource_group" "rg_group" {
 # Resource Group for VNET
 module "naming_rg_vnet" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.3"
 
   suffix = ["vnet"]
 }
