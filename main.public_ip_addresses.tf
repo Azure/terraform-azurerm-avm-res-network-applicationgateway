@@ -51,7 +51,10 @@ resource "azapi_resource" "public_ip_addresses" {
   }
   retry                     = var.retry
   schema_validation_enabled = true
-  tags                      = merge(coalesce(var.tags, {}), each.value.tags)
+  # TFFR9 permits consumer-settable expressions; remove this exemption when the released checker accepts them.
+  # Per-IP tags override inherited module tags without disabling the gateway's tagging rule.
+  # tflint-ignore: avm_azapi_resource_tags_required
+  tags = merge(coalesce(var.tags, {}), each.value.tags)
 
   dynamic "timeouts" {
     for_each = var.timeouts == null ? [] : [var.timeouts]
