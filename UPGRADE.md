@@ -18,11 +18,13 @@ diagnostic settings.
 - **Cross-references**: name-based references (e.g.
   `probe_name = "my-probe"`) are replaced by ARM resource ID
   references (e.g. `probe = { id = "..." }`).
-- **Public IP**: no longer managed by the module. Create and manage
-  your public IP externally and pass its ID into
-  `frontend_ip_configurations`.
+- **Public IP**: `v0.5.3` removed management. Optional management is now
+  available through the default-empty `public_ip_addresses` map. Existing
+  external IP inputs remain supported. Migrating the old managed IP still
+  requires an explicit ownership transfer; see
+  [Public IP ownership migration](#public-ip-ownership-migration).
 - **Terraform**: `>= 1.12` required.
-- **AzAPI provider**: `~> 2.7` required.
+- **AzAPI provider**: `~> 2.12` required.
 - **azurerm provider**: `>= 3.117, < 5.0` required.
 - **Zones**: changed from `set(number)` to `list(string)`.
 - **Autoscale + SKU capacity**: when `autoscale_configuration` is set,
@@ -54,9 +56,12 @@ diagnostic settings.
 | `frontend_ports` (map) | `frontend_ports` (list) | Flat fields → `properties` block |
 | `gateway_ip_configuration` | `gateway_ip_configurations` (list) | Flat fields → `properties` block |
 | `app_gateway_waf_policy_resource_id` / `firewall_policy_id` | `firewall_policy` | Object: `{ id = "..." }` |
-| `create_public_ip` | Removed | Manage the public IP externally |
-| `public_ip_name` | Removed | Manage the public IP externally |
-| `public_ip_resource_id` | Removed | Pass the ID into `frontend_ip_configurations` |
+| `public_ip_address_configuration` | `public_ip_addresses` | Optional managed-IP map; empty by default. Each entry requires `name`. |
+| `public_ip_address_configuration.create_public_ip_enabled` | Map membership | Include an entry to manage an IP; omit it for an external IP. Transfer state before changing ownership. |
+| `public_ip_address_configuration.public_ip_name` | `public_ip_addresses[key].name` | Preserve the existing Azure name during adoption. |
+| `public_ip_address_configuration.public_ip_resource_id` | `frontend_ip_configurations[*].properties.public_ip_address.id` | External IP ID; not adopted by the module. |
+| `public_ip_address_configuration.public_ip_prefix_resource_id` | `public_ip_addresses[key].public_ip_prefix_resource_id` | Existing prefix, not created by the module. |
+| `public_ip_address_configuration.resource_group_name` | `public_ip_addresses[key].parent_id` | Full ID of the existing resource group; defaults to the gateway's group. |
 | `waf_configuration` | `web_application_firewall_configuration` | Renamed |
 | `zones` (`set(number)`) | `zones` (`list(string)`) | Type changed |
 | `sku_name` / `sku_tier` / `sku_capacity` | `sku` (object) | Combined into a single object; omit `capacity` when `autoscale_configuration` is set |
@@ -205,32 +210,49 @@ http_listeners = [
 
 ### Frontend IP configuration
 
-The old module could create and manage a public IP internally. The new
-module does not — create the public IP as a separate resource and pass
-its ID:
+The old module could create and manage a public IP internally. Optional
+management is available again, but is no longer enabled by default.
+The following are module arguments, not a state migration:
 
 ```hcl
-# Old
-create_public_ip      = true
-public_ip_name        = "pip-appgw"
-
-# New — create the public IP yourself
-resource "azurerm_public_ip" "appgw" {
-  name                = "pip-appgw"
-  location            = "australiaeast"
-  resource_group_name = "rg-example"
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  zones               = ["1", "2", "3"]
+# Old v0.5.2
+public_ip_address_configuration = {
+  create_public_ip_enabled = true
+  public_ip_name           = "pip-appgw"
 }
 
-# Then pass it into the module
+# New
+public_ip_addresses = {
+  internet_v4 = {
+    name = "pip-appgw"
+  }
+}
+
+frontend_ip_configurations = [
+  {
+    name                  = "public"
+    public_ip_address_key = "internet_v4"
+  }
+]
+```
+
+Preserve the old IP's actual name, resource group, zones, tags, DDoS and DNS
+settings. The new module uses the gateway's location and Standard/Regional/Static
+IPs. Copy compatible settings into the selected entry; `public_ip_name` becomes
+`name`, and `resource_group_name` becomes a full resource-group `parent_id`.
+Other supported per-IP setting names are listed in the generated input
+documentation. Do not treat adoption as an opportunity to change immutable IP
+settings.
+
+An external IP keeps the existing interface:
+
+```hcl
 frontend_ip_configurations = [
   {
     name = "public"
     properties = {
       public_ip_address = {
-        id = azurerm_public_ip.appgw.id
+        id = var.existing_public_ip_resource_id
       }
     }
   }
@@ -319,8 +341,8 @@ terraform state pull > terraform.tfstate.backup
 # 2. Remove the old azurerm resource from state
 terraform state rm 'module.appgw.azurerm_application_gateway.this'
 
-# 3. If the module managed a public IP, remove that too
-terraform state rm 'module.appgw.azurerm_public_ip.this'
+# 3. If the module managed a public IP, complete the ownership
+# migration below before applying. Do not just remove it from state.
 
 # 4. Import into the new azapi resource
 terraform import 'module.appgw.azapi_resource.this' \
@@ -334,14 +356,79 @@ Adjust the resource addresses above to match your module call. If you
 use `for_each` or `count`, include the key or index in the address
 (e.g. `module.appgw["prod"].azapi_resource.this`).
 
+### Public IP ownership migration
+
+Coordinate state operations with your deployment pipeline and back up the state
+first. Do not run an apply between forgetting an old address and importing the
+existing IP at its new address. None of the following commands should create,
+delete or reallocate the Azure public IP.
+
+**From v0.5.2 module management to the new managed map**
+
+Configure the desired map key and matching frontend binding as shown above.
+Use `terraform state list` and `terraform state show` to record the actual old
+address, public IP resource ID and settings. The old module used `count`, so its
+IP instance normally ends in `.this[0]`. After installing the updated module,
+transfer ownership explicitly:
+
+```powershell
+terraform state pull > terraform.tfstate.backup
+terraform state rm 'module.appgw.azurerm_public_ip.this[0]'
+terraform import 'module.appgw.azapi_resource.public_ip_addresses["internet_v4"]' '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Network/publicIPAddresses/pip-appgw'
+terraform plan
+```
+
+Substitute the real module addresses, map key and Azure resource ID. The selected
+key is consumer-defined, so the module cannot supply one generic `moved` block
+for every old counted IP. Stop if the resulting plan proposes IP or gateway
+replacement or destruction. Reconcile the configuration with the existing
+resource before applying.
+
+**From external ownership to module ownership**
+
+If the IP is already owned by an `azapi_resource` in the same state, configure
+the new map entry and transfer its address using `terraform state mv`. If the
+provider resource type changes, use the explicit forget/import sequence above
+with the old external address instead. If the IP belongs to another state,
+coordinate relinquishing ownership there before importing it here. Do not
+leave two Terraform addresses or states managing the same Azure IP.
+
+**From module ownership to an external IP**
+
+Create a matching external resource declaration and change the frontend to use
+its ID. For an external `azapi_resource` in the same state, transfer ownership
+before any apply:
+
+```powershell
+terraform state pull > terraform.tfstate.backup
+terraform state mv 'module.appgw.azapi_resource.public_ip_addresses["internet_v4"]' 'azapi_resource.appgw_public_ip'
+terraform plan
+```
+
+Remove the managed map entry as part of that configuration change. Merely
+emptying `public_ip_addresses` does not preserve the IP: Terraform would normally
+schedule deletion. If the external owner uses another resource type or state,
+coordinate an explicit forget/import transfer instead.
+
+**Renaming a map key**
+
+Keep the Azure name and configuration unchanged, update the frontend key, and
+use an explicit address move:
+
+```powershell
+terraform state mv 'module.appgw.azapi_resource.public_ip_addresses["internet_v4"]' 'module.appgw.azapi_resource.public_ip_addresses["public_v4"]'
+```
+
+Inspect the plan before applying. A key rename must not allocate a new IP.
+
 ## Output changes
 
 | Old output | New output | Notes |
 |---|---|---|
 | `resource_id` | `resource_id` | Unchanged |
 | `name` | `name` | Unchanged |
-| `public_ip_id` | Removed | Manage the public IP externally |
-| `new_public_ip_address` | Removed | Use `azurerm_public_ip.*.ip_address` |
+| `public_ip_id` | `public_ip_addresses[key].resource_id` | For managed IPs; external IPs remain outputs of their owner. |
+| `new_public_ip_address` | `public_ip_addresses[key].ip_address` | Managed IPs only. |
 | N/A | `identity_principal_id` | New — system-assigned identity principal |
 | N/A | `identity_tenant_id` | New — system-assigned identity tenant |
 | N/A | `default_predefined_ssl_policy` | New |

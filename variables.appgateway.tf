@@ -170,7 +170,8 @@ DESCRIPTION
 
 variable "frontend_ip_configurations" {
   type = list(object({
-    name = optional(string)
+    name                  = optional(string)
+    public_ip_address_key = optional(string)
     properties = optional(object({
       private_ip_address           = optional(string)
       private_ip_allocation_method = optional(string)
@@ -188,7 +189,50 @@ variable "frontend_ip_configurations" {
   default     = null
   description = <<DESCRIPTION
 Frontend IP addresses of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+
+Set `public_ip_address_key` to a key in `public_ip_addresses` to attach a module-managed public IP. The module constructs `properties.public_ip_address.id`; `properties` may be omitted. Alternatively, keep supplying an external IP through `properties.public_ip_address.id`. These options are mutually exclusive. Managed public frontends require a name and cannot include private IP or subnet settings. Private Link configuration is supported alongside a managed public IP.
 DESCRIPTION
+
+  validation {
+    condition = alltrue([
+      for frontend in coalesce(var.frontend_ip_configurations, []) :
+      frontend == null ? true : frontend.public_ip_address_key == null ? true : contains(keys(var.public_ip_addresses), frontend.public_ip_address_key)
+    ])
+    error_message = "Each frontend public_ip_address_key must reference an existing key in public_ip_addresses."
+  }
+  validation {
+    condition = alltrue([
+      for frontend in coalesce(var.frontend_ip_configurations, []) :
+      frontend == null ? true : frontend.public_ip_address_key == null ? true : try(frontend.properties.public_ip_address.id, null) == null
+    ])
+    error_message = "A frontend cannot specify both public_ip_address_key and properties.public_ip_address.id."
+  }
+  validation {
+    condition = alltrue([
+      for frontend in coalesce(var.frontend_ip_configurations, []) :
+      frontend == null ? true : frontend.public_ip_address_key == null ? true : (
+        try(frontend.properties.private_ip_address, null) == null &&
+        try(frontend.properties.private_ip_allocation_method, null) == null &&
+        try(frontend.properties.subnet, null) == null
+      )
+    ])
+    error_message = "A managed public frontend cannot also specify a private IP address, private allocation method or subnet."
+  }
+  validation {
+    condition = alltrue([
+      for frontend in coalesce(var.frontend_ip_configurations, []) :
+      frontend == null ? true : frontend.public_ip_address_key == null ? true : frontend.name == null ? false : trimspace(frontend.name) != ""
+    ])
+    error_message = "Each frontend using public_ip_address_key must have a non-empty name."
+  }
+  validation {
+    condition = length(distinct(compact([
+      for frontend in coalesce(var.frontend_ip_configurations, []) : try(frontend.public_ip_address_key, null)
+      ]))) == length(compact([
+      for frontend in coalesce(var.frontend_ip_configurations, []) : try(frontend.public_ip_address_key, null)
+    ]))
+    error_message = "Each managed public IP key may be attached to only one frontend configuration."
+  }
 }
 
 variable "frontend_ports" {
