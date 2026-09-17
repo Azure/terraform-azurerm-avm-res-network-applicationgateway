@@ -102,7 +102,7 @@ module "application_gateway" {
       metric_categories              = ["AllMetrics"]
     }
   }
-  enable_telemetry = var.enable_telemetry
+  enable_telemetry = false
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
