@@ -107,6 +107,7 @@ module "application_gateway" {
       }
     }
   ]
+  enable_telemetry = false
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
