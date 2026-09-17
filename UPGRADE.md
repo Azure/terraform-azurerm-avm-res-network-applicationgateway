@@ -368,8 +368,16 @@ delete or reallocate the Azure public IP.
 Configure the desired map key and matching frontend binding as shown above.
 Use `terraform state list` and `terraform state show` to record the actual old
 address, public IP resource ID and settings. The old module used `count`, so its
-IP instance normally ends in `.this[0]`. After installing the updated module,
-transfer ownership explicitly:
+IP instance normally ends in `.this[0]`.
+
+This migration changes both the Terraform resource type, from
+`azurerm_public_ip` to `azapi_resource`, and the instance address, from a `count`
+index to a named `for_each` key. A direct `terraform state mv` cannot perform
+that resource-type conversion. The procedure below removes the old state
+binding and imports the same existing Azure public IP under the new resource
+type and address. Do not run an apply between these commands.
+
+After installing the updated module, transfer ownership explicitly:
 
 ```powershell
 terraform state pull > terraform.tfstate.backup
@@ -383,6 +391,10 @@ key is consumer-defined, so the module cannot supply one generic `moved` block
 for every old counted IP. Stop if the resulting plan proposes IP or gateway
 replacement or destruction. Reconcile the configuration with the existing
 resource before applying.
+
+The `terraform state mv` command is distinct from provider-supported declarative
+`moved` blocks. That alternative has not been validated for this public-IP upgrade
+path; this guide uses the explicit remove/import procedure above.
 
 **From external ownership to module ownership**
 
