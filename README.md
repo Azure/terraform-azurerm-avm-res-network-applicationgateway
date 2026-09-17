@@ -17,17 +17,109 @@ This module deploys an Azure Application Gateway using the [AzAPI provider](http
 This module has been rewritten from `azurerm_application_gateway` to `azapi_resource`. A `moved` block is included to preserve Terraform state for existing deployments; this block will be removed in a future release. Key breaking changes:
 
 - **AzAPI provider** — the core resource now uses `azapi_resource` instead of `azurerm_application_gateway`
-- **Public IP** — no longer managed by the module. Create and manage your public IP externally and pass its ID into `frontend_ip_configurations`.
+- **Public IP** — `v0.5.3` removed public IP management. Optional management is now available through `public_ip_addresses`, but old counted public IP instances still require an explicit state migration.
 
 ### Requirements
 
 | Dependency | Version |
 |---|---|
-| Terraform | `>= 1.9` |
+| Terraform | `>= 1.12, < 2.0` |
 | AzAPI provider | `~> 2.12` |
 | azurerm provider | `>= 3.117, < 5.0` |
 
 For the full migration guide including variable mapping and code examples, see [UPGRADE.md](UPGRADE.md).
+
+## Optional public IP management
+
+Public IP creation is opt-in: `public_ip_addresses` defaults to `{}`. Upgrading
+does not create public IPs or change existing external-IP and private-only
+frontends.
+
+To create and attach a public IP, supply a named map entry and reference its key
+on the frontend. These are arguments to this module:
+
+```hcl
+public_ip_addresses = {
+  internet_v4 = {
+    name       = "pip-appgw-prod-v4"
+    ip_version = "IPv4"
+  }
+}
+
+frontend_ip_configurations = [
+  {
+    name                  = "public-v4"
+    public_ip_address_key = "internet_v4"
+  }
+]
+```
+
+The module resolves the public IP resource ID internally; the frontend
+`properties` block may be omitted. Existing properties, such as
+`private_link_configuration`, may still be supplied. The helper
+`public_ip_address_key` is not sent to the ARM API.
+
+For an externally managed IP, keep the existing input shape and omit
+`public_ip_address_key`:
+
+```hcl
+frontend_ip_configurations = [
+  {
+    name = "public-v4"
+    properties = {
+      public_ip_address = {
+        id = var.existing_public_ip_resource_id
+      }
+    }
+  }
+]
+```
+
+A frontend cannot select both a managed key and an external IP ID, or combine a
+managed public IP with private IP/subnet settings. A managed key must exist and
+can be attached to only one frontend. The module does not look up, adopt, modify
+or delete an external IP.
+
+Managed IPs use Standard/Regional/Static settings in the gateway's location.
+They inherit the gateway's resource group and zones unless overridden, and
+merge per-IP tags over module tags. Explicit non-empty IP zones must cover the
+gateway's zones; an empty list preserves Azure's default zone selection.
+An existing public IP prefix, DDoS settings, DNS settings, IP tags and idle
+timeout can also be configured. Prefixes, DDoS plans and resource groups remain
+external dependencies.
+
+The map supports one IPv4 and one IPv6 public IP for a dual-stack gateway.
+The surrounding subnet, frontend and listener configuration must also support
+the selected protocol. This feature does not create listeners, routing rules,
+networks or public IP prefixes.
+
+The `public_ip_addresses` output contains only module-managed IPs, indexed by
+the same keys. Each entry exposes `resource_id`, `ip_address` and `fqdn`
+(`null` without a DNS label).
+
+> [!WARNING]
+> Map keys are Terraform resource identities. Removing an entry normally
+> schedules its public IP for deletion; changing a key requires a state move
+> to preserve ownership. Azure names, address family, prefix and zone changes
+> can require replacement and loss of the allocated address. Gateway-scoped
+> locks do not protect these separate public IP resources. Follow
+> [the ownership migration instructions](UPGRADE.md#public-ip-ownership-migration)
+> before switching between managed and external ownership.
+
+### Public IP regression coverage
+
+Run `avm test unit` from the module root for provider-mocked coverage of legacy
+frontends, optional creation, IPv4/IPv6 bindings, outputs, advanced IP settings,
+unknown values and invalid inputs. Positive cases use mocked apply; invalid
+inputs intentionally fail during plan.
+
+`avm test integration` creates billable Azure resources using the isolated
+fixture in `tests/integration`. Run it only in an approved test subscription
+with the required permissions. It verifies a real managed IPv4 gateway and
+independently reads back its IP attachment and outputs. A second plan verifies
+retained identity, not a complete zero-change plan. Real upgrade/state-transfer
+and dual-stack deployment coverage are still required before claiming those
+paths are production-proven.
 
 ## Supported frontend IP configuration
 
@@ -97,6 +189,7 @@ The following requirements are needed by this module:
 
 The following resources are used by this module:
 
+- [azapi_resource.public_ip_addresses](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azapi_resource.this](https://registry.terraform.io/providers/Azure/azapi/latest/docs/resources/resource) (resource)
 - [azurerm_management_lock.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/management_lock) (resource)
 - [azurerm_monitor_diagnostic_setting.this](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/monitor_diagnostic_setting) (resource)
@@ -400,11 +493,14 @@ Default: `null`
 
 Description: Frontend IP addresses of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
+Set `public_ip_address_key` to a key in `public_ip_addresses` to attach a module-managed public IP. The module constructs `properties.public_ip_address.id`; `properties` may be omitted. Alternatively, keep supplying an external IP through `properties.public_ip_address.id`. These options are mutually exclusive. Managed public frontends require a name and cannot include private IP or subnet settings. Private Link configuration is supported alongside a managed public IP.
+
 Type:
 
 ```hcl
 list(object({
-    name = optional(string)
+    name                  = optional(string)
+    public_ip_address_key = optional(string)
     properties = optional(object({
       private_ip_address           = optional(string)
       private_ip_allocation_method = optional(string)
@@ -512,6 +608,24 @@ list(object({
 ```
 
 Default: `null`
+
+### <a name="input_ignore_body_changes"></a> [ignore\_body\_changes](#input\_ignore\_body\_changes)
+
+Description: Body-relative dot-notation paths to ignore. Ignored configuration is not sent to Azure until the path is removed. Changes take effect only after apply. List indices are not supported.
+
+- `network_application_gateways` - Paths ignored on the Application Gateway.
+- `network_public_ip_addresses` - Paths ignored on each module-managed public IP.
+
+Type:
+
+```hcl
+object({
+    network_application_gateways = optional(list(string), [])
+    network_public_ip_addresses  = optional(list(string), [])
+  })
+```
+
+Default: `{}`
 
 ### <a name="input_listeners"></a> [listeners](#input\_listeners)
 
@@ -723,6 +837,47 @@ list(object({
 
 Default: `null`
 
+### <a name="input_public_ip_addresses"></a> [public\_ip\_addresses](#input\_public\_ip\_addresses)
+
+Description: Public IP addresses owned by this module. The default empty map creates no public IPs. Map keys must be known at plan time and are stable Terraform instance keys, independent of Azure names. Reference a key using `frontend_ip_configurations[*].public_ip_address_key`.
+
+Each entry supports:
+- `name` - Required Azure public IP name.
+- `ip_version` - `IPv4` (default) or `IPv6`. At most one managed IP per protocol is supported.
+- `parent_id` - Existing resource group ID. Defaults to the gateway's `parent_id`. The IP always uses the gateway's location.
+- `zones` - Defaults to the gateway's zones. An explicit empty list leaves zone selection to Azure. A non-empty selection must include every gateway zone.
+- `tags` - Per-IP tags merged over the module's tags.
+- `public_ip_prefix_resource_id` - Optional existing public IP prefix ID. The prefix must be compatible with the IP's location, protocol and zones.
+- `ddos_protection_mode` - `VirtualNetworkInherited` (default), `Enabled`, or `Disabled`.
+- `ddos_protection_plan_resource_id` - Optional existing DDoS plan ID; requires `Enabled`. `Enabled` without a plan uses individual IP protection.
+- `domain_name_label` - Optional Azure-managed DNS label.
+- `reverse_fqdn` - Optional reverse DNS FQDN; supported for IPv4 only.
+- `idle_timeout_in_minutes` - Integer from 4 to 30, default 4.
+- `ip_tags` - IP tag type to tag value mapping, separate from resource tags.
+
+Managed IPs use the Standard SKU, Regional tier and Static allocation. Prefixes, DDoS plans and resource groups are not created. Removing an entry schedules its IP for deletion; transferring ownership requires explicit state migration. See UPGRADE.md.
+
+Type:
+
+```hcl
+map(object({
+    name                             = string
+    ddos_protection_mode             = optional(string, "VirtualNetworkInherited")
+    ddos_protection_plan_resource_id = optional(string)
+    domain_name_label                = optional(string)
+    idle_timeout_in_minutes          = optional(number, 4)
+    ip_tags                          = optional(map(string), {})
+    ip_version                       = optional(string, "IPv4")
+    parent_id                        = optional(string)
+    public_ip_prefix_resource_id     = optional(string)
+    reverse_fqdn                     = optional(string)
+    tags                             = optional(map(string), {})
+    zones                            = optional(list(string))
+  }))
+```
+
+Default: `{}`
+
 ### <a name="input_redirect_configurations"></a> [redirect\_configurations](#input\_redirect\_configurations)
 
 Description: Redirect configurations of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
@@ -793,6 +948,44 @@ list(object({
       }))
     }))
   }))
+```
+
+Default: `null`
+
+### <a name="input_resource_types"></a> [resource\_types](#input\_resource\_types)
+
+Description: AzAPI resource types and API versions. Override only where the selected API supports the configured properties.
+
+- `network_application_gateways` - Resource type and API version for the Application Gateway.
+- `network_public_ip_addresses` - Resource type and API version for module-managed public IPs.
+
+Type:
+
+```hcl
+object({
+    network_application_gateways = optional(string, "Microsoft.Network/applicationGateways@2025-03-01")
+    network_public_ip_addresses  = optional(string, "Microsoft.Network/publicIPAddresses@2025-03-01")
+  })
+```
+
+Default: `{}`
+
+### <a name="input_retry"></a> [retry](#input\_retry)
+
+Description: Retry configuration applied to the Application Gateway and module-managed public IPs. Defaults to the provider's retry behavior.
+
+- `error_message_regex` - Error patterns eligible for retry.
+- `interval_seconds` - Initial retry interval.
+- `max_interval_seconds` - Maximum retry interval.
+
+Type:
+
+```hcl
+object({
+    error_message_regex  = optional(list(string))
+    interval_seconds     = optional(number)
+    max_interval_seconds = optional(number)
+  })
 ```
 
 Default: `null`
@@ -1001,6 +1194,28 @@ Type: `map(string)`
 
 Default: `null`
 
+### <a name="input_timeouts"></a> [timeouts](#input\_timeouts)
+
+Description: Per-operation timeouts applied to the Application Gateway and module-managed public IPs. Omitted values use provider defaults.
+
+- `create` - Creation timeout, as a Go duration such as `1h`.
+- `read` - Read timeout.
+- `update` - Update timeout.
+- `delete` - Deletion timeout.
+
+Type:
+
+```hcl
+object({
+    create = optional(string)
+    read   = optional(string)
+    update = optional(string)
+    delete = optional(string)
+  })
+```
+
+Default: `null`
+
 ### <a name="input_trusted_client_certificates"></a> [trusted\_client\_certificates](#input\_trusted\_client\_certificates)
 
 Description: Trusted client certificates of the application gateway resource. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
@@ -1161,6 +1376,10 @@ Description: Private Endpoint connections on application gateway.
 ### <a name="output_provisioning_state"></a> [provisioning\_state](#output\_provisioning\_state)
 
 Description: The current provisioning state.
+
+### <a name="output_public_ip_addresses"></a> [public\_ip\_addresses](#output\_public\_ip\_addresses)
+
+Description: Module-managed public IPs, keyed by public\_ip\_addresses input keys. Each value contains resource\_id, ip\_address and fqdn (null when no DNS label is configured). External IPs are excluded.
 
 ### <a name="output_resource_guid"></a> [resource\_guid](#output\_resource\_guid)
 

@@ -2,8 +2,9 @@ resource "azapi_resource" "this" {
   location             = var.location
   name                 = var.name
   parent_id            = var.parent_id
-  type                 = "Microsoft.Network/applicationGateways@2025-03-01"
+  type                 = var.resource_types.network_application_gateways
   body                 = local.resource_body
+  ignore_body_changes  = length(var.ignore_body_changes.network_application_gateways) > 0 ? var.ignore_body_changes.network_application_gateways : null
   ignore_null_property = true
   list_unique_id_property = {
     "properties.frontendIPConfigurations"                        = "name"
@@ -16,6 +17,7 @@ resource "azapi_resource" "this" {
     "identity.principalId",
     "identity.tenantId",
   ]
+  retry                     = var.retry
   schema_validation_enabled = true
   tags                      = var.tags
 
@@ -25,6 +27,17 @@ resource "azapi_resource" "this" {
     content {
       type         = identity.value.type
       identity_ids = identity.value.user_assigned_resource_ids
+    }
+  }
+
+  dynamic "timeouts" {
+    for_each = var.timeouts == null ? [] : [var.timeouts]
+
+    content {
+      create = timeouts.value.create
+      read   = timeouts.value.read
+      update = timeouts.value.update
+      delete = timeouts.value.delete
     }
   }
 
