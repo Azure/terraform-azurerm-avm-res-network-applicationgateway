@@ -113,7 +113,7 @@ module "application_gateway" {
       metric_categories              = ["AllMetrics"]
     }
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
@@ -292,7 +292,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 

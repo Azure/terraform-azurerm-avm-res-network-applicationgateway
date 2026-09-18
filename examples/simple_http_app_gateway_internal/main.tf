@@ -80,7 +80,7 @@ module "application_gateway" {
       }
     }
   ]
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"

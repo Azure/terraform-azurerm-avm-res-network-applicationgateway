@@ -115,7 +115,7 @@ module "application_gateway" {
       metric_categories              = ["AllMetrics"]
     }
   }
-  enable_telemetry = false
+  enable_telemetry = var.enable_telemetry
   # WAF : Use Application Gateway with Web Application Firewall (WAF) in an application virtual network to safeguard inbound HTTP/S internet traffic. WAF offers centralized defense against potential exploits through OWASP core rule sets-based rules.
   # Ensure that you have a WAF policy created before enabling WAF on the Application Gateway
   # The use of an external WAF policy is recommended rather than using the classic WAF via the waf_configuration block.
@@ -252,7 +252,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `true`
+Default: `false`
 
 ## Outputs
 
