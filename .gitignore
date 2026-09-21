@@ -7,6 +7,7 @@
 *.terraform.lock.hcl
 .tflint.hcl
 *.hcl
+!tests/**/*.tftest.hcl
 # Crash log files
 crash.log
 crash.*.log

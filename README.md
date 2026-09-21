@@ -40,6 +40,17 @@ Application Gateway V2 supports the following combinations:
 > [!IMPORTANT]
 > Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private-only gateways.
 
+## Private endpoint creation
+
+The `private_endpoints` and `private_endpoints_manage_dns_zone_group` inputs are
+currently schema-only compatibility declarations. They do not create private
+endpoints or manage DNS zone groups, locks or role assignments. Functional
+implementation is tracked in [issue #284](https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284).
+
+The gateway-side `private_link_configurations` input is separate and remains
+supported. Until private endpoint creation is implemented, manage the endpoint
+resources outside this module.
+
 ## Supported Scenarios
 
 **[Default — Simple HTTP Application Gateway](examples/default/README.md)**
@@ -608,13 +619,16 @@ Default: `{}`
 
 ### <a name="input_private_endpoints"></a> [private\_endpoints](#input\_private\_endpoints)
 
-Description: A map of private endpoints to create on this resource. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
+Description: Private endpoint configuration schema retained for compatibility. **Private endpoint creation is not implemented: entries currently have no deployment effect.** Implementation is tracked in [issue #284](https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284). The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time. The fields below describe the standard interface, not implemented resource behavior.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
+  - `name` - (Optional) The role assignment name.
 - `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
+  - `notes` - (Optional) Notes for the lock.
 - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
 - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
+- `subresource_name` - (Optional) The private endpoint subresource name.
 - `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
 - `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
 - `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
@@ -625,6 +639,7 @@ Description: A map of private endpoints to create on this resource. The map key 
 - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   - `name` - The name of the IP configuration.
   - `private_ip_address` - The private IP address of the IP configuration.
+  - `member_name` - (Optional) The private IP configuration member name.
 
 Type:
 
@@ -632,6 +647,7 @@ Type:
 map(object({
     name = optional(string, null)
     role_assignments = optional(map(object({
+      name                                   = optional(string, null)
       role_definition_id_or_name             = string
       principal_id                           = string
       description                            = optional(string, null)
@@ -642,11 +658,13 @@ map(object({
       principal_type                         = optional(string, null)
     })), {})
     lock = optional(object({
-      kind = string
-      name = optional(string, null)
+      kind  = string
+      name  = optional(string, null)
+      notes = optional(string, null)
     }), null)
     tags                                    = optional(map(string), null)
     subnet_resource_id                      = string
+    subresource_name                        = optional(string, null)
     private_dns_zone_group_name             = optional(string, "default")
     private_dns_zone_resource_ids           = optional(set(string), [])
     application_security_group_associations = optional(map(string), {})
@@ -657,11 +675,20 @@ map(object({
     ip_configurations = optional(map(object({
       name               = string
       private_ip_address = string
+      member_name        = optional(string)
     })), {})
   }))
 ```
 
 Default: `{}`
+
+### <a name="input_private_endpoints_manage_dns_zone_group"></a> [private\_endpoints\_manage\_dns\_zone\_group](#input\_private\_endpoints\_manage\_dns\_zone\_group)
+
+Description: Standard private-endpoint DNS-zone-group control. Currently schema-only: private endpoint creation and DNS-zone-group management are not implemented, so this value has no deployment effect. See https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284.
+
+Type: `bool`
+
+Default: `true`
 
 ### <a name="input_private_link_configurations"></a> [private\_link\_configurations](#input\_private\_link\_configurations)
 
