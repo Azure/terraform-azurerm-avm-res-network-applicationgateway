@@ -15,9 +15,10 @@ diagnostic settings.
 - **Variable shape**: variables changed from `map(object)` with flat
   fields to `list(object)` with nested `properties` blocks matching
   the ARM schema.
-- **Cross-references**: name-based references (e.g.
-  `probe_name = "my-probe"`) are replaced by ARM resource ID
-  references (e.g. `probe = { id = "..." }`).
+- **Cross-references**: legacy fields such as `probe_name` become reference
+  objects. Use `probe = { name = "my-probe" }` for a probe declared in this
+  module, or retain `probe = { id = "..." }`. Earlier AzAPI-based releases
+  required the ID form; it remains supported.
 - **Public IP**: `v0.5.3` removed management. Optional management is now
   available through the default-empty `public_ip_addresses` map. Existing
   external IP inputs remain supported. Migrating the old managed IP still
@@ -74,6 +75,53 @@ diagnostic settings.
 | N/A | `load_distribution_policies` | New |
 | N/A | `private_link_configurations` | New |
 | N/A | `id` | Optional — set to import an existing resource |
+
+## Adopting named references (optional)
+
+Existing AzAPI-based configurations do not need to change. To remove manual ID
+construction, replace an internal reference's `id` with the corresponding
+component's configured `name`:
+
+```hcl
+# Existing reference inside backend HTTP settings properties
+probe = {
+  id = "${local.appgw_id}/probes/myapp-probe"
+}
+
+# Equivalent name reference when probes contains name = "myapp-probe"
+probe = {
+  name = "myapp-probe"
+}
+```
+
+Supply either `id` or `name`, not both. A name must identify exactly one component
+in the corresponding collection supplied to this module. Matching is
+case-insensitive. Explicit IDs remain the option for references to components
+outside the supplied configuration; external public IPs, subnets and WAF policies
+are not resolved by name.
+
+For a named path-rule reference in a redirect configuration's `path_rules`,
+also supply `url_path_map_name` to identify the parent map:
+
+```hcl
+path_rules = [
+  {
+    name              = "api"
+    url_path_map_name = "routes"
+  }
+]
+```
+
+This resolves the `api` rule in the `routes` entry of `url_path_maps`. Repeated
+rule names in different maps are not ambiguous when the parent is specified.
+An ID-only reference must not also supply a name or parent map name.
+
+Only the reference input changes: the module constructs the same ARM ID, and no
+Terraform resources or state addresses are added or moved. Do not run
+`terraform state rm`, `terraform state mv` or import solely to adopt names.
+Inspect the resulting plan before applying. The provider-migration instructions
+later in this guide apply to the older AzureRM implementation, not this optional
+reference syntax.
 
 ## Migration examples
 
@@ -137,9 +185,7 @@ backend_http_settings = {
   }
 }
 
-# New (ARM resource ID cross-reference)
-# Build the gateway ID first:
-#   appgw_id = "/subscriptions/.../resourceGroups/rg-example/providers/Microsoft.Network/applicationGateways/my-appgw"
+# New (name reference to an entry declared in probes)
 backend_http_settings_collection = [
   {
     name = "myapp-https"
@@ -149,14 +195,15 @@ backend_http_settings_collection = [
       cookie_based_affinity = "Disabled"
       request_timeout     = 30
       probe = {
-        id = "${local.appgw_id}/probes/myapp-probe"
+        name = "myapp-probe"
       }
     }
   }
 ]
 ```
 
-**ARM sub-resource type names are camelCase.** The most common ones:
+When using explicit IDs instead of names, **ARM sub-resource type names are
+camelCase.** The most common ones:
 
 | Sub-resource | ARM path segment |
 |---|---|
@@ -194,14 +241,14 @@ http_listeners = [
     name = "myapp-https-listener"
     properties = {
       frontend_ip_configuration = {
-        id = "${local.appgw_id}/frontendIPConfigurations/public"
+        name = "public"
       }
       frontend_port = {
-        id = "${local.appgw_id}/frontendPorts/https"
+        name = "https"
       }
       protocol = "Https"
       ssl_certificate = {
-        id = "${local.appgw_id}/sslCertificates/wildcard-cert"
+        name = "wildcard-cert"
       }
     }
   }

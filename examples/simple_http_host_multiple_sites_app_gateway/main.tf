@@ -48,10 +48,6 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-locals {
-  agw_id = "${azurerm_resource_group.rg_group.id}/providers/Microsoft.Network/applicationGateways/${module.naming.application_gateway.name_unique}"
-}
-
 module "application_gateway" {
   source = "../../"
 
@@ -148,10 +144,10 @@ module "application_gateway" {
       name = "appGatewayHttpListener"
       properties = {
         frontend_ip_configuration = {
-          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+          name = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          id = "${local.agw_id}/frontendPorts/frontend-port-80"
+          name = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -160,10 +156,10 @@ module "application_gateway" {
       name = "contosoListener"
       properties = {
         frontend_ip_configuration = {
-          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+          name = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          id = "${local.agw_id}/frontendPorts/frontend-port-80"
+          name = "frontend-port-80"
         }
         protocol  = "Http"
         host_name = "www.contoso.com"
@@ -173,10 +169,10 @@ module "application_gateway" {
       name = "fabrikamListener"
       properties = {
         frontend_ip_configuration = {
-          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+          name = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          id = "${local.agw_id}/frontendPorts/frontend-port-80"
+          name = "frontend-port-80"
         }
         protocol   = "Http"
         host_names = ["www.fabrikam.com", "www.fabrikam.org"]
@@ -191,13 +187,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          id = "${local.agw_id}/httpListeners/contosoListener"
+          name = "contosoListener"
         }
         backend_address_pool = {
-          id = "${local.agw_id}/backendAddressPools/contosoPool"
+          name = "contosoPool"
         }
         backend_http_settings = {
-          id = "${local.agw_id}/backendHttpSettingsCollection/appGatewayBackendHttpSettings"
+          name = "appGatewayBackendHttpSettings"
         }
         priority = 100
       }
@@ -207,13 +203,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          id = "${local.agw_id}/httpListeners/fabrikamListener"
+          name = "fabrikamListener"
         }
         backend_address_pool = {
-          id = "${local.agw_id}/backendAddressPools/fabrikamPool"
+          name = "fabrikamPool"
         }
         backend_http_settings = {
-          id = "${local.agw_id}/backendHttpSettingsCollection/appGatewayBackendHttpSettings"
+          name = "appGatewayBackendHttpSettings"
         }
         priority = 200
       }

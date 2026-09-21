@@ -119,6 +119,82 @@ retained identity, not a complete zero-change plan. Real upgrade/state-transfer
 and dual-stack deployment coverage are still required before claiming those
 paths are production-proven.
 
+## Reference gateway components by name or ID
+
+References to components defined in the same module can use their configured
+`name` instead of a manually constructed ARM resource ID. Existing `{ id = ... }`
+references remain supported without modification.
+
+For example, these module arguments define a probe and reference it from backend
+HTTP settings:
+
+```hcl
+probes = [
+  {
+    name = "health"
+    properties = {
+      host                = "example.internal"
+      interval            = 30
+      path                = "/health"
+      protocol            = "Http"
+      timeout             = 30
+      unhealthy_threshold = 3
+    }
+  }
+]
+
+backend_http_settings_collection = [
+  {
+    name = "backend-http"
+    properties = {
+      cookie_based_affinity = "Disabled"
+      port                  = 80
+      protocol              = "Http"
+      probe                 = { name = "health" }
+    }
+  }
+]
+```
+
+Use `name` or `id`, not both. Names are matched case-insensitively against the
+corresponding component collection, and the generated ID uses the declaration's
+name. Blank names, names containing a path separator, missing targets and
+ambiguous target names are rejected. Omitted references and the existing ID-only
+input behavior are unchanged.
+
+Name references are supported for frontend IP configurations and ports, HTTP and
+TCP/TLS listeners, backend pools and settings, probes, certificates and SSL
+profiles, routing/redirect references, rewrite sets, URL path maps,
+load-distribution policies, Entra JWT configurations and Private Link
+configurations. This applies to references nested inside path rules and
+load-distribution targets as well as top-level component properties.
+
+Path-rule names are scoped to a URL path map. For example, a redirect
+configuration's `properties.path_rules` can contain:
+
+```hcl
+path_rules = [
+  {
+    name              = "api"
+    url_path_map_name = "routes"
+  }
+]
+```
+
+Both the `routes` URL path map and its `api` path rule must be defined in
+`url_path_maps`. The parent map name is required only for a name-based path-rule
+reference; an explicit path-rule ID needs no additional scope field.
+
+External dependencies such as public IPs, subnets and WAF policies still use IDs.
+Use an explicit ID for a gateway component that is not declared in this module's
+configuration. The module does not query Azure to discover targets.
+
+IDs are constructed from the gateway's `parent_id`, `name` and the known ARM
+child-resource type. Do not feed this module's resource ID output back into its
+own inputs. Name resolution does not add Terraform resources or change resource
+addresses, so adopting it alone requires no state migration. See
+[the optional reference migration guidance](UPGRADE.md#adopting-named-references-optional).
+
 ## Supported frontend IP configuration
 
 Application Gateway V2 supports the following combinations:
@@ -142,6 +218,9 @@ supported. Until private endpoint creation is implemented, manage the endpoint
 resources outside this module.
 
 ## Supported Scenarios
+
+**[Named child-reference E2E](examples/named_child_references/README.md)**
+Deploys an isolated gateway with named references, verifies the resolved IDs through Azure readback, and supports an equivalent explicit-ID compatibility plan.
 
 **[Default — Simple HTTP Application Gateway](examples/default/README.md)**
 A straightforward HTTP Application Gateway for basic web applications or services.
