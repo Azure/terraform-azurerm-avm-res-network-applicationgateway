@@ -38,6 +38,17 @@ Application Gateway V2 supports the following combinations:
 > [!IMPORTANT]
 > Private link configuration support for tunneling traffic through private endpoints to Application Gateway is unsupported with private-only gateways.
 
+## Private endpoint creation
+
+The `private_endpoints` and `private_endpoints_manage_dns_zone_group` inputs are
+currently schema-only compatibility declarations. They do not create private
+endpoints or manage DNS zone groups, locks or role assignments. Functional
+implementation is tracked in [issue #284](https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284).
+
+The gateway-side `private_link_configurations` input is separate and remains
+supported. Until private endpoint creation is implemented, manage the endpoint
+resources outside this module.
+
 ## Supported Scenarios
 
 **[Default — Simple HTTP Application Gateway](examples/default/README.md)**
