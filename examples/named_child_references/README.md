@@ -7,6 +7,11 @@ case-insensitive named references for frontend IP/port, listener, backend pool,
 backend HTTP settings and health probe. Azure readback postconditions verify
 the resulting child IDs. All supporting Azure resources use AzAPI.
 
+The gateway subnet is delegated to `Microsoft.Network/applicationGateways`.
+The gateway uses autoscaling with minimum capacity 2 and maximum capacity 3,
+and both the gateway and Standard public IP use availability zones 1, 2 and 3.
+Use a region that supports these zones.
+
 Run `avm test e2e --example named_child_references` from the module root for
 deployment, no-change planning and automatic teardown. This creates billable
 resources; use an approved test subscription and region.
@@ -24,6 +29,12 @@ return exit code 0, not 2. Destroy the example after the comparison.
 The backend pool is intentionally empty. This exercises real Azure
 control-plane deployment and reference resolution, not application HTTP
 traffic, TLS certificates, or every optional gateway feature.
+
+The example-scoped policy file temporarily replaces the upstream autoscale
+check's incorrect `min_capacity` lookup with an enforced `minCapacity` check.
+The other resiliency policies remain enabled. Remove this compatibility rule
+after [the upstream fix](https://github.com/Azure/policy-library-avm/pull/58)
+is available in the policy version used by authoring.
 
 ```hcl
 provider "azapi" {}
@@ -75,6 +86,12 @@ resource "azapi_resource" "subnet" {
   body = {
     properties = {
       addressPrefix = "10.87.0.0/24"
+      delegations = [{
+        name = "application-gateway"
+        properties = {
+          serviceName = "Microsoft.Network/applicationGateways"
+        }
+      }]
     }
   }
   response_export_values = []
@@ -98,7 +115,7 @@ resource "azapi_resource" "public_ip" {
       name = "Standard"
       tier = "Regional"
     }
-    zones = ["1"]
+    zones = ["1", "2", "3"]
   }
   response_export_values = ["properties.ipAddress"]
   tags                   = var.tags
@@ -110,6 +127,10 @@ module "gateway" {
   location  = var.location
   name      = local.gateway_name
   parent_id = azapi_resource.resource_group.id
+  autoscale_configuration = {
+    min_capacity = 2
+    max_capacity = 3
+  }
   backend_address_pools = [{
     name       = local.component_names.backendAddressPools
     properties = { backend_addresses = [] }
@@ -171,29 +192,33 @@ module "gateway" {
     }
   }]
   sku = {
-    capacity = 1
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
+    name = "Standard_v2"
+    tier = "Standard_v2"
   }
   tags  = var.tags
-  zones = ["1"]
+  zones = ["1", "2", "3"]
 }
 
 data "azapi_resource" "gateway" {
   resource_id = module.gateway.resource_id
   type        = "Microsoft.Network/applicationGateways@2025-03-01"
   response_export_values = {
-    frontends          = "properties.frontendIPConfigurations"
-    listeners          = "properties.httpListeners"
-    provisioning_state = "properties.provisioningState"
-    rules              = "properties.requestRoutingRules"
-    settings           = "properties.backendHttpSettingsCollection"
+    autoscale_min_capacity = "properties.autoscaleConfiguration.minCapacity"
+    frontends              = "properties.frontendIPConfigurations"
+    listeners              = "properties.httpListeners"
+    provisioning_state     = "properties.provisioningState"
+    rules                  = "properties.requestRoutingRules"
+    settings               = "properties.backendHttpSettingsCollection"
   }
 
   lifecycle {
     postcondition {
       condition     = self.output.provisioning_state == "Succeeded"
       error_message = "The deployed gateway must reach Succeeded."
+    }
+    postcondition {
+      condition     = self.output.autoscale_min_capacity >= 2
+      error_message = "Azure readback must confirm autoscaling with a minimum capacity of at least two."
     }
     postcondition {
       condition = alltrue([
@@ -253,7 +278,7 @@ If it is set to false, then no telemetry will be collected.
 
 Type: `bool`
 
-Default: `false`
+Default: `true`
 
 ### <a name="input_location"></a> [location](#input\_location)
 

@@ -5,6 +5,11 @@ case-insensitive named references for frontend IP/port, listener, backend pool,
 backend HTTP settings and health probe. Azure readback postconditions verify
 the resulting child IDs. All supporting Azure resources use AzAPI.
 
+The gateway subnet is delegated to `Microsoft.Network/applicationGateways`.
+The gateway uses autoscaling with minimum capacity 2 and maximum capacity 3,
+and both the gateway and Standard public IP use availability zones 1, 2 and 3.
+Use a region that supports these zones.
+
 Run `avm test e2e --example named_child_references` from the module root for
 deployment, no-change planning and automatic teardown. This creates billable
 resources; use an approved test subscription and region.
@@ -22,3 +27,9 @@ return exit code 0, not 2. Destroy the example after the comparison.
 The backend pool is intentionally empty. This exercises real Azure
 control-plane deployment and reference resolution, not application HTTP
 traffic, TLS certificates, or every optional gateway feature.
+
+The example-scoped policy file temporarily replaces the upstream autoscale
+check's incorrect `min_capacity` lookup with an enforced `minCapacity` check.
+The other resiliency policies remain enabled. Remove this compatibility rule
+after [the upstream fix](https://github.com/Azure/policy-library-avm/pull/58)
+is available in the policy version used by authoring.

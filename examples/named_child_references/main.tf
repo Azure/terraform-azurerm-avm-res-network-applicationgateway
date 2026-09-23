@@ -47,6 +47,12 @@ resource "azapi_resource" "subnet" {
   body = {
     properties = {
       addressPrefix = "10.87.0.0/24"
+      delegations = [{
+        name = "application-gateway"
+        properties = {
+          serviceName = "Microsoft.Network/applicationGateways"
+        }
+      }]
     }
   }
   response_export_values = []
@@ -70,7 +76,7 @@ resource "azapi_resource" "public_ip" {
       name = "Standard"
       tier = "Regional"
     }
-    zones = ["1"]
+    zones = ["1", "2", "3"]
   }
   response_export_values = ["properties.ipAddress"]
   tags                   = var.tags
@@ -82,6 +88,10 @@ module "gateway" {
   location  = var.location
   name      = local.gateway_name
   parent_id = azapi_resource.resource_group.id
+  autoscale_configuration = {
+    min_capacity = 2
+    max_capacity = 3
+  }
   backend_address_pools = [{
     name       = local.component_names.backendAddressPools
     properties = { backend_addresses = [] }
@@ -143,29 +153,33 @@ module "gateway" {
     }
   }]
   sku = {
-    capacity = 1
-    name     = "Standard_v2"
-    tier     = "Standard_v2"
+    name = "Standard_v2"
+    tier = "Standard_v2"
   }
   tags  = var.tags
-  zones = ["1"]
+  zones = ["1", "2", "3"]
 }
 
 data "azapi_resource" "gateway" {
   resource_id = module.gateway.resource_id
   type        = "Microsoft.Network/applicationGateways@2025-03-01"
   response_export_values = {
-    frontends          = "properties.frontendIPConfigurations"
-    listeners          = "properties.httpListeners"
-    provisioning_state = "properties.provisioningState"
-    rules              = "properties.requestRoutingRules"
-    settings           = "properties.backendHttpSettingsCollection"
+    autoscale_min_capacity = "properties.autoscaleConfiguration.minCapacity"
+    frontends              = "properties.frontendIPConfigurations"
+    listeners              = "properties.httpListeners"
+    provisioning_state     = "properties.provisioningState"
+    rules                  = "properties.requestRoutingRules"
+    settings               = "properties.backendHttpSettingsCollection"
   }
 
   lifecycle {
     postcondition {
       condition     = self.output.provisioning_state == "Succeeded"
       error_message = "The deployed gateway must reach Succeeded."
+    }
+    postcondition {
+      condition     = self.output.autoscale_min_capacity >= 2
+      error_message = "Azure readback must confirm autoscaling with a minimum capacity of at least two."
     }
     postcondition {
       condition = alltrue([
