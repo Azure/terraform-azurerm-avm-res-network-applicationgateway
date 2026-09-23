@@ -106,7 +106,7 @@ locals {
         id = var.firewall_policy.id
       }
       forceFirewallPolicyAssociation = var.force_firewall_policy_association
-      frontendIPConfigurations = var.frontend_ip_configurations == null ? null : [for item in var.frontend_ip_configurations : item == null ? null : {
+      frontendIPConfigurations = local.frontend_ip_configurations == null ? null : [for item in local.frontend_ip_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           privateIPAddress          = item.properties.private_ip_address
