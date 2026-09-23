@@ -71,6 +71,12 @@ resource "azapi_resource" "subnet" {
   body = {
     properties = {
       addressPrefix = "10.87.0.0/24"
+      delegations = [{
+        name = "application-gateway"
+        properties = {
+          serviceName = "Microsoft.Network/applicationGateways"
+        }
+      }]
     }
   }
   response_export_values = []
