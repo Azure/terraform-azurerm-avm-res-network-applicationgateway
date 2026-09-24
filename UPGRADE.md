@@ -15,9 +15,10 @@ diagnostic settings.
 - **Variable shape**: variables changed from `map(object)` with flat
   fields to `list(object)` with nested `properties` blocks matching
   the ARM schema.
-- **Cross-references**: name-based references (e.g.
-  `probe_name = "my-probe"`) are replaced by ARM resource ID
-  references (e.g. `probe = { id = "..." }`).
+- **Cross-references**: legacy fields such as `probe_name` become reference
+  objects. Use `probe = { probe_key = "my-probe" }` for a probe declared in this
+  module, or retain `probe = { id = "..." }`. Earlier AzAPI-based releases
+  required the ID form; it remains supported.
 - **Public IP**: `v0.5.3` removed management. Optional management is now
   available through the default-empty `public_ip_addresses` map. Existing
   external IP inputs remain supported. Migrating the old managed IP still
@@ -74,6 +75,57 @@ diagnostic settings.
 | N/A | `load_distribution_policies` | New |
 | N/A | `private_link_configurations` | New |
 | N/A | `id` | Optional — set to import an existing resource |
+
+## Adopting keyed references (optional)
+
+Existing AzAPI-based configurations do not need to change. To remove manual ID
+construction, replace an internal reference's `id` with the corresponding
+target type's `*_key` selector. The key matches the target component's configured
+`name` case-insensitively; it does not create a separate alias or map-key system:
+
+```hcl
+# Existing reference inside backend HTTP settings properties
+probe = {
+  id = "${local.appgw_id}/probes/myapp-probe"
+}
+
+# Equivalent keyed reference when probes contains name = "myapp-probe"
+probe = {
+  probe_key = "myapp-probe"
+}
+```
+
+Supply either `id` or the corresponding type-specific key, not both. A key must
+identify exactly one component by its configured `name` in the target collection
+supplied to this module. The selector follows the target type rather than the
+property role: for example, `target_listener` uses `http_listener_key`, and
+`default_backend_http_settings` uses `backend_http_settings_key`. Explicit IDs
+remain the option for references to components outside the supplied
+configuration; external public IPs, subnets and WAF policies are not resolved by
+key.
+
+For a keyed path-rule reference in a redirect configuration's `path_rules`,
+also supply `url_path_map_key` to identify the parent map:
+
+```hcl
+path_rules = [
+  {
+    path_rule_key    = "api"
+    url_path_map_key = "routes"
+  }
+]
+```
+
+This resolves the `api` rule in the `routes` entry of `url_path_maps`. Repeated
+rule names in different maps are not ambiguous when the parent is specified.
+An ID-only path-rule reference must not supply either key.
+
+Only the reference input changes: the module constructs the same ARM ID, and no
+Terraform resources or state addresses are added or moved. Do not run
+`terraform state rm`, `terraform state mv` or import solely to adopt keys.
+Inspect the resulting plan before applying. The provider-migration instructions
+later in this guide apply to the older AzureRM implementation, not this optional
+reference syntax.
 
 ## Migration examples
 
@@ -137,9 +189,7 @@ backend_http_settings = {
   }
 }
 
-# New (ARM resource ID cross-reference)
-# Build the gateway ID first:
-#   appgw_id = "/subscriptions/.../resourceGroups/rg-example/providers/Microsoft.Network/applicationGateways/my-appgw"
+# New (key reference to an entry declared in probes)
 backend_http_settings_collection = [
   {
     name = "myapp-https"
@@ -149,14 +199,15 @@ backend_http_settings_collection = [
       cookie_based_affinity = "Disabled"
       request_timeout     = 30
       probe = {
-        id = "${local.appgw_id}/probes/myapp-probe"
+        probe_key = "myapp-probe"
       }
     }
   }
 ]
 ```
 
-**ARM sub-resource type names are camelCase.** The most common ones:
+When using explicit IDs instead of keys, **ARM sub-resource type names are
+camelCase.** The most common ones:
 
 | Sub-resource | ARM path segment |
 |---|---|
@@ -194,14 +245,14 @@ http_listeners = [
     name = "myapp-https-listener"
     properties = {
       frontend_ip_configuration = {
-        id = "${local.appgw_id}/frontendIPConfigurations/public"
+        frontend_ip_configuration_key = "public"
       }
       frontend_port = {
-        id = "${local.appgw_id}/frontendPorts/https"
+        frontend_port_key = "https"
       }
       protocol = "Https"
       ssl_certificate = {
-        id = "${local.appgw_id}/sslCertificates/wildcard-cert"
+        ssl_certificate_key = "wildcard-cert"
       }
     }
   }
