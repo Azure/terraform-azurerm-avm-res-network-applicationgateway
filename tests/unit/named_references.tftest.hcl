@@ -19,23 +19,23 @@ run "resolves_all_internal_reference_families" {
     backend_http_settings_collection = [{
       name = "BackendHttp"
       properties = {
-        authentication_certificates = [{ name = "authcert" }]
-        probe                       = { name = "PROBE" }
-        trusted_root_certificates   = [{ name = "rootcert" }]
+        authentication_certificates = [{ authentication_certificate_key = "authcert" }]
+        probe                       = { probe_key = "PROBE" }
+        trusted_root_certificates   = [{ trusted_root_certificate_key = "rootcert" }]
       }
     }]
     backend_settings_collection = [{
       name = "BackendSetting"
       properties = {
-        probe                     = { name = "probe" }
-        trusted_root_certificates = [{ name = "ROOTCERT" }]
+        probe                     = { probe_key = "probe" }
+        trusted_root_certificates = [{ trusted_root_certificate_key = "ROOTCERT" }]
       }
     }]
     entra_jwt_validation_configs = [{ name = "EntraConfig" }]
     frontend_ip_configurations = [{
       name = "FrontendIp"
       properties = {
-        private_link_configuration = { name = "privatelink" }
+        private_link_configuration = { private_link_configuration_key = "privatelink" }
         public_ip_address          = { id = "/opaque/public-ip" }
         subnet                     = { id = "/opaque/frontend-subnet" }
       }
@@ -45,19 +45,19 @@ run "resolves_all_internal_reference_families" {
       name = "HttpListener"
       properties = {
         firewall_policy           = { id = "/opaque/listener-policy" }
-        frontend_ip_configuration = { name = "frontendip" }
-        frontend_port             = { name = "FRONTENDPORT" }
-        ssl_certificate           = { name = "sslcert" }
-        ssl_profile               = { name = "SSLPROFILE" }
+        frontend_ip_configuration = { frontend_ip_configuration_key = "frontendip" }
+        frontend_port             = { frontend_port_key = "FRONTENDPORT" }
+        ssl_certificate           = { ssl_certificate_key = "sslcert" }
+        ssl_profile               = { ssl_profile_key = "SSLPROFILE" }
       }
     }]
     listeners = [{
       name = "Listener"
       properties = {
-        frontend_ip_configuration = { name = "FRONTENDIP" }
-        frontend_port             = { name = "frontendport" }
-        ssl_certificate           = { name = "SSLCERT" }
-        ssl_profile               = { name = "sslprofile" }
+        frontend_ip_configuration = { frontend_ip_configuration_key = "FRONTENDIP" }
+        frontend_port             = { frontend_port_key = "frontendport" }
+        ssl_certificate           = { ssl_certificate_key = "SSLCERT" }
+        ssl_profile               = { ssl_profile_key = "sslprofile" }
       }
     }]
     load_distribution_policies = [{
@@ -67,7 +67,7 @@ run "resolves_all_internal_reference_families" {
           id   = "/opaque/load-target-definition"
           name = "LoadTarget"
           properties = {
-            backend_address_pool = { name = "backendpool" }
+            backend_address_pool = { backend_address_pool_key = "backendpool" }
           }
         }]
       }
@@ -88,32 +88,32 @@ run "resolves_all_internal_reference_families" {
     redirect_configurations = [{
       name = "Redirect"
       properties = {
-        path_rules            = [{ name = "PATHRULE", url_path_map_name = "pathmap" }]
-        request_routing_rules = [{ name = "ROUTERULE" }]
-        target_listener       = { name = "httplistener" }
-        url_path_maps         = [{ name = "PATHMAP" }]
+        path_rules            = [{ path_rule_key = "PATHRULE", url_path_map_key = "pathmap" }]
+        request_routing_rules = [{ request_routing_rule_key = "ROUTERULE" }]
+        target_listener       = { http_listener_key = "httplistener" }
+        url_path_maps         = [{ url_path_map_key = "PATHMAP" }]
       }
     }]
     request_routing_rules = [{
       name = "RouteRule"
       properties = {
-        backend_address_pool        = { name = "BACKENDPOOL" }
-        backend_http_settings       = { name = "backendhttp" }
-        entra_jwt_validation_config = { name = "ENTRACONFIG" }
-        http_listener               = { name = "HTTPListener" }
-        load_distribution_policy    = { name = "loadpolicy" }
-        redirect_configuration      = { name = "REDIRECT" }
-        rewrite_rule_set            = { name = "rewriteset" }
-        url_path_map                = { name = "pathmap" }
+        backend_address_pool        = { backend_address_pool_key = "BACKENDPOOL" }
+        backend_http_settings       = { backend_http_settings_key = "backendhttp" }
+        entra_jwt_validation_config = { entra_jwt_validation_config_key = "ENTRACONFIG" }
+        http_listener               = { http_listener_key = "HTTPListener" }
+        load_distribution_policy    = { load_distribution_policy_key = "loadpolicy" }
+        redirect_configuration      = { redirect_configuration_key = "REDIRECT" }
+        rewrite_rule_set            = { rewrite_rule_set_key = "rewriteset" }
+        url_path_map                = { url_path_map_key = "pathmap" }
       }
     }]
     rewrite_rule_sets = [{ name = "RewriteSet" }]
     routing_rules = [{
       name = "RoutingRule"
       properties = {
-        backend_address_pool = { name = "backendpool" }
-        backend_settings     = { name = "BACKENDSETTING" }
-        listener             = { name = "listener" }
+        backend_address_pool = { backend_address_pool_key = "backendpool" }
+        backend_settings     = { backend_settings_key = "BACKENDSETTING" }
+        listener             = { listener_key = "listener" }
         priority             = 1
       }
     }]
@@ -121,7 +121,7 @@ run "resolves_all_internal_reference_families" {
     ssl_profiles = [{
       name = "SslProfile"
       properties = {
-        trusted_client_certificates = [{ name = "clientcert" }]
+        trusted_client_certificates = [{ trusted_client_certificate_key = "clientcert" }]
       }
     }]
     trusted_client_certificates = [{ name = "ClientCert" }]
@@ -129,21 +129,21 @@ run "resolves_all_internal_reference_families" {
     url_path_maps = [{
       name = "PathMap"
       properties = {
-        default_backend_address_pool     = { name = "backendpool" }
-        default_backend_http_settings    = { name = "BACKENDHTTP" }
-        default_load_distribution_policy = { name = "loadpolicy" }
-        default_redirect_configuration   = { name = "redirect" }
-        default_rewrite_rule_set         = { name = "REWRITESET" }
+        default_backend_address_pool     = { backend_address_pool_key = "backendpool" }
+        default_backend_http_settings    = { backend_http_settings_key = "BACKENDHTTP" }
+        default_load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
+        default_redirect_configuration   = { redirect_configuration_key = "redirect" }
+        default_rewrite_rule_set         = { rewrite_rule_set_key = "REWRITESET" }
         path_rules = [{
           id   = "/opaque/path-rule-definition"
           name = "PathRule"
           properties = {
-            backend_address_pool     = { name = "backendpool" }
-            backend_http_settings    = { name = "backendhttp" }
+            backend_address_pool     = { backend_address_pool_key = "backendpool" }
+            backend_http_settings    = { backend_http_settings_key = "backendhttp" }
             firewall_policy          = { id = "/opaque/path-rule-policy" }
-            load_distribution_policy = { name = "loadpolicy" }
-            redirect_configuration   = { name = "redirect" }
-            rewrite_rule_set         = { name = "rewriteset" }
+            load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
+            redirect_configuration   = { redirect_configuration_key = "redirect" }
+            rewrite_rule_set         = { rewrite_rule_set_key = "rewriteset" }
           }
         }]
       }
@@ -215,6 +215,7 @@ run "resolves_all_internal_reference_families" {
       length(keys(azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[0])) == 1,
       length(keys(azapi_resource.this.body.properties.requestRoutingRules[0].properties.backendAddressPool)) == 1,
       length(keys(azapi_resource.this.body.properties.httpListeners[0].properties.frontendPort)) == 1,
+      !contains(keys(azapi_resource.this.body.properties.requestRoutingRules[0].properties.backendAddressPool), "backend_address_pool_key"),
     ])
     error_message = "Reference helper fields must not be sent in the ARM body."
   }

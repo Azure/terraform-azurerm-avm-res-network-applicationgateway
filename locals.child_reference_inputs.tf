@@ -23,6 +23,29 @@ locals {
     trusted_root_certificates        = coalesce(var.trusted_root_certificates, [])
     url_path_maps                    = coalesce(var.url_path_maps, [])
   }
+  child_reference_key_attributes = {
+    authentication_certificates      = "authentication_certificate_key"
+    backend_address_pools            = "backend_address_pool_key"
+    backend_http_settings_collection = "backend_http_settings_key"
+    backend_settings_collection      = "backend_settings_key"
+    entra_jwt_validation_configs     = "entra_jwt_validation_config_key"
+    frontend_ip_configurations       = "frontend_ip_configuration_key"
+    frontend_ports                   = "frontend_port_key"
+    http_listeners                   = "http_listener_key"
+    listeners                        = "listener_key"
+    load_distribution_policies       = "load_distribution_policy_key"
+    path_rules                       = "path_rule_key"
+    private_link_configurations      = "private_link_configuration_key"
+    probes                           = "probe_key"
+    redirect_configurations          = "redirect_configuration_key"
+    request_routing_rules            = "request_routing_rule_key"
+    rewrite_rule_sets                = "rewrite_rule_set_key"
+    ssl_certificates                 = "ssl_certificate_key"
+    ssl_profiles                     = "ssl_profile_key"
+    trusted_client_certificates      = "trusted_client_certificate_key"
+    trusted_root_certificates        = "trusted_root_certificate_key"
+    url_path_maps                    = "url_path_map_key"
+  }
   child_scalar_reference_targets = {
     backend_http_settings_collection = { probe = "probes" }
     backend_settings_collection      = { probe = "probes" }
@@ -153,17 +176,17 @@ locals {
       target_type = reference.target_type
       present     = reference.value != null
       id          = try(reference.value.id, null)
-      name        = try(reference.value.name, null)
-      scope_name  = try(reference.value.url_path_map_name, null)
+      key         = reference.value == null ? null : reference.value[local.child_reference_key_attributes[reference.target_type]]
+      scope_key   = reference.target_type == "path_rules" ? (reference.value == null ? null : reference.value.url_path_map_key) : null
     }
   }
   normalized_child_references = {
     for path, reference in local.child_reference_values : path => merge(reference, {
       mode = (
-        reference.id != null && (reference.name != null || reference.scope_name != null) ||
-        (reference.target_type == "path_rules" && ((reference.name == null) != (reference.scope_name == null)))
+        reference.id != null && (reference.key != null || reference.scope_key != null) ||
+        (reference.target_type == "path_rules" && ((reference.key == null) != (reference.scope_key == null)))
         ) ? "invalid" : (
-        reference.name != null ? "name" : reference.id != null ? "id" : "none"
+        reference.key != null ? "key" : reference.id != null ? "id" : "none"
       )
     })
   }

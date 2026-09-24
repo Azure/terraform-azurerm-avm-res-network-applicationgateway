@@ -124,10 +124,10 @@ module "application_gateway" {
       name = "http_listeners-for-80"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -145,13 +145,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "http_listeners-for-80"
+          http_listener_key = "http_listeners-for-80"
         }
         backend_address_pool = {
-          name = "Pool1"
+          backend_address_pool_key = "Pool1"
         }
         backend_http_settings = {
-          name = "backend_http_settings-port-80"
+          backend_http_settings_key = "backend_http_settings-port-80"
         }
         priority = 9
       }

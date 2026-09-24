@@ -138,10 +138,10 @@ module "application_gateway" {
       name = "appGatewayHttpListener"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -155,16 +155,16 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "appGatewayHttpListener"
+          http_listener_key = "appGatewayHttpListener"
         }
         backend_address_pool = {
-          name = "appGatewayBackendPool"
+          backend_address_pool_key = "appGatewayBackendPool"
         }
         backend_http_settings = {
-          name = "appGatewayBackendHttpSettings"
+          backend_http_settings_key = "appGatewayBackendHttpSettings"
         }
         rewrite_rule_set = {
-          name = "my-rewrite-rule-set"
+          rewrite_rule_set_key = "my-rewrite-rule-set"
         }
         priority = 100
       }

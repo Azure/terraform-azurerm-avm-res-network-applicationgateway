@@ -10,7 +10,7 @@ variables {
   parent_id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg"
 }
 
-run "rejects_id_and_name_together" {
+run "rejects_id_and_key_together" {
   command = plan
 
   variables {
@@ -19,8 +19,8 @@ run "rejects_id_and_name_together" {
       name = "listener"
       properties = {
         frontend_port = {
-          id   = "/opaque/legacy-id"
-          name = "port"
+          frontend_port_key = "port"
+          id                = "/opaque/legacy-id"
         }
       }
     }]
@@ -29,14 +29,14 @@ run "rejects_id_and_name_together" {
   expect_failures = [azapi_resource.this]
 }
 
-run "rejects_missing_named_target" {
+run "rejects_missing_keyed_target" {
   command = plan
 
   variables {
     http_listeners = [{
       name = "listener"
       properties = {
-        frontend_port = { name = "missing" }
+        frontend_port = { frontend_port_key = "missing" }
       }
     }]
   }
@@ -55,7 +55,7 @@ run "rejects_case_insensitive_ambiguity_only_when_referenced" {
     http_listeners = [{
       name = "listener"
       properties = {
-        frontend_port = { name = "port" }
+        frontend_port = { frontend_port_key = "port" }
       }
     }]
   }
@@ -75,11 +75,11 @@ run "allows_unreferenced_duplicate_declarations" {
 
   assert {
     condition     = length(azapi_resource.this.body.properties.frontendPorts) == 2
-    error_message = "Duplicate declaration names should be validated only when a named reference targets them."
+    error_message = "Duplicate declaration names should be validated only when a keyed reference targets them."
   }
 }
 
-run "rejects_malformed_new_names" {
+run "rejects_malformed_new_keys" {
   command = plan
 
   variables {
@@ -87,15 +87,23 @@ run "rejects_malformed_new_names" {
     http_listeners = [{
       name = "listener"
       properties = {
-        frontend_port = { name = "child/name" }
+        frontend_port = { frontend_port_key = "child/name" }
       }
     }]
   }
 
   expect_failures = [azapi_resource.this]
+
+  assert {
+    condition = (
+      local.child_reference_resolution["http_listeners[0].properties.frontend_port"].status == "invalid_key" &&
+      contains(local.invalid_child_reference_key_paths, "http_listeners[0].properties.frontend_port")
+    )
+    error_message = "Malformed selectors must be classified as invalid_key and reported through invalid_child_reference_key_paths."
+  }
 }
 
-run "rejects_blank_new_names" {
+run "rejects_blank_new_keys" {
   command = plan
 
   variables {
@@ -103,7 +111,7 @@ run "rejects_blank_new_names" {
     http_listeners = [{
       name = "listener"
       properties = {
-        frontend_port = { name = "   " }
+        frontend_port = { frontend_port_key = "   " }
       }
     }]
   }
@@ -111,14 +119,14 @@ run "rejects_blank_new_names" {
   expect_failures = [azapi_resource.this]
 }
 
-run "rejects_path_rule_name_without_scope" {
+run "rejects_path_rule_key_without_scope_key" {
   command = plan
 
   variables {
     redirect_configurations = [{
       name = "redirect"
       properties = {
-        path_rules = [{ name = "rule" }]
+        path_rules = [{ path_rule_key = "rule" }]
       }
     }]
   }
@@ -126,14 +134,14 @@ run "rejects_path_rule_name_without_scope" {
   expect_failures = [azapi_resource.this]
 }
 
-run "rejects_orphan_path_rule_scope" {
+run "rejects_orphan_path_rule_scope_key" {
   command = plan
 
   variables {
     redirect_configurations = [{
       name = "redirect"
       properties = {
-        path_rules = [{ url_path_map_name = "map" }]
+        path_rules = [{ url_path_map_key = "map" }]
       }
     }]
   }
@@ -141,7 +149,7 @@ run "rejects_orphan_path_rule_scope" {
   expect_failures = [azapi_resource.this]
 }
 
-run "rejects_path_rule_id_with_new_scope" {
+run "rejects_path_rule_id_with_keys" {
   command = plan
 
   variables {
@@ -149,9 +157,9 @@ run "rejects_path_rule_id_with_new_scope" {
       name = "redirect"
       properties = {
         path_rules = [{
-          id                = "/opaque/legacy-id"
-          name              = "rule"
-          url_path_map_name = "map"
+          id               = "/opaque/legacy-id"
+          path_rule_key    = "rule"
+          url_path_map_key = "map"
         }]
       }
     }]
@@ -160,7 +168,7 @@ run "rejects_path_rule_id_with_new_scope" {
   expect_failures = [azapi_resource.this]
 }
 
-run "rejects_ambiguous_path_map_scope" {
+run "rejects_ambiguous_path_map_scope_key" {
   command = plan
 
   variables {
@@ -168,8 +176,8 @@ run "rejects_ambiguous_path_map_scope" {
       name = "redirect"
       properties = {
         path_rules = [{
-          name              = "rule"
-          url_path_map_name = "map"
+          path_rule_key    = "rule"
+          url_path_map_key = "map"
         }]
       }
     }]

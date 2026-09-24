@@ -121,11 +121,13 @@ retained identity, not a complete zero-change plan. Real upgrade/state-transfer
 and dual-stack deployment coverage are still required before claiming those
 paths are production-proven.
 
-## Reference gateway components by name or ID
+## Reference gateway components by key or ID
 
-References to components defined in the same module can use their configured
-`name` instead of a manually constructed ARM resource ID. Existing `{ id = ... }`
-references remain supported without modification.
+Nested reference objects for components defined in the same module can use a
+type-specific `*_key` selector instead of a manually constructed ARM resource
+ID. The key selects the target component's configured `name`
+case-insensitively; it is not a separate alias or Terraform map key. Existing
+`{ id = ... }` references remain supported without modification.
 
 For example, these module arguments define a probe and reference it from backend
 HTTP settings:
@@ -152,40 +154,62 @@ backend_http_settings_collection = [
       cookie_based_affinity = "Disabled"
       port                  = 80
       protocol              = "Http"
-      probe                 = { name = "health" }
+      probe                 = { probe_key = "health" }
     }
   }
 ]
 ```
 
-Use `name` or `id`, not both. Names are matched case-insensitively against the
-corresponding component collection, and the generated ID uses the declaration's
-name. Blank names, names containing a path separator, missing targets and
-ambiguous target names are rejected. Omitted references and the existing ID-only
-input behavior are unchanged.
+Use the target type's key field or `id`, not both. The generated ID preserves
+the declaration's actual `name` and casing. Blank keys, keys containing a path
+separator, missing targets and ambiguous case-insensitive matches are rejected.
+Omitted references, null or empty reference objects, and existing ID-only input
+behavior are unchanged.
 
-Name references are supported for frontend IP configurations and ports, HTTP and
-TCP/TLS listeners, backend pools and settings, probes, certificates and SSL
-profiles, routing/redirect references, rewrite sets, URL path maps,
-load-distribution policies, Entra JWT configurations and Private Link
-configurations. This applies to references nested inside path rules and
-load-distribution targets as well as top-level component properties.
+The selector is based on the target type, not the property role. For example,
+`target_listener` uses `{ http_listener_key = "listener" }`, while
+`default_backend_http_settings` uses
+`{ backend_http_settings_key = "settings" }`. Supported selectors are:
 
-Path-rule names are scoped to a URL path map. For example, a redirect
+| Target collection | Nested selector |
+|---|---|
+| `authentication_certificates` | `authentication_certificate_key` |
+| `backend_address_pools` | `backend_address_pool_key` |
+| `backend_http_settings_collection` | `backend_http_settings_key` |
+| `backend_settings_collection` | `backend_settings_key` |
+| `entra_jwt_validation_configs` | `entra_jwt_validation_config_key` |
+| `frontend_ip_configurations` | `frontend_ip_configuration_key` |
+| `frontend_ports` | `frontend_port_key` |
+| `http_listeners` | `http_listener_key` |
+| `listeners` | `listener_key` |
+| `load_distribution_policies` | `load_distribution_policy_key` |
+| `private_link_configurations` | `private_link_configuration_key` |
+| `probes` | `probe_key` |
+| `path_rules` | `path_rule_key` plus the parent `url_path_map_key` |
+| `redirect_configurations` | `redirect_configuration_key` |
+| `request_routing_rules` | `request_routing_rule_key` |
+| `rewrite_rule_sets` | `rewrite_rule_set_key` |
+| `ssl_certificates` | `ssl_certificate_key` |
+| `ssl_profiles` | `ssl_profile_key` |
+| `trusted_client_certificates` | `trusted_client_certificate_key` |
+| `trusted_root_certificates` | `trusted_root_certificate_key` |
+| `url_path_maps` | `url_path_map_key` |
+
+Path-rule keys are scoped to a URL path map. For example, a redirect
 configuration's `properties.path_rules` can contain:
 
 ```hcl
 path_rules = [
   {
-    name              = "api"
-    url_path_map_name = "routes"
+    path_rule_key    = "api"
+    url_path_map_key = "routes"
   }
 ]
 ```
 
 Both the `routes` URL path map and its `api` path rule must be defined in
-`url_path_maps`. The parent map name is required only for a name-based path-rule
-reference; an explicit path-rule ID needs no additional scope field.
+`url_path_maps`. A keyed path-rule reference requires both fields. An ID-only
+path-rule reference must provide neither key.
 
 External dependencies such as public IPs, subnets and WAF policies still use IDs.
 Use an explicit ID for a gateway component that is not declared in this module's
@@ -193,9 +217,9 @@ configuration. The module does not query Azure to discover targets.
 
 IDs are constructed from the gateway's `parent_id`, `name` and the known ARM
 child-resource type. Do not feed this module's resource ID output back into its
-own inputs. Name resolution does not add Terraform resources or change resource
-addresses, so adopting it alone requires no state migration. See
-[the optional reference migration guidance](UPGRADE.md#adopting-named-references-optional).
+own inputs. Key resolution does not add Terraform resources or change resource
+addresses, so adoption is optional and requires no state migration. See
+[the optional reference migration guidance](UPGRADE.md#adopting-keyed-references-optional).
 
 ## Supported frontend IP configuration
 
@@ -221,8 +245,8 @@ resources outside this module.
 
 ## Supported Scenarios
 
-**[Named child-reference E2E](examples/named\_child\_references/README.md)**
-Deploys an isolated gateway with named references, verifies the resolved IDs through Azure readback, and supports an equivalent explicit-ID compatibility plan.
+**[Keyed child-reference E2E](examples/named\_child\_references/README.md)**
+Deploys an isolated gateway with type-specific keyed references, verifies the resolved IDs through Azure readback, and supports an equivalent explicit-ID compatibility plan.
 
 **[Default — Simple HTTP Application Gateway](examples/default/README.md)**
 A straightforward HTTP Application Gateway for basic web applications or services.
@@ -370,7 +394,7 @@ Default: `null`
 
 ### <a name="input_backend_http_settings_collection"></a> [backend\_http\_settings\_collection](#input\_backend\_http\_settings\_collection)
 
-Description: Backend http settings of the application gateway resource. Internal authentication certificate, probe, and trusted root certificate references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+Description: Backend http settings of the application gateway resource. Internal references accept either `id` or their nested `authentication_certificate_key`, `probe_key`, or `trusted_root_certificate_key`, but not both. A key must be nonblank and case-insensitively match exactly one corresponding component's configured `name`; it is not a separate alias. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
 Type:
 
@@ -380,8 +404,8 @@ list(object({
     properties = optional(object({
       affinity_cookie_name = optional(string)
       authentication_certificates = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id                             = optional(string)
+        authentication_certificate_key = optional(string)
       })))
       connection_draining = optional(object({
         drain_timeout_in_sec = number
@@ -394,16 +418,16 @@ list(object({
       pick_host_name_from_backend_address = optional(bool)
       port                                = optional(number)
       probe = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id        = optional(string)
+        probe_key = optional(string)
       }))
       probe_enabled   = optional(bool)
       protocol        = optional(string)
       request_timeout = optional(number)
       sni_name        = optional(string)
       trusted_root_certificates = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id                           = optional(string)
+        trusted_root_certificate_key = optional(string)
       })))
       validate_cert_chain_and_expiry = optional(bool)
       validate_sni                   = optional(bool)
@@ -415,7 +439,7 @@ Default: `null`
 
 ### <a name="input_backend_settings_collection"></a> [backend\_settings\_collection](#input\_backend\_settings\_collection)
 
-Description: Backend settings of the application gateway resource. Internal probe and trusted root certificate references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+Description: Backend settings of the application gateway resource. Internal references accept either `id` or their nested `probe_key` or `trusted_root_certificate_key`, but not both. A key must be nonblank and case-insensitively match exactly one corresponding component's configured `name`; it is not a separate alias. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
 Type:
 
@@ -428,14 +452,14 @@ list(object({
       pick_host_name_from_backend_address = optional(bool)
       port                                = optional(number)
       probe = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id        = optional(string)
+        probe_key = optional(string)
       }))
       protocol = optional(string)
       timeout  = optional(number)
       trusted_root_certificates = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id                           = optional(string)
+        trusted_root_certificate_key = optional(string)
       })))
     }))
   }))
@@ -590,7 +614,7 @@ Description: Frontend IP addresses of the application gateway resource. For defa
 
 Set `public_ip_address_key` to a key in `public_ip_addresses` to attach a module-managed public IP. The module constructs `properties.public_ip_address.id`; `properties` may be omitted. Alternatively, keep supplying an external IP through `properties.public_ip_address.id`. These options are mutually exclusive. Managed public frontends require a name and cannot include private IP or subnet settings. Private Link configuration is supported alongside a managed public IP.
 
-The internal private link configuration reference accepts either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one private link configuration declared in this module. External public IP and subnet reference objects remain ID-only; use `public_ip_address_key` separately for a module-managed public IP.
+The internal private link configuration reference accepts either `id` or nested `private_link_configuration_key`, but not both. The key must be nonblank and case-insensitively match exactly one private link configuration's configured `name`. External public IP and subnet reference objects remain ID-only; use `public_ip_address_key` separately to select a module-managed public IP by its map key.
 
 Type:
 
@@ -602,8 +626,8 @@ list(object({
       private_ip_address           = optional(string)
       private_ip_allocation_method = optional(string)
       private_link_configuration = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                             = optional(string)
+        private_link_configuration_key = optional(string)
       }))
       public_ip_address = optional(object({
         id = optional(string)
@@ -670,7 +694,7 @@ Default: `null`
 
 ### <a name="input_http_listeners"></a> [http\_listeners](#input\_http\_listeners)
 
-Description: Http listeners of the application gateway resource. Internal frontend IP configuration, frontend port, SSL certificate, and SSL profile references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module. Firewall policy remains an external ID-only reference. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+Description: Http listeners of the application gateway resource. Internal references accept either `id` or their nested `frontend_ip_configuration_key`, `frontend_port_key`, `ssl_certificate_key`, or `ssl_profile_key`, but not both. Each key case-insensitively selects the configured `name` of one corresponding component. Firewall policy remains an external ID-only reference. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
 Type:
 
@@ -686,24 +710,24 @@ list(object({
         id = optional(string)
       }))
       frontend_ip_configuration = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                            = optional(string)
+        frontend_ip_configuration_key = optional(string)
       }))
       frontend_port = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                = optional(string)
+        frontend_port_key = optional(string)
       }))
       host_name                      = optional(string)
       host_names                     = optional(list(string))
       protocol                       = optional(string)
       require_server_name_indication = optional(bool)
       ssl_certificate = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                  = optional(string)
+        ssl_certificate_key = optional(string)
       }))
       ssl_profile = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id              = optional(string)
+        ssl_profile_key = optional(string)
       }))
     }))
   }))
@@ -731,7 +755,7 @@ Default: `{}`
 
 ### <a name="input_listeners"></a> [listeners](#input\_listeners)
 
-Description: Listeners of the application gateway resource. Internal frontend IP configuration, frontend port, SSL certificate, and SSL profile references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+Description: Listeners of the application gateway resource. Internal references accept either `id` or their nested `frontend_ip_configuration_key`, `frontend_port_key`, `ssl_certificate_key`, or `ssl_profile_key`, but not both. Each key case-insensitively selects the configured `name` of one corresponding component. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
 Type:
 
@@ -740,22 +764,22 @@ list(object({
     name = optional(string)
     properties = optional(object({
       frontend_ip_configuration = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                            = optional(string)
+        frontend_ip_configuration_key = optional(string)
       }))
       frontend_port = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                = optional(string)
+        frontend_port_key = optional(string)
       }))
       host_names = optional(list(string))
       protocol   = optional(string)
       ssl_certificate = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                  = optional(string)
+        ssl_certificate_key = optional(string)
       }))
       ssl_profile = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id              = optional(string)
+        ssl_profile_key = optional(string)
       }))
     }))
   }))
@@ -765,7 +789,7 @@ Default: `null`
 
 ### <a name="input_load_distribution_policies"></a> [load\_distribution\_policies](#input\_load\_distribution\_policies)
 
-Description: Load distribution policies of the application gateway resource. Internal backend address pool references accept either `id` or `name`, but not both. A reference `name` must be a nonblank single child name that case-insensitively identifies exactly one backend address pool declared in this module. The `id` and `name` on load distribution target definition objects retain their existing definition semantics.
+Description: Load distribution policies of the application gateway resource. Internal backend address pool references accept either `id` or nested `backend_address_pool_key`, but not both. The key case-insensitively selects one backend pool's configured `name`. The `id` and `name` on load distribution target definition objects retain their existing definition semantics.
 
 Type:
 
@@ -779,8 +803,8 @@ list(object({
         name = optional(string)
         properties = optional(object({
           backend_address_pool = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                       = optional(string)
+            backend_address_pool_key = optional(string)
           }))
           weight_per_server = optional(number)
         }))
@@ -1003,7 +1027,7 @@ Default: `{}`
 
 ### <a name="input_redirect_configurations"></a> [redirect\_configurations](#input\_redirect\_configurations)
 
-Description: Redirect configurations of the application gateway resource. Internal target listener, request routing rule, and URL path map references accept either `id` or `name`, but not both. A path rule reference may also use `name`, but then requires `url_path_map_name` to scope the match; `id` cannot be combined with either new field, and `url_path_map_name` cannot be supplied without `name`. Each new name must be a nonblank single child name and case-insensitively identify exactly one corresponding component declared in this module.
+Description: Redirect configurations of the application gateway resource. Internal references accept either `id` or their nested `http_listener_key`, `request_routing_rule_key`, or `url_path_map_key`, but not both. A path rule reference uses `path_rule_key` together with `url_path_map_key` to identify its parent; neither key can be combined with `id`. Each key must be nonblank and case-insensitively match the configured `name` of exactly one corresponding component.
 
 Type:
 
@@ -1014,23 +1038,23 @@ list(object({
       include_path         = optional(bool)
       include_query_string = optional(bool)
       path_rules = optional(list(object({
-        id                = optional(string)
-        name              = optional(string)
-        url_path_map_name = optional(string)
+        id               = optional(string)
+        path_rule_key    = optional(string)
+        url_path_map_key = optional(string)
       })))
       redirect_type = optional(string)
       request_routing_rules = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id                       = optional(string)
+        request_routing_rule_key = optional(string)
       })))
       target_listener = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                = optional(string)
+        http_listener_key = optional(string)
       }))
       target_url = optional(string)
       url_path_maps = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id               = optional(string)
+        url_path_map_key = optional(string)
       })))
     }))
   }))
@@ -1040,7 +1064,7 @@ Default: `null`
 
 ### <a name="input_request_routing_rules"></a> [request\_routing\_rules](#input\_request\_routing\_rules)
 
-Description: Request routing rules of the application gateway resource. Internal backend address pool, backend HTTP settings, Entra JWT validation configuration, HTTP listener, load distribution policy, redirect configuration, rewrite rule set, and URL path map references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module.
+Description: Request routing rules of the application gateway resource. Each internal reference object accepts either `id` or its type-specific nested `*_key`, but not both. Keys case-insensitively select the configured `name` of exactly one corresponding backend pool/settings, JWT configuration, HTTP listener, load distribution policy, redirect configuration, rewrite rule set, or URL path map.
 
 Type:
 
@@ -1049,38 +1073,38 @@ list(object({
     name = optional(string)
     properties = optional(object({
       backend_address_pool = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                       = optional(string)
+        backend_address_pool_key = optional(string)
       }))
       backend_http_settings = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                        = optional(string)
+        backend_http_settings_key = optional(string)
       }))
       entra_jwt_validation_config = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                              = optional(string)
+        entra_jwt_validation_config_key = optional(string)
       }))
       http_listener = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                = optional(string)
+        http_listener_key = optional(string)
       }))
       load_distribution_policy = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                           = optional(string)
+        load_distribution_policy_key = optional(string)
       }))
       priority = optional(number)
       redirect_configuration = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                         = optional(string)
+        redirect_configuration_key = optional(string)
       }))
       rewrite_rule_set = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                   = optional(string)
+        rewrite_rule_set_key = optional(string)
       }))
       rule_type = optional(string)
       url_path_map = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id               = optional(string)
+        url_path_map_key = optional(string)
       }))
     }))
   }))
@@ -1212,7 +1236,7 @@ Default: `{}`
 
 ### <a name="input_routing_rules"></a> [routing\_rules](#input\_routing\_rules)
 
-Description: Routing rules of the application gateway resource. Internal backend address pool, backend settings, and listener references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module.
+Description: Routing rules of the application gateway resource. Internal references accept either `id` or their nested `backend_address_pool_key`, `backend_settings_key`, or `listener_key`, but not both. Each key case-insensitively selects the configured `name` of one corresponding component.
 
 Type:
 
@@ -1221,16 +1245,16 @@ list(object({
     name = optional(string)
     properties = optional(object({
       backend_address_pool = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                       = optional(string)
+        backend_address_pool_key = optional(string)
       }))
       backend_settings = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                   = optional(string)
+        backend_settings_key = optional(string)
       }))
       listener = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id           = optional(string)
+        listener_key = optional(string)
       }))
       priority  = number
       rule_type = optional(string)
@@ -1296,7 +1320,7 @@ Default: `null`
 
 ### <a name="input_ssl_profiles"></a> [ssl\_profiles](#input\_ssl\_profiles)
 
-Description: SSL profiles of the application gateway resource. Internal trusted client certificate references accept either `id` or `name`, but not both. A `name` must be a nonblank single child name that case-insensitively identifies exactly one trusted client certificate declared in this module. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
+Description: SSL profiles of the application gateway resource. Internal trusted client certificate references accept either `id` or nested `trusted_client_certificate_key`, but not both. Each key case-insensitively selects the configured `name` of one trusted client certificate. For default limits, see [Application Gateway limits](https://docs.microsoft.com/azure/azure-subscription-service-limits#application-gateway-limits).
 
 Type:
 
@@ -1317,8 +1341,8 @@ list(object({
         policy_type            = optional(string)
       }))
       trusted_client_certificates = optional(list(object({
-        id   = optional(string)
-        name = optional(string)
+        id                             = optional(string)
+        trusted_client_certificate_key = optional(string)
       })))
     }))
   }))
@@ -1393,7 +1417,7 @@ Default: `null`
 
 ### <a name="input_url_path_maps"></a> [url\_path\_maps](#input\_url\_path\_maps)
 
-Description: URL path map of the application gateway resource. Internal default and path-rule references to backend address pools, backend HTTP settings, load distribution policies, redirect configurations, and rewrite rule sets accept either `id` or `name`, but not both. A reference `name` must be a nonblank single child name that case-insensitively identifies exactly one corresponding component declared in this module. Path rule definition `id` and `name` fields retain their existing definition semantics, and firewall policy remains an external ID-only reference.
+Description: URL path map of the application gateway resource. Internal default and path-rule references accept either `id` or their nested `backend_address_pool_key`, `backend_http_settings_key`, `load_distribution_policy_key`, `redirect_configuration_key`, or `rewrite_rule_set_key`, but not both. Each key case-insensitively selects the configured `name` of one corresponding component. Path rule definition `id` and `name` fields retain their existing definition semantics, and firewall policy remains an external ID-only reference.
 
 Type:
 
@@ -1402,52 +1426,52 @@ list(object({
     name = optional(string)
     properties = optional(object({
       default_backend_address_pool = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                       = optional(string)
+        backend_address_pool_key = optional(string)
       }))
       default_backend_http_settings = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                        = optional(string)
+        backend_http_settings_key = optional(string)
       }))
       default_load_distribution_policy = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                           = optional(string)
+        load_distribution_policy_key = optional(string)
       }))
       default_redirect_configuration = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                         = optional(string)
+        redirect_configuration_key = optional(string)
       }))
       default_rewrite_rule_set = optional(object({
-        id   = optional(string)
-        name = optional(string)
+        id                   = optional(string)
+        rewrite_rule_set_key = optional(string)
       }))
       path_rules = optional(list(object({
         id   = optional(string)
         name = optional(string)
         properties = optional(object({
           backend_address_pool = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                       = optional(string)
+            backend_address_pool_key = optional(string)
           }))
           backend_http_settings = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                        = optional(string)
+            backend_http_settings_key = optional(string)
           }))
           firewall_policy = optional(object({
             id = optional(string)
           }))
           load_distribution_policy = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                           = optional(string)
+            load_distribution_policy_key = optional(string)
           }))
           paths = optional(list(string))
           redirect_configuration = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                         = optional(string)
+            redirect_configuration_key = optional(string)
           }))
           rewrite_rule_set = optional(object({
-            id   = optional(string)
-            name = optional(string)
+            id                   = optional(string)
+            rewrite_rule_set_key = optional(string)
           }))
         }))
       })))

@@ -47,24 +47,24 @@ locals {
   child_reference_lookups = {
     for path, reference in local.normalized_child_references : path => {
       target_type = reference.target_type
-      lookup_key = reference.name == null ? null : (
+      lookup_key = reference.key == null ? null : (
         reference.target_type == "path_rules" ? (
-          reference.scope_name == null ? null : jsonencode([lower(reference.scope_name), lower(reference.name)])
-        ) : lower(reference.name)
+          reference.scope_key == null ? null : jsonencode([lower(reference.scope_key), lower(reference.key)])
+        ) : lower(reference.key)
       )
-      scope_key = reference.scope_name == null ? null : lower(reference.scope_name)
-      name_valid = reference.name == null ? true : (
-        trimspace(reference.name) != "" && !strcontains(reference.name, "/")
+      scope_lookup_key = reference.scope_key == null ? null : lower(reference.scope_key)
+      key_valid = reference.key == null ? true : (
+        trimspace(reference.key) != "" && !strcontains(reference.key, "/")
       )
-      scope_valid = reference.scope_name == null ? true : (
-        trimspace(reference.scope_name) != "" && !strcontains(reference.scope_name, "/")
+      scope_valid = reference.scope_key == null ? true : (
+        trimspace(reference.scope_key) != "" && !strcontains(reference.scope_key, "/")
       )
     }
   }
   child_reference_matches = {
     for path, reference in local.child_reference_lookups : path => {
       target_paths = reference.lookup_key == null ? [] : lookup(local.child_target_paths[reference.target_type], reference.lookup_key, [])
-      scope_paths  = reference.scope_key == null ? [] : lookup(local.child_target_paths.url_path_maps, reference.scope_key, [])
+      scope_paths  = reference.scope_lookup_key == null ? [] : lookup(local.child_target_paths.url_path_maps, reference.scope_lookup_key, [])
     }
   }
   matched_child_reference_paths = {
@@ -78,8 +78,8 @@ locals {
       present       = reference.present
       id            = reference.id
       relative_path = local.matched_child_reference_paths[path]
-      status = reference.mode != "name" ? reference.mode : (
-        !local.child_reference_lookups[path].name_valid || !local.child_reference_lookups[path].scope_valid ? "invalid_name" :
+      status = reference.mode != "key" ? reference.mode : (
+        !local.child_reference_lookups[path].key_valid || !local.child_reference_lookups[path].scope_valid ? "invalid_key" :
         local.matched_child_reference_paths[path] == null ? "unresolved" : "resolved"
       )
     }
@@ -87,8 +87,8 @@ locals {
   invalid_child_reference_shape_paths = [
     for path, reference in local.child_reference_resolution : path if reference.status == "invalid"
   ]
-  invalid_child_reference_name_paths = [
-    for path, reference in local.child_reference_resolution : path if reference.status == "invalid_name"
+  invalid_child_reference_key_paths = [
+    for path, reference in local.child_reference_resolution : path if reference.status == "invalid_key"
   ]
   unresolved_child_reference_paths = [
     for path, reference in local.child_reference_resolution : path if reference.status == "unresolved"

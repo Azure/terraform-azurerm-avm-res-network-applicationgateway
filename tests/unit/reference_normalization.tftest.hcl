@@ -19,7 +19,7 @@ run "classifies_scalar_references_and_preserves_rendering" {
       },
       {
         name       = "name-only"
-        properties = { probe = { name = "canonicalprobe" } }
+        properties = { probe = { probe_key = "canonicalprobe" } }
       },
       {
         name       = "null-reference"
@@ -33,8 +33,8 @@ run "classifies_scalar_references_and_preserves_rendering" {
         name = "explicit-nulls"
         properties = {
           probe = {
-            id   = null
-            name = null
+            id        = null
+            probe_key = null
           }
         }
       },
@@ -50,7 +50,9 @@ run "classifies_scalar_references_and_preserves_rendering" {
       local.normalized_child_references["backend_http_settings_collection[0].properties.probe"].mode == "id",
       local.normalized_child_references["backend_http_settings_collection[0].properties.probe"].present,
       local.normalized_child_references["backend_http_settings_collection[0].properties.probe"].id == "not/an/arm/resource/id",
-      local.normalized_child_references["backend_http_settings_collection[1].properties.probe"].mode == "name",
+      local.normalized_child_references["backend_http_settings_collection[1].properties.probe"].mode == "key",
+      local.normalized_child_references["backend_http_settings_collection[1].properties.probe"].key == "canonicalprobe",
+      local.normalized_child_references["backend_http_settings_collection[1].properties.probe"].scope_key == null,
       local.normalized_child_references["backend_http_settings_collection[1].properties.probe"].target_type == "probes",
       local.normalized_child_references["backend_http_settings_collection[2].properties.probe"].mode == "none",
       !local.normalized_child_references["backend_http_settings_collection[2].properties.probe"].present,
@@ -98,8 +100,8 @@ run "preserves_list_indexes_nulls_and_duplicates" {
         authentication_certificates = [
           null,
           {},
-          { name = "canonicalcertificate" },
-          { name = "CANONICALCERTIFICATE" },
+          { authentication_certificate_key = "canonicalcertificate" },
+          { authentication_certificate_key = "CANONICALCERTIFICATE" },
           { id = "/opaque/certificate" },
         ]
       }
@@ -140,12 +142,12 @@ run "resolves_reused_names_by_target_type" {
     probes                = [{ name = "Shared" }]
     backend_http_settings_collection = [{
       name       = "Settings"
-      properties = { probe = { name = "shared" } }
+      properties = { probe = { probe_key = "shared" } }
     }]
     request_routing_rules = [{
       name = "rule"
       properties = {
-        backend_address_pool  = { name = "SHARED" }
+        backend_address_pool  = { backend_address_pool_key = "SHARED" }
         backend_http_settings = { id = "/opaque/backend-settings" }
       }
     }]
@@ -177,8 +179,8 @@ run "preserves_compound_invalid_list_paths" {
       name = "settings"
       properties = {
         authentication_certificates = [{
-          id   = "/opaque/certificate"
-          name = "certificate"
+          authentication_certificate_key = "certificate"
+          id                             = "/opaque/certificate"
         }]
       }
     }]
@@ -187,12 +189,12 @@ run "preserves_compound_invalid_list_paths" {
       properties = {
         path_rules = [
           {
-            id                = "/opaque/path-rule"
-            name              = "rule"
-            url_path_map_name = "map"
+            id               = "/opaque/path-rule"
+            path_rule_key    = "rule"
+            url_path_map_key = "map"
           },
-          { url_path_map_name = "map" },
-          { name = "rule" },
+          { url_path_map_key = "map" },
+          { path_rule_key = "rule" },
         ]
       }
     }]
@@ -236,7 +238,7 @@ run "preserves_null_elements_and_properties" {
       },
       {
         name       = "resolved-properties"
-        properties = { probe = { name = "probe" } }
+        properties = { probe = { probe_key = "probe" } }
       },
     ]
   }

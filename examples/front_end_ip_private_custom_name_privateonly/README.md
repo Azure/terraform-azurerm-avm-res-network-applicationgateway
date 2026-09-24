@@ -174,10 +174,10 @@ module "application_gateway" {
       name = "app-Gateway-Http-Listener-80"
       properties = {
         frontend_ip_configuration = {
-          name = "private-ip-custom-name"
+          frontend_ip_configuration_key = "private-ip-custom-name"
         }
         frontend_port = {
-          name = "port_80"
+          frontend_port_key = "port_80"
         }
         protocol = "Http"
       }
@@ -186,10 +186,10 @@ module "application_gateway" {
       name = "app-Gateway-Http-Listener-81"
       properties = {
         frontend_ip_configuration = {
-          name = "private-ip-custom-name"
+          frontend_ip_configuration_key = "private-ip-custom-name"
         }
         frontend_port = {
-          name = "port_81"
+          frontend_port_key = "port_81"
         }
         protocol = "Http"
       }
@@ -203,13 +203,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "app-Gateway-Http-Listener-80"
+          http_listener_key = "app-Gateway-Http-Listener-80"
         }
         backend_address_pool = {
-          name = "app-Gateway-Backend-Pool-80"
+          backend_address_pool_key = "app-Gateway-Backend-Pool-80"
         }
         backend_http_settings = {
-          name = "app-Gateway-Backend-Http-Settings-80"
+          backend_http_settings_key = "app-Gateway-Backend-Http-Settings-80"
         }
         priority = 100
       }
@@ -219,13 +219,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "app-Gateway-Http-Listener-81"
+          http_listener_key = "app-Gateway-Http-Listener-81"
         }
         backend_address_pool = {
-          name = "app-Gateway-Backend-Pool-81"
+          backend_address_pool_key = "app-Gateway-Backend-Pool-81"
         }
         backend_http_settings = {
-          name = "app-Gateway-Backend-Http-Settings-81"
+          backend_http_settings_key = "app-Gateway-Backend-Http-Settings-81"
         }
         priority = 101
       }

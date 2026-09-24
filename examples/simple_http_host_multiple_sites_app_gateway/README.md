@@ -155,10 +155,10 @@ module "application_gateway" {
       name = "appGatewayHttpListener"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -167,10 +167,10 @@ module "application_gateway" {
       name = "contosoListener"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol  = "Http"
         host_name = "www.contoso.com"
@@ -180,10 +180,10 @@ module "application_gateway" {
       name = "fabrikamListener"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol   = "Http"
         host_names = ["www.fabrikam.com", "www.fabrikam.org"]
@@ -198,13 +198,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "contosoListener"
+          http_listener_key = "contosoListener"
         }
         backend_address_pool = {
-          name = "contosoPool"
+          backend_address_pool_key = "contosoPool"
         }
         backend_http_settings = {
-          name = "appGatewayBackendHttpSettings"
+          backend_http_settings_key = "appGatewayBackendHttpSettings"
         }
         priority = 100
       }
@@ -214,13 +214,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "fabrikamListener"
+          http_listener_key = "fabrikamListener"
         }
         backend_address_pool = {
-          name = "fabrikamPool"
+          backend_address_pool_key = "fabrikamPool"
         }
         backend_http_settings = {
-          name = "appGatewayBackendHttpSettings"
+          backend_http_settings_key = "appGatewayBackendHttpSettings"
         }
         priority = 200
       }

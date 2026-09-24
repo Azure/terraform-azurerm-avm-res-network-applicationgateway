@@ -31,14 +31,14 @@ variables {
   http_listeners = [{
     name = "HttpListener"
     properties = {
-      frontend_ip_configuration = { name = "publicfrontend" }
-      frontend_port             = { name = "httpport" }
+      frontend_ip_configuration = { frontend_ip_configuration_key = "publicfrontend" }
+      frontend_port             = { frontend_port_key = "httpport" }
       protocol                  = "Http"
     }
   }]
 }
 
-run "named_listener_resolves_a_managed_ip_frontend" {
+run "keyed_listener_resolves_a_managed_ip_frontend" {
   command = apply
 
   assert {
@@ -47,7 +47,7 @@ run "named_listener_resolves_a_managed_ip_frontend" {
       azapi_resource.this.body.properties.httpListeners[0].properties.frontendIPConfiguration.id == "${var.parent_id}/providers/Microsoft.Network/applicationGateways/${var.name}/frontendIPConfigurations/PublicFrontend" &&
       azapi_resource.this.body.properties.httpListeners[0].properties.frontendPort.id == "${var.parent_id}/providers/Microsoft.Network/applicationGateways/${var.name}/frontendPorts/HttpPort"
     )
-    error_message = "A named listener must resolve the frontend's child ID while the frontend retains its separately managed public IP ID."
+    error_message = "A keyed listener must resolve the frontend's child ID while the frontend retains its separately managed public IP ID."
   }
 
   assert {
@@ -60,7 +60,7 @@ run "named_listener_resolves_a_managed_ip_frontend" {
   }
 }
 
-run "named_private_link_and_managed_ip_share_a_frontend" {
+run "keyed_private_link_and_managed_ip_share_a_frontend" {
   command = apply
 
   variables {
@@ -71,7 +71,7 @@ run "named_private_link_and_managed_ip_share_a_frontend" {
       name                  = "PublicFrontend"
       public_ip_address_key = "edge"
       properties = {
-        private_link_configuration = { name = "frontendlink" }
+        private_link_configuration = { private_link_configuration_key = "frontendlink" }
       }
     }]
   }
@@ -82,6 +82,6 @@ run "named_private_link_and_managed_ip_share_a_frontend" {
       azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.privateLinkConfiguration.id == "${var.parent_id}/providers/Microsoft.Network/applicationGateways/${var.name}/privateLinkConfigurations/FrontendLink" &&
       azapi_resource.this.body.properties.httpListeners[0].properties.frontendIPConfiguration.id == "${var.parent_id}/providers/Microsoft.Network/applicationGateways/${var.name}/frontendIPConfigurations/PublicFrontend"
     )
-    error_message = "Managed public IP normalization must preserve named Private Link references on the same frontend."
+    error_message = "Managed public IP normalization must preserve keyed Private Link references on the same frontend."
   }
 }

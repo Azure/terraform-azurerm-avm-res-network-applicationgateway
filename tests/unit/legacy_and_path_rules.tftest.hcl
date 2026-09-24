@@ -63,7 +63,7 @@ run "preserves_legacy_id_null_and_empty_references" {
   }
 }
 
-run "matching_name_and_id_modes_emit_equivalent_reference_ids" {
+run "matching_key_and_id_modes_emit_equivalent_reference_ids" {
   command = apply
 
   variables {
@@ -72,7 +72,7 @@ run "matching_name_and_id_modes_emit_equivalent_reference_ids" {
       {
         name = "name-mode"
         properties = {
-          backend_address_pool = { name = "pool" }
+          backend_address_pool = { backend_address_pool_key = "pool" }
         }
       },
       {
@@ -88,7 +88,7 @@ run "matching_name_and_id_modes_emit_equivalent_reference_ids" {
 
   assert {
     condition     = azapi_resource.this.body.properties.requestRoutingRules[0].properties.backendAddressPool == azapi_resource.this.body.properties.requestRoutingRules[1].properties.backendAddressPool
-    error_message = "A matching name-mode reference and legacy ID-mode reference should emit identical ARM objects."
+    error_message = "A matching key-mode reference and legacy ID-mode reference should emit identical ARM objects."
   }
 }
 
@@ -100,8 +100,8 @@ run "qualifies_same_path_rule_name_by_parent_map" {
       name = "redirect"
       properties = {
         path_rules = [
-          { name = "rule", url_path_map_name = "mapone" },
-          { name = "RULE", url_path_map_name = "MAPTWO" },
+          { path_rule_key = "rule", url_path_map_key = "mapone" },
+          { path_rule_key = "RULE", url_path_map_key = "MAPTWO" },
         ]
       }
     }]
@@ -122,6 +122,6 @@ run "qualifies_same_path_rule_name_by_parent_map" {
       azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[0].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/gateway/urlPathMaps/MapOne/pathRules/Rule",
       azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[1].id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/gateway/urlPathMaps/MapTwo/pathRules/Rule",
     ])
-    error_message = "Path rule names should be resolved only within their qualified URL path map."
+    error_message = "Path rule keys should be resolved only within their qualified URL path map."
   }
 }

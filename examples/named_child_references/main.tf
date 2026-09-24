@@ -191,7 +191,7 @@ data "azapi_resource" "gateway" {
         lower(one(self.output.rules).properties.backendHttpSettings.id) == lower(local.expected_ids.backendHttpSettingsCollection),
         lower(one(self.output.rules).properties.httpListener.id) == lower(local.expected_ids.httpListeners),
       ])
-      error_message = "Azure readback must resolve every exercised named reference to its expected child ID and preserve the external public IP reference."
+      error_message = "Azure readback must resolve every exercised keyed reference to its expected child ID and preserve the external public IP reference."
     }
   }
 }

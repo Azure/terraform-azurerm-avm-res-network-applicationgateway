@@ -19,10 +19,10 @@ variable "tags" {
   nullable    = false
 }
 
-variable "use_reference_names" {
+variable "use_reference_keys" {
   type        = bool
   default     = true
-  description = "Use named internal references. Setting false constructs equivalent explicit IDs for a compatibility plan."
+  description = "Use type-specific keys for internal references. Setting false constructs equivalent explicit IDs for a compatibility plan."
   nullable    = false
 }
 

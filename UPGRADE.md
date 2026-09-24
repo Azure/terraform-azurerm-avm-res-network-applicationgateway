@@ -16,7 +16,7 @@ diagnostic settings.
   fields to `list(object)` with nested `properties` blocks matching
   the ARM schema.
 - **Cross-references**: legacy fields such as `probe_name` become reference
-  objects. Use `probe = { name = "my-probe" }` for a probe declared in this
+  objects. Use `probe = { probe_key = "my-probe" }` for a probe declared in this
   module, or retain `probe = { id = "..." }`. Earlier AzAPI-based releases
   required the ID form; it remains supported.
 - **Public IP**: `v0.5.3` removed management. Optional management is now
@@ -76,11 +76,12 @@ diagnostic settings.
 | N/A | `private_link_configurations` | New |
 | N/A | `id` | Optional — set to import an existing resource |
 
-## Adopting named references (optional)
+## Adopting keyed references (optional)
 
 Existing AzAPI-based configurations do not need to change. To remove manual ID
 construction, replace an internal reference's `id` with the corresponding
-component's configured `name`:
+target type's `*_key` selector. The key matches the target component's configured
+`name` case-insensitively; it does not create a separate alias or map-key system:
 
 ```hcl
 # Existing reference inside backend HTTP settings properties
@@ -88,37 +89,40 @@ probe = {
   id = "${local.appgw_id}/probes/myapp-probe"
 }
 
-# Equivalent name reference when probes contains name = "myapp-probe"
+# Equivalent keyed reference when probes contains name = "myapp-probe"
 probe = {
-  name = "myapp-probe"
+  probe_key = "myapp-probe"
 }
 ```
 
-Supply either `id` or `name`, not both. A name must identify exactly one component
-in the corresponding collection supplied to this module. Matching is
-case-insensitive. Explicit IDs remain the option for references to components
-outside the supplied configuration; external public IPs, subnets and WAF policies
-are not resolved by name.
+Supply either `id` or the corresponding type-specific key, not both. A key must
+identify exactly one component by its configured `name` in the target collection
+supplied to this module. The selector follows the target type rather than the
+property role: for example, `target_listener` uses `http_listener_key`, and
+`default_backend_http_settings` uses `backend_http_settings_key`. Explicit IDs
+remain the option for references to components outside the supplied
+configuration; external public IPs, subnets and WAF policies are not resolved by
+key.
 
-For a named path-rule reference in a redirect configuration's `path_rules`,
-also supply `url_path_map_name` to identify the parent map:
+For a keyed path-rule reference in a redirect configuration's `path_rules`,
+also supply `url_path_map_key` to identify the parent map:
 
 ```hcl
 path_rules = [
   {
-    name              = "api"
-    url_path_map_name = "routes"
+    path_rule_key    = "api"
+    url_path_map_key = "routes"
   }
 ]
 ```
 
 This resolves the `api` rule in the `routes` entry of `url_path_maps`. Repeated
 rule names in different maps are not ambiguous when the parent is specified.
-An ID-only reference must not also supply a name or parent map name.
+An ID-only path-rule reference must not supply either key.
 
 Only the reference input changes: the module constructs the same ARM ID, and no
 Terraform resources or state addresses are added or moved. Do not run
-`terraform state rm`, `terraform state mv` or import solely to adopt names.
+`terraform state rm`, `terraform state mv` or import solely to adopt keys.
 Inspect the resulting plan before applying. The provider-migration instructions
 later in this guide apply to the older AzureRM implementation, not this optional
 reference syntax.
@@ -185,7 +189,7 @@ backend_http_settings = {
   }
 }
 
-# New (name reference to an entry declared in probes)
+# New (key reference to an entry declared in probes)
 backend_http_settings_collection = [
   {
     name = "myapp-https"
@@ -195,14 +199,14 @@ backend_http_settings_collection = [
       cookie_based_affinity = "Disabled"
       request_timeout     = 30
       probe = {
-        name = "myapp-probe"
+        probe_key = "myapp-probe"
       }
     }
   }
 ]
 ```
 
-When using explicit IDs instead of names, **ARM sub-resource type names are
+When using explicit IDs instead of keys, **ARM sub-resource type names are
 camelCase.** The most common ones:
 
 | Sub-resource | ARM path segment |
@@ -241,14 +245,14 @@ http_listeners = [
     name = "myapp-https-listener"
     properties = {
       frontend_ip_configuration = {
-        name = "public"
+        frontend_ip_configuration_key = "public"
       }
       frontend_port = {
-        name = "https"
+        frontend_port_key = "https"
       }
       protocol = "Https"
       ssl_certificate = {
-        name = "wildcard-cert"
+        ssl_certificate_key = "wildcard-cert"
       }
     }
   }

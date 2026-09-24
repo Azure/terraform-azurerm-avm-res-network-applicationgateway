@@ -1,9 +1,11 @@
-# Named child-reference E2E example
+# Keyed child-reference E2E example
 
 Deploys an isolated Application Gateway, public IP, VNet and subnet using
-case-insensitive named references for frontend IP/port, listener, backend pool,
-backend HTTP settings and health probe. Azure readback postconditions verify
-the resulting child IDs. All supporting Azure resources use AzAPI.
+case-insensitive type-specific reference keys for frontend IP/port, listener,
+backend pool, backend HTTP settings and health probe. Each key selects the
+matching component's configured `name`; it is not a separate alias. Azure
+readback postconditions verify the resulting child IDs. All supporting Azure
+resources use AzAPI.
 
 The gateway subnet is delegated to `Microsoft.Network/applicationGateways`.
 The gateway uses autoscaling with minimum capacity 2 and maximum capacity 3,
@@ -19,9 +21,9 @@ Supply environment-required public IP classifications through the
 value is embedded in the example.
 
 For a manual compatibility comparison, deploy with the default
-`use_reference_names = true`, then run a second no-change plan with
-`-var=use_reference_names=false -detailed-exitcode` against the same state.
-Both the unchanged named configuration and equivalent ID configuration must
+`use_reference_keys = true`, then run a second no-change plan with
+`-var=use_reference_keys=false -detailed-exitcode` against the same state.
+Both the unchanged keyed configuration and equivalent ID configuration must
 return exit code 0, not 2. Destroy the example after the comparison.
 
 The backend pool is intentionally empty. This exercises real Azure

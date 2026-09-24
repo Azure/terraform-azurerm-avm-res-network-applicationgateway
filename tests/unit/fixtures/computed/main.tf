@@ -39,7 +39,7 @@ module "sut" {
   http_listeners = [{
     name = "listener"
     properties = {
-      frontend_port = { name = "port-${random_pet.gateway.id}" }
+      frontend_port = { frontend_port_key = "port-${random_pet.gateway.id}" }
     }
   }]
   location  = "westus2"

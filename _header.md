@@ -119,11 +119,13 @@ retained identity, not a complete zero-change plan. Real upgrade/state-transfer
 and dual-stack deployment coverage are still required before claiming those
 paths are production-proven.
 
-## Reference gateway components by name or ID
+## Reference gateway components by key or ID
 
-References to components defined in the same module can use their configured
-`name` instead of a manually constructed ARM resource ID. Existing `{ id = ... }`
-references remain supported without modification.
+Nested reference objects for components defined in the same module can use a
+type-specific `*_key` selector instead of a manually constructed ARM resource
+ID. The key selects the target component's configured `name`
+case-insensitively; it is not a separate alias or Terraform map key. Existing
+`{ id = ... }` references remain supported without modification.
 
 For example, these module arguments define a probe and reference it from backend
 HTTP settings:
@@ -150,40 +152,62 @@ backend_http_settings_collection = [
       cookie_based_affinity = "Disabled"
       port                  = 80
       protocol              = "Http"
-      probe                 = { name = "health" }
+      probe                 = { probe_key = "health" }
     }
   }
 ]
 ```
 
-Use `name` or `id`, not both. Names are matched case-insensitively against the
-corresponding component collection, and the generated ID uses the declaration's
-name. Blank names, names containing a path separator, missing targets and
-ambiguous target names are rejected. Omitted references and the existing ID-only
-input behavior are unchanged.
+Use the target type's key field or `id`, not both. The generated ID preserves
+the declaration's actual `name` and casing. Blank keys, keys containing a path
+separator, missing targets and ambiguous case-insensitive matches are rejected.
+Omitted references, null or empty reference objects, and existing ID-only input
+behavior are unchanged.
 
-Name references are supported for frontend IP configurations and ports, HTTP and
-TCP/TLS listeners, backend pools and settings, probes, certificates and SSL
-profiles, routing/redirect references, rewrite sets, URL path maps,
-load-distribution policies, Entra JWT configurations and Private Link
-configurations. This applies to references nested inside path rules and
-load-distribution targets as well as top-level component properties.
+The selector is based on the target type, not the property role. For example,
+`target_listener` uses `{ http_listener_key = "listener" }`, while
+`default_backend_http_settings` uses
+`{ backend_http_settings_key = "settings" }`. Supported selectors are:
 
-Path-rule names are scoped to a URL path map. For example, a redirect
+| Target collection | Nested selector |
+|---|---|
+| `authentication_certificates` | `authentication_certificate_key` |
+| `backend_address_pools` | `backend_address_pool_key` |
+| `backend_http_settings_collection` | `backend_http_settings_key` |
+| `backend_settings_collection` | `backend_settings_key` |
+| `entra_jwt_validation_configs` | `entra_jwt_validation_config_key` |
+| `frontend_ip_configurations` | `frontend_ip_configuration_key` |
+| `frontend_ports` | `frontend_port_key` |
+| `http_listeners` | `http_listener_key` |
+| `listeners` | `listener_key` |
+| `load_distribution_policies` | `load_distribution_policy_key` |
+| `private_link_configurations` | `private_link_configuration_key` |
+| `probes` | `probe_key` |
+| `path_rules` | `path_rule_key` plus the parent `url_path_map_key` |
+| `redirect_configurations` | `redirect_configuration_key` |
+| `request_routing_rules` | `request_routing_rule_key` |
+| `rewrite_rule_sets` | `rewrite_rule_set_key` |
+| `ssl_certificates` | `ssl_certificate_key` |
+| `ssl_profiles` | `ssl_profile_key` |
+| `trusted_client_certificates` | `trusted_client_certificate_key` |
+| `trusted_root_certificates` | `trusted_root_certificate_key` |
+| `url_path_maps` | `url_path_map_key` |
+
+Path-rule keys are scoped to a URL path map. For example, a redirect
 configuration's `properties.path_rules` can contain:
 
 ```hcl
 path_rules = [
   {
-    name              = "api"
-    url_path_map_name = "routes"
+    path_rule_key    = "api"
+    url_path_map_key = "routes"
   }
 ]
 ```
 
 Both the `routes` URL path map and its `api` path rule must be defined in
-`url_path_maps`. The parent map name is required only for a name-based path-rule
-reference; an explicit path-rule ID needs no additional scope field.
+`url_path_maps`. A keyed path-rule reference requires both fields. An ID-only
+path-rule reference must provide neither key.
 
 External dependencies such as public IPs, subnets and WAF policies still use IDs.
 Use an explicit ID for a gateway component that is not declared in this module's
@@ -191,9 +215,9 @@ configuration. The module does not query Azure to discover targets.
 
 IDs are constructed from the gateway's `parent_id`, `name` and the known ARM
 child-resource type. Do not feed this module's resource ID output back into its
-own inputs. Name resolution does not add Terraform resources or change resource
-addresses, so adopting it alone requires no state migration. See
-[the optional reference migration guidance](UPGRADE.md#adopting-named-references-optional).
+own inputs. Key resolution does not add Terraform resources or change resource
+addresses, so adoption is optional and requires no state migration. See
+[the optional reference migration guidance](UPGRADE.md#adopting-keyed-references-optional).
 
 ## Supported frontend IP configuration
 
@@ -219,8 +243,8 @@ resources outside this module.
 
 ## Supported Scenarios
 
-**[Named child-reference E2E](examples/named_child_references/README.md)**
-Deploys an isolated gateway with named references, verifies the resolved IDs through Azure readback, and supports an equivalent explicit-ID compatibility plan.
+**[Keyed child-reference E2E](examples/named_child_references/README.md)**
+Deploys an isolated gateway with type-specific keyed references, verifies the resolved IDs through Azure readback, and supports an equivalent explicit-ID compatibility plan.
 
 **[Default — Simple HTTP Application Gateway](examples/default/README.md)**
 A straightforward HTTP Application Gateway for basic web applications or services.

@@ -90,7 +90,7 @@ module "application_gateway" {
           drain_timeout_in_sec = 300
         }
         probe = {
-          name = "Probe1"
+          probe_key = "Probe1"
         }
         probe_enabled = true
       }
@@ -135,10 +135,10 @@ module "application_gateway" {
       name = "app-Gateway-Http-Listener"
       properties = {
         frontend_ip_configuration = {
-          name = "appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          name = "frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -179,13 +179,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "app-Gateway-Http-Listener"
+          http_listener_key = "app-Gateway-Http-Listener"
         }
         backend_address_pool = {
-          name = "app-Gateway-Backend-Pool"
+          backend_address_pool_key = "app-Gateway-Backend-Pool"
         }
         backend_http_settings = {
-          name = "app-Gateway-Backend-Http-Settings"
+          backend_http_settings_key = "app-Gateway-Backend-Http-Settings"
         }
         priority = 100
       }

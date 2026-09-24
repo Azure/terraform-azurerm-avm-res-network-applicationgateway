@@ -134,17 +134,17 @@ module "application_gateway" {
       name = "appGatewayHttpListener"
       properties = {
         frontend_ip_configuration = {
-          name = "private-ip-custom-name"
+          frontend_ip_configuration_key = "private-ip-custom-name"
         }
         frontend_port = {
-          name = "frontend-port-443"
+          frontend_port_key = "frontend-port-443"
         }
         protocol = "Https"
         ssl_certificate = {
-          name = "app-gateway-cert"
+          ssl_certificate_key = "app-gateway-cert"
         }
         ssl_profile = {
-          name = "example-ssl-profile"
+          ssl_profile_key = "example-ssl-profile"
         }
       }
     }
@@ -163,7 +163,7 @@ module "application_gateway" {
         include_path         = true
         include_query_string = true
         target_listener = {
-          name = "appGatewayHttpListener"
+          http_listener_key = "appGatewayHttpListener"
         }
       }
     }
@@ -176,13 +176,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          name = "appGatewayHttpListener"
+          http_listener_key = "appGatewayHttpListener"
         }
         backend_address_pool = {
-          name = "appGatewayBackendPool"
+          backend_address_pool_key = "appGatewayBackendPool"
         }
         backend_http_settings = {
-          name = "appGatewayBackendHttpSettings"
+          backend_http_settings_key = "appGatewayBackendHttpSettings"
         }
         priority = 100
       }
