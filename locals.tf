@@ -39,13 +39,14 @@ locals {
           }]
         }
       }]
-      backendHttpSettingsCollection = var.backend_http_settings_collection == null ? null : [for item in var.backend_http_settings_collection : item == null ? null : {
+      backendHttpSettingsCollection = var.backend_http_settings_collection == null ? null : [for settings_index, item in var.backend_http_settings_collection : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           affinityCookieName = item.properties.affinity_cookie_name
-          authenticationCertificates = item.properties.authentication_certificates == null ? null : [for item in item.properties.authentication_certificates : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.authentication_certificates[jsonencode([item.id, item.name, null])]))
-          }]
+          authenticationCertificates = item.properties.authentication_certificates == null ? null : [
+            for certificate_index, _ in item.properties.authentication_certificates :
+            local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.authentication_certificates[${certificate_index}]"]
+          ]
           connectionDraining = item.properties.connection_draining == null ? null : {
             drainTimeoutInSec = item.properties.connection_draining.drain_timeout_in_sec
             enabled           = item.properties.connection_draining.enabled
@@ -56,35 +57,33 @@ locals {
           path                           = item.properties.path
           pickHostNameFromBackendAddress = item.properties.pick_host_name_from_backend_address
           port                           = item.properties.port
-          probe = item.properties.probe == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.probes[jsonencode([item.properties.probe.id, item.properties.probe.name, null])]))
-          }
-          probeEnabled   = item.properties.probe_enabled
-          protocol       = item.properties.protocol
-          requestTimeout = item.properties.request_timeout
-          sniName        = item.properties.sni_name
-          trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [for item in item.properties.trusted_root_certificates : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.trusted_root_certificates[jsonencode([item.id, item.name, null])]))
-          }]
+          probe                          = local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.probe"]
+          probeEnabled                   = item.properties.probe_enabled
+          protocol                       = item.properties.protocol
+          requestTimeout                 = item.properties.request_timeout
+          sniName                        = item.properties.sni_name
+          trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [
+            for certificate_index, _ in item.properties.trusted_root_certificates :
+            local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.trusted_root_certificates[${certificate_index}]"]
+          ]
           validateCertChainAndExpiry = item.properties.validate_cert_chain_and_expiry
           validateSNI                = item.properties.validate_sni
         }
       }]
-      backendSettingsCollection = var.backend_settings_collection == null ? null : [for item in var.backend_settings_collection : item == null ? null : {
+      backendSettingsCollection = var.backend_settings_collection == null ? null : [for settings_index, item in var.backend_settings_collection : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           enableL4ClientIpPreservation   = item.properties.enable_l4_client_ip_preservation
           hostName                       = item.properties.host_name
           pickHostNameFromBackendAddress = item.properties.pick_host_name_from_backend_address
           port                           = item.properties.port
-          probe = item.properties.probe == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.probes[jsonencode([item.properties.probe.id, item.properties.probe.name, null])]))
-          }
-          protocol = item.properties.protocol
-          timeout  = item.properties.timeout
-          trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [for item in item.properties.trusted_root_certificates : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.trusted_root_certificates[jsonencode([item.id, item.name, null])]))
-          }]
+          probe                          = local.resolved_child_references["backend_settings_collection[${settings_index}].properties.probe"]
+          protocol                       = item.properties.protocol
+          timeout                        = item.properties.timeout
+          trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [
+            for certificate_index, _ in item.properties.trusted_root_certificates :
+            local.resolved_child_references["backend_settings_collection[${settings_index}].properties.trusted_root_certificates[${certificate_index}]"]
+          ]
         }
       }]
       customErrorConfigurations = var.custom_error_configurations == null ? null : [for item in var.custom_error_configurations : item == null ? null : {
@@ -106,14 +105,12 @@ locals {
         id = var.firewall_policy.id
       }
       forceFirewallPolicyAssociation = var.force_firewall_policy_association
-      frontendIPConfigurations = local.frontend_ip_configurations == null ? null : [for item in local.frontend_ip_configurations : item == null ? null : {
+      frontendIPConfigurations = local.frontend_ip_configurations == null ? null : [for frontend_index, item in local.frontend_ip_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           privateIPAddress          = item.properties.private_ip_address
           privateIPAllocationMethod = item.properties.private_ip_allocation_method
-          privateLinkConfiguration = item.properties.private_link_configuration == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.private_link_configurations[jsonencode([item.properties.private_link_configuration.id, item.properties.private_link_configuration.name, null])]))
-          }
+          privateLinkConfiguration  = local.resolved_child_references["frontend_ip_configurations[${frontend_index}].properties.private_link_configuration"]
           publicIPAddress = item.properties.public_ip_address == null ? null : {
             id = item.properties.public_ip_address.id
           }
@@ -140,7 +137,7 @@ locals {
         enableRequestBuffering  = var.global_configuration.enable_request_buffering
         enableResponseBuffering = var.global_configuration.enable_response_buffering
       }
-      httpListeners = var.http_listeners == null ? null : [for item in var.http_listeners : item == null ? null : {
+      httpListeners = var.http_listeners == null ? null : [for listener_index, item in var.http_listeners : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           customErrorConfigurations = item.properties.custom_error_configurations == null ? null : [for item in item.properties.custom_error_configurations : item == null ? null : {
@@ -150,55 +147,37 @@ locals {
           firewallPolicy = item.properties.firewall_policy == null ? null : {
             id = item.properties.firewall_policy.id
           }
-          frontendIPConfiguration = item.properties.frontend_ip_configuration == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.frontend_ip_configurations[jsonencode([item.properties.frontend_ip_configuration.id, item.properties.frontend_ip_configuration.name, null])]))
-          }
-          frontendPort = item.properties.frontend_port == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.frontend_ports[jsonencode([item.properties.frontend_port.id, item.properties.frontend_port.name, null])]))
-          }
+          frontendIPConfiguration     = local.resolved_child_references["http_listeners[${listener_index}].properties.frontend_ip_configuration"]
+          frontendPort                = local.resolved_child_references["http_listeners[${listener_index}].properties.frontend_port"]
           hostName                    = item.properties.host_name
           hostNames                   = item.properties.host_names == null ? null : [for item in item.properties.host_names : item]
           protocol                    = item.properties.protocol
           requireServerNameIndication = item.properties.require_server_name_indication
-          sslCertificate = item.properties.ssl_certificate == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.ssl_certificates[jsonencode([item.properties.ssl_certificate.id, item.properties.ssl_certificate.name, null])]))
-          }
-          sslProfile = item.properties.ssl_profile == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.ssl_profiles[jsonencode([item.properties.ssl_profile.id, item.properties.ssl_profile.name, null])]))
-          }
+          sslCertificate              = local.resolved_child_references["http_listeners[${listener_index}].properties.ssl_certificate"]
+          sslProfile                  = local.resolved_child_references["http_listeners[${listener_index}].properties.ssl_profile"]
         }
       }]
-      listeners = var.listeners == null ? null : [for item in var.listeners : item == null ? null : {
+      listeners = var.listeners == null ? null : [for listener_index, item in var.listeners : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          frontendIPConfiguration = item.properties.frontend_ip_configuration == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.frontend_ip_configurations[jsonencode([item.properties.frontend_ip_configuration.id, item.properties.frontend_ip_configuration.name, null])]))
-          }
-          frontendPort = item.properties.frontend_port == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.frontend_ports[jsonencode([item.properties.frontend_port.id, item.properties.frontend_port.name, null])]))
-          }
-          hostNames = item.properties.host_names == null ? null : [for item in item.properties.host_names : item]
-          protocol  = item.properties.protocol
-          sslCertificate = item.properties.ssl_certificate == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.ssl_certificates[jsonencode([item.properties.ssl_certificate.id, item.properties.ssl_certificate.name, null])]))
-          }
-          sslProfile = item.properties.ssl_profile == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.ssl_profiles[jsonencode([item.properties.ssl_profile.id, item.properties.ssl_profile.name, null])]))
-          }
+          frontendIPConfiguration = local.resolved_child_references["listeners[${listener_index}].properties.frontend_ip_configuration"]
+          frontendPort            = local.resolved_child_references["listeners[${listener_index}].properties.frontend_port"]
+          hostNames               = item.properties.host_names == null ? null : [for item in item.properties.host_names : item]
+          protocol                = item.properties.protocol
+          sslCertificate          = local.resolved_child_references["listeners[${listener_index}].properties.ssl_certificate"]
+          sslProfile              = local.resolved_child_references["listeners[${listener_index}].properties.ssl_profile"]
         }
       }]
-      loadDistributionPolicies = var.load_distribution_policies == null ? null : [for item in var.load_distribution_policies : item == null ? null : {
+      loadDistributionPolicies = var.load_distribution_policies == null ? null : [for policy_index, item in var.load_distribution_policies : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           loadDistributionAlgorithm = item.properties.load_distribution_algorithm
-          loadDistributionTargets = item.properties.load_distribution_targets == null ? null : [for item in item.properties.load_distribution_targets : item == null ? null : {
+          loadDistributionTargets = item.properties.load_distribution_targets == null ? null : [for target_index, item in item.properties.load_distribution_targets : item == null ? null : {
             id   = item.id
             name = item.name
             properties = item.properties == null ? null : {
-              backendAddressPool = item.properties.backend_address_pool == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.backend_address_pools[jsonencode([item.properties.backend_address_pool.id, item.properties.backend_address_pool.name, null])]))
-              }
-              weightPerServer = item.properties.weight_per_server
+              backendAddressPool = local.resolved_child_references["load_distribution_policies[${policy_index}].properties.load_distribution_targets[${target_index}].properties.backend_address_pool"]
+              weightPerServer    = item.properties.weight_per_server
             }
           }]
         }
@@ -240,56 +219,41 @@ locals {
           unhealthyThreshold                  = item.properties.unhealthy_threshold
         }
       }]
-      redirectConfigurations = var.redirect_configurations == null ? null : [for item in var.redirect_configurations : item == null ? null : {
+      redirectConfigurations = var.redirect_configurations == null ? null : [for redirect_index, item in var.redirect_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           includePath        = item.properties.include_path
           includeQueryString = item.properties.include_query_string
-          pathRules = item.properties.path_rules == null ? null : [for item in item.properties.path_rules : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.path_rules[jsonencode([item.id, item.name, item.url_path_map_name])]))
-          }]
+          pathRules = item.properties.path_rules == null ? null : [
+            for reference_index, _ in item.properties.path_rules :
+            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.path_rules[${reference_index}]"]
+          ]
           redirectType = item.properties.redirect_type
-          requestRoutingRules = item.properties.request_routing_rules == null ? null : [for item in item.properties.request_routing_rules : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.request_routing_rules[jsonencode([item.id, item.name, null])]))
-          }]
-          targetListener = item.properties.target_listener == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.http_listeners[jsonencode([item.properties.target_listener.id, item.properties.target_listener.name, null])]))
-          }
-          targetUrl = item.properties.target_url
-          urlPathMaps = item.properties.url_path_maps == null ? null : [for item in item.properties.url_path_maps : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.url_path_maps[jsonencode([item.id, item.name, null])]))
-          }]
+          requestRoutingRules = item.properties.request_routing_rules == null ? null : [
+            for reference_index, _ in item.properties.request_routing_rules :
+            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.request_routing_rules[${reference_index}]"]
+          ]
+          targetListener = local.resolved_child_references["redirect_configurations[${redirect_index}].properties.target_listener"]
+          targetUrl      = item.properties.target_url
+          urlPathMaps = item.properties.url_path_maps == null ? null : [
+            for reference_index, _ in item.properties.url_path_maps :
+            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.url_path_maps[${reference_index}]"]
+          ]
         }
       }]
-      requestRoutingRules = var.request_routing_rules == null ? null : [for item in var.request_routing_rules : item == null ? null : {
+      requestRoutingRules = var.request_routing_rules == null ? null : [for rule_index, item in var.request_routing_rules : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          backendAddressPool = item.properties.backend_address_pool == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_address_pools[jsonencode([item.properties.backend_address_pool.id, item.properties.backend_address_pool.name, null])]))
-          }
-          backendHttpSettings = item.properties.backend_http_settings == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_http_settings[jsonencode([item.properties.backend_http_settings.id, item.properties.backend_http_settings.name, null])]))
-          }
-          entraJWTValidationConfig = item.properties.entra_jwt_validation_config == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.entra_jwt_validation_configs[jsonencode([item.properties.entra_jwt_validation_config.id, item.properties.entra_jwt_validation_config.name, null])]))
-          }
-          httpListener = item.properties.http_listener == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.http_listeners[jsonencode([item.properties.http_listener.id, item.properties.http_listener.name, null])]))
-          }
-          loadDistributionPolicy = item.properties.load_distribution_policy == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.load_distribution_policies[jsonencode([item.properties.load_distribution_policy.id, item.properties.load_distribution_policy.name, null])]))
-          }
-          priority = item.properties.priority
-          redirectConfiguration = item.properties.redirect_configuration == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.redirect_configurations[jsonencode([item.properties.redirect_configuration.id, item.properties.redirect_configuration.name, null])]))
-          }
-          rewriteRuleSet = item.properties.rewrite_rule_set == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.rewrite_rule_sets[jsonencode([item.properties.rewrite_rule_set.id, item.properties.rewrite_rule_set.name, null])]))
-          }
-          ruleType = item.properties.rule_type
-          urlPathMap = item.properties.url_path_map == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.url_path_maps[jsonencode([item.properties.url_path_map.id, item.properties.url_path_map.name, null])]))
-          }
+          backendAddressPool       = local.resolved_child_references["request_routing_rules[${rule_index}].properties.backend_address_pool"]
+          backendHttpSettings      = local.resolved_child_references["request_routing_rules[${rule_index}].properties.backend_http_settings"]
+          entraJWTValidationConfig = local.resolved_child_references["request_routing_rules[${rule_index}].properties.entra_jwt_validation_config"]
+          httpListener             = local.resolved_child_references["request_routing_rules[${rule_index}].properties.http_listener"]
+          loadDistributionPolicy   = local.resolved_child_references["request_routing_rules[${rule_index}].properties.load_distribution_policy"]
+          priority                 = item.properties.priority
+          redirectConfiguration    = local.resolved_child_references["request_routing_rules[${rule_index}].properties.redirect_configuration"]
+          rewriteRuleSet           = local.resolved_child_references["request_routing_rules[${rule_index}].properties.rewrite_rule_set"]
+          ruleType                 = item.properties.rule_type
+          urlPathMap               = local.resolved_child_references["request_routing_rules[${rule_index}].properties.url_path_map"]
         }
       }]
       rewriteRuleSets = var.rewrite_rule_sets == null ? null : [for item in var.rewrite_rule_sets : item == null ? null : {
@@ -332,20 +296,14 @@ locals {
           }]
         }
       }]
-      routingRules = var.routing_rules == null ? null : [for item in var.routing_rules : item == null ? null : {
+      routingRules = var.routing_rules == null ? null : [for rule_index, item in var.routing_rules : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          backendAddressPool = item.properties.backend_address_pool == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_address_pools[jsonencode([item.properties.backend_address_pool.id, item.properties.backend_address_pool.name, null])]))
-          }
-          backendSettings = item.properties.backend_settings == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_settings[jsonencode([item.properties.backend_settings.id, item.properties.backend_settings.name, null])]))
-          }
-          listener = item.properties.listener == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.listeners[jsonencode([item.properties.listener.id, item.properties.listener.name, null])]))
-          }
-          priority = item.properties.priority
-          ruleType = item.properties.rule_type
+          backendAddressPool = local.resolved_child_references["routing_rules[${rule_index}].properties.backend_address_pool"]
+          backendSettings    = local.resolved_child_references["routing_rules[${rule_index}].properties.backend_settings"]
+          listener           = local.resolved_child_references["routing_rules[${rule_index}].properties.listener"]
+          priority           = item.properties.priority
+          ruleType           = item.properties.rule_type
         }
       }]
       sku = var.sku == null ? null : {
@@ -369,7 +327,7 @@ locals {
         policyName           = var.ssl_policy.policy_name
         policyType           = var.ssl_policy.policy_type
       }
-      sslProfiles = var.ssl_profiles == null ? null : [for item in var.ssl_profiles : item == null ? null : {
+      sslProfiles = var.ssl_profiles == null ? null : [for profile_index, item in var.ssl_profiles : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           clientAuthConfiguration = item.properties.client_auth_configuration == null ? null : {
@@ -384,9 +342,10 @@ locals {
             policyName           = item.properties.ssl_policy.policy_name
             policyType           = item.properties.ssl_policy.policy_type
           }
-          trustedClientCertificates = item.properties.trusted_client_certificates == null ? null : [for item in item.properties.trusted_client_certificates : item == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.trusted_client_certificates[jsonencode([item.id, item.name, null])]))
-          }]
+          trustedClientCertificates = item.properties.trusted_client_certificates == null ? null : [
+            for certificate_index, _ in item.properties.trusted_client_certificates :
+            local.resolved_child_references["ssl_profiles[${profile_index}].properties.trusted_client_certificates[${certificate_index}]"]
+          ]
         }
       }]
       trustedClientCertificates = var.trusted_client_certificates == null ? null : [for item in var.trusted_client_certificates : item == null ? null : {
@@ -402,47 +361,27 @@ locals {
           keyVaultSecretId = item.properties.key_vault_secret_id
         }
       }]
-      urlPathMaps = var.url_path_maps == null ? null : [for item in var.url_path_maps : item == null ? null : {
+      urlPathMaps = var.url_path_maps == null ? null : [for map_index, item in var.url_path_maps : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          defaultBackendAddressPool = item.properties.default_backend_address_pool == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_address_pools[jsonencode([item.properties.default_backend_address_pool.id, item.properties.default_backend_address_pool.name, null])]))
-          }
-          defaultBackendHttpSettings = item.properties.default_backend_http_settings == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.backend_http_settings[jsonencode([item.properties.default_backend_http_settings.id, item.properties.default_backend_http_settings.name, null])]))
-          }
-          defaultLoadDistributionPolicy = item.properties.default_load_distribution_policy == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.load_distribution_policies[jsonencode([item.properties.default_load_distribution_policy.id, item.properties.default_load_distribution_policy.name, null])]))
-          }
-          defaultRedirectConfiguration = item.properties.default_redirect_configuration == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.redirect_configurations[jsonencode([item.properties.default_redirect_configuration.id, item.properties.default_redirect_configuration.name, null])]))
-          }
-          defaultRewriteRuleSet = item.properties.default_rewrite_rule_set == null ? null : {
-            id = one(distinct(local.child_reference_ids_by_target.rewrite_rule_sets[jsonencode([item.properties.default_rewrite_rule_set.id, item.properties.default_rewrite_rule_set.name, null])]))
-          }
-          pathRules = item.properties.path_rules == null ? null : [for item in item.properties.path_rules : item == null ? null : {
+          defaultBackendAddressPool     = local.resolved_child_references["url_path_maps[${map_index}].properties.default_backend_address_pool"]
+          defaultBackendHttpSettings    = local.resolved_child_references["url_path_maps[${map_index}].properties.default_backend_http_settings"]
+          defaultLoadDistributionPolicy = local.resolved_child_references["url_path_maps[${map_index}].properties.default_load_distribution_policy"]
+          defaultRedirectConfiguration  = local.resolved_child_references["url_path_maps[${map_index}].properties.default_redirect_configuration"]
+          defaultRewriteRuleSet         = local.resolved_child_references["url_path_maps[${map_index}].properties.default_rewrite_rule_set"]
+          pathRules = item.properties.path_rules == null ? null : [for rule_index, item in item.properties.path_rules : item == null ? null : {
             id   = item.id
             name = item.name
             properties = item.properties == null ? null : {
-              backendAddressPool = item.properties.backend_address_pool == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.backend_address_pools[jsonencode([item.properties.backend_address_pool.id, item.properties.backend_address_pool.name, null])]))
-              }
-              backendHttpSettings = item.properties.backend_http_settings == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.backend_http_settings[jsonencode([item.properties.backend_http_settings.id, item.properties.backend_http_settings.name, null])]))
-              }
+              backendAddressPool  = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.backend_address_pool"]
+              backendHttpSettings = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.backend_http_settings"]
               firewallPolicy = item.properties.firewall_policy == null ? null : {
                 id = item.properties.firewall_policy.id
               }
-              loadDistributionPolicy = item.properties.load_distribution_policy == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.load_distribution_policies[jsonencode([item.properties.load_distribution_policy.id, item.properties.load_distribution_policy.name, null])]))
-              }
-              paths = item.properties.paths == null ? null : [for item in item.properties.paths : item]
-              redirectConfiguration = item.properties.redirect_configuration == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.redirect_configurations[jsonencode([item.properties.redirect_configuration.id, item.properties.redirect_configuration.name, null])]))
-              }
-              rewriteRuleSet = item.properties.rewrite_rule_set == null ? null : {
-                id = one(distinct(local.child_reference_ids_by_target.rewrite_rule_sets[jsonencode([item.properties.rewrite_rule_set.id, item.properties.rewrite_rule_set.name, null])]))
-              }
+              loadDistributionPolicy = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.load_distribution_policy"]
+              paths                  = item.properties.paths == null ? null : [for item in item.properties.paths : item]
+              redirectConfiguration  = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.redirect_configuration"]
+              rewriteRuleSet         = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.rewrite_rule_set"]
             }
           }]
         }
