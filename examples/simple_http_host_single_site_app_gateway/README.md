@@ -43,7 +43,7 @@ provider "azapi" {}
 # This ensures we have unique CAF compliant names for our resources.
 module "naming" {
   source  = "Azure/naming/azurerm"
-  version = "0.3.0"
+  version = "0.4.4"
 
   suffix = ["agw"]
 }
@@ -302,13 +302,13 @@ Version:
 
 Source: Azure/naming/azurerm
 
-Version: 0.3.0
+Version: 0.4.4
 
 ### <a name="module_naming_rg_vnet"></a> [naming\_rg\_vnet](#module\_naming\_rg\_vnet)
 
 Source: Azure/naming/azurerm
 
-Version: 0.3.0
+Version: 0.4.4
 
 ### <a name="module_regions"></a> [regions](#module\_regions)
 
