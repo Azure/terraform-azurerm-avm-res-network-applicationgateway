@@ -119,25 +119,25 @@ locals {
         ["load_distribution_targets", "path_rules"],
         ) : collection => [
         for index, item in local.normalized_child_collections[collection] : {
-          path       = "${collection}[${index}].properties"
-          properties = try(item.properties, null)
+          path       = "${collection}[${index}]"
+          properties = item
         }
       ]
     },
     {
       load_distribution_targets = flatten([
         for policy_index, policy in local.normalized_child_collections.load_distribution_policies : [
-          for target_index, target in coalesce(try(policy.properties.load_distribution_targets, null), []) : {
-            path       = "load_distribution_policies[${policy_index}].properties.load_distribution_targets[${target_index}].properties"
-            properties = try(target.properties, null)
+          for target_index, target in coalesce(try(policy.load_distribution_targets, null), []) : {
+            path       = "load_distribution_policies[${policy_index}].load_distribution_targets[${target_index}]"
+            properties = target
           }
         ]
       ])
       path_rules = flatten([
         for map_index, path_map in local.normalized_child_collections.url_path_maps : [
-          for rule_index, rule in coalesce(try(path_map.properties.path_rules, null), []) : {
-            path       = "url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties"
-            properties = try(rule.properties, null)
+          for rule_index, rule in coalesce(try(path_map.path_rules, null), []) : {
+            path       = "url_path_maps[${map_index}].path_rules[${rule_index}]"
+            properties = rule
           }
         ]
       ])

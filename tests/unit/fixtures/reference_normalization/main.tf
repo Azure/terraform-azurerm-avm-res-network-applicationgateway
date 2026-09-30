@@ -36,12 +36,10 @@ module "sut" {
   probes                      = [{ name = "KnownProbe" }]
   backend_http_settings_collection = [{
     name = "settings"
-    properties = {
-      authentication_certificates = [{
-        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/external/providers/Microsoft.Network/probes/${random_id.reference.hex}"
-      }]
-      probe = { probe_key = "knownprobe" }
-    }
+    authentication_certificates = [{
+      id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/external/providers/Microsoft.Network/probes/${random_id.reference.hex}"
+    }]
+    probe = { probe_key = "knownprobe" }
   }]
 }
 

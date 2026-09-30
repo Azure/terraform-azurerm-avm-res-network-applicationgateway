@@ -73,25 +73,22 @@ module "application_gateway" {
   # Mandatory Input
   backend_address_pools = [
     {
-      name       = "appGatewayBackendPool"
-      properties = {}
+      name = "appGatewayBackendPool"
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "appGatewayBackendHttpSettings"
-      properties = {
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        port                  = 80
-        protocol              = "Http"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      name                  = "appGatewayBackendHttpSettings"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      port                  = 80
+      protocol              = "Http"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     }
   ]
@@ -104,13 +101,11 @@ module "application_gateway" {
   }
   frontend_ip_configurations = [
     {
-      name = "private-ip-custom-name"
-      properties = {
-        private_ip_address           = "100.64.1.5"
-        private_ip_allocation_method = "Static"
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      name                         = "private-ip-custom-name"
+      private_ip_address           = "100.64.1.5"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -119,18 +114,14 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-443"
-      properties = {
-        port = 443
-      }
+      port = 443
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -139,20 +130,18 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "appGatewayHttpListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "private-ip-custom-name"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-443"
-        }
-        protocol = "Https"
-        ssl_certificate = {
-          ssl_certificate_key = "app-gateway-cert"
-        }
-        ssl_profile = {
-          ssl_profile_key = "example-ssl-profile"
-        }
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "private-ip-custom-name"
+      }
+      frontend_port = {
+        frontend_port_key = "frontend-port-443"
+      }
+      protocol = "Https"
+      ssl_certificate = {
+        ssl_certificate_key = "app-gateway-cert"
+      }
+      ssl_profile = {
+        ssl_profile_key = "example-ssl-profile"
       }
     }
   ]
@@ -164,14 +153,12 @@ module "application_gateway" {
   # HTTP to HTTPS Redirection Configuration
   redirect_configurations = [
     {
-      name = "Redirect1"
-      properties = {
-        redirect_type        = "Permanent"
-        include_path         = true
-        include_query_string = true
-        target_listener = {
-          http_listener_key = "appGatewayHttpListener"
-        }
+      name                 = "Redirect1"
+      redirect_type        = "Permanent"
+      include_path         = true
+      include_query_string = true
+      target_listener = {
+        http_listener_key = "appGatewayHttpListener"
       }
     }
   ]
@@ -179,20 +166,18 @@ module "application_gateway" {
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "rule-1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "appGatewayHttpListener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "appGatewayBackendPool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "appGatewayBackendHttpSettings"
-        }
-        priority = 100
+      name      = "rule-1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "appGatewayHttpListener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "appGatewayBackendPool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "appGatewayBackendHttpSettings"
+      }
+      priority = 100
     }
   ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
@@ -205,10 +190,8 @@ module "application_gateway" {
   # SSL Certificate Block
   ssl_certificates = [
     {
-      name = "app-gateway-cert"
-      properties = {
-        key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
-      }
+      name                = "app-gateway-cert"
+      key_vault_secret_id = azurerm_key_vault_certificate.ssl_cert_id.secret_id
     }
   ]
   ssl_policy = {
@@ -222,15 +205,13 @@ module "application_gateway" {
   ssl_profiles = [
     {
       name = "example-ssl-profile"
-      properties = {
-        ssl_policy = {
-          policy_type          = "Custom"
-          min_protocol_version = "TLSv1_2"
-          cipher_suites = [
-            "TLS_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-          ]
-        }
+      ssl_policy = {
+        policy_type          = "Custom"
+        min_protocol_version = "TLSv1_2"
+        cipher_suites = [
+          "TLS_RSA_WITH_AES_128_GCM_SHA256",
+          "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        ]
       }
     }
   ]

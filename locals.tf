@@ -20,7 +20,7 @@ locals {
   }
   resource_body = {
     properties = {
-      authenticationCertificates = var.authentication_certificates == null ? null : [for item in var.authentication_certificates : item == null ? null : {
+      authenticationCertificates = local.normalized_appgateway_components.authentication_certificates == null ? null : [for item in local.normalized_appgateway_components.authentication_certificates : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           data = item.properties.data
@@ -30,7 +30,7 @@ locals {
         maxCapacity = var.autoscale_configuration.max_capacity
         minCapacity = var.autoscale_configuration.min_capacity
       }
-      backendAddressPools = var.backend_address_pools == null ? null : [for item in var.backend_address_pools : item == null ? null : {
+      backendAddressPools = local.normalized_appgateway_components.backend_address_pools == null ? null : [for item in local.normalized_appgateway_components.backend_address_pools : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           backendAddresses = item.properties.backend_addresses == null ? null : [for item in item.properties.backend_addresses : item == null ? null : {
@@ -39,13 +39,13 @@ locals {
           }]
         }
       }]
-      backendHttpSettingsCollection = var.backend_http_settings_collection == null ? null : [for settings_index, item in var.backend_http_settings_collection : item == null ? null : {
+      backendHttpSettingsCollection = local.normalized_appgateway_components.backend_http_settings_collection == null ? null : [for settings_index, item in local.normalized_appgateway_components.backend_http_settings_collection : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           affinityCookieName = item.properties.affinity_cookie_name
           authenticationCertificates = item.properties.authentication_certificates == null ? null : [
             for certificate_index, _ in item.properties.authentication_certificates :
-            local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.authentication_certificates[${certificate_index}]"]
+            lookup(local.resolved_child_references, "backend_http_settings_collection[${settings_index}].authentication_certificates[${certificate_index}]", null)
           ]
           connectionDraining = item.properties.connection_draining == null ? null : {
             drainTimeoutInSec = item.properties.connection_draining.drain_timeout_in_sec
@@ -57,32 +57,32 @@ locals {
           path                           = item.properties.path
           pickHostNameFromBackendAddress = item.properties.pick_host_name_from_backend_address
           port                           = item.properties.port
-          probe                          = local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.probe"]
+          probe                          = lookup(local.resolved_child_references, "backend_http_settings_collection[${settings_index}].probe", null)
           probeEnabled                   = item.properties.probe_enabled
           protocol                       = item.properties.protocol
           requestTimeout                 = item.properties.request_timeout
           sniName                        = item.properties.sni_name
           trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [
             for certificate_index, _ in item.properties.trusted_root_certificates :
-            local.resolved_child_references["backend_http_settings_collection[${settings_index}].properties.trusted_root_certificates[${certificate_index}]"]
+            lookup(local.resolved_child_references, "backend_http_settings_collection[${settings_index}].trusted_root_certificates[${certificate_index}]", null)
           ]
           validateCertChainAndExpiry = item.properties.validate_cert_chain_and_expiry
           validateSNI                = item.properties.validate_sni
         }
       }]
-      backendSettingsCollection = var.backend_settings_collection == null ? null : [for settings_index, item in var.backend_settings_collection : item == null ? null : {
+      backendSettingsCollection = local.normalized_appgateway_components.backend_settings_collection == null ? null : [for settings_index, item in local.normalized_appgateway_components.backend_settings_collection : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           enableL4ClientIpPreservation   = item.properties.enable_l4_client_ip_preservation
           hostName                       = item.properties.host_name
           pickHostNameFromBackendAddress = item.properties.pick_host_name_from_backend_address
           port                           = item.properties.port
-          probe                          = local.resolved_child_references["backend_settings_collection[${settings_index}].properties.probe"]
+          probe                          = lookup(local.resolved_child_references, "backend_settings_collection[${settings_index}].probe", null)
           protocol                       = item.properties.protocol
           timeout                        = item.properties.timeout
           trustedRootCertificates = item.properties.trusted_root_certificates == null ? null : [
             for certificate_index, _ in item.properties.trusted_root_certificates :
-            local.resolved_child_references["backend_settings_collection[${settings_index}].properties.trusted_root_certificates[${certificate_index}]"]
+            lookup(local.resolved_child_references, "backend_settings_collection[${settings_index}].trusted_root_certificates[${certificate_index}]", null)
           ]
         }
       }]
@@ -92,7 +92,7 @@ locals {
       }]
       enableFips  = var.enable_fips
       enableHttp2 = var.enable_http2
-      entraJWTValidationConfigs = var.entra_jwt_validation_configs == null ? null : [for item in var.entra_jwt_validation_configs : item == null ? null : {
+      entraJWTValidationConfigs = local.normalized_appgateway_components.entra_jwt_validation_configs == null ? null : [for item in local.normalized_appgateway_components.entra_jwt_validation_configs : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           audiences                 = item.properties.audiences == null ? null : [for item in item.properties.audiences : item]
@@ -105,12 +105,12 @@ locals {
         id = var.firewall_policy.id
       }
       forceFirewallPolicyAssociation = var.force_firewall_policy_association
-      frontendIPConfigurations = local.frontend_ip_configurations == null ? null : [for frontend_index, item in local.frontend_ip_configurations : item == null ? null : {
+      frontendIPConfigurations = local.normalized_appgateway_components.frontend_ip_configurations == null ? null : [for frontend_index, item in local.normalized_appgateway_components.frontend_ip_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           privateIPAddress          = item.properties.private_ip_address
           privateIPAllocationMethod = item.properties.private_ip_allocation_method
-          privateLinkConfiguration  = local.resolved_child_references["frontend_ip_configurations[${frontend_index}].properties.private_link_configuration"]
+          privateLinkConfiguration  = lookup(local.resolved_child_references, "frontend_ip_configurations[${frontend_index}].private_link_configuration", null)
           publicIPAddress = item.properties.public_ip_address == null ? null : {
             id = item.properties.public_ip_address.id
           }
@@ -119,13 +119,13 @@ locals {
           }
         }
       }]
-      frontendPorts = var.frontend_ports == null ? null : [for item in var.frontend_ports : item == null ? null : {
+      frontendPorts = local.normalized_appgateway_components.frontend_ports == null ? null : [for item in local.normalized_appgateway_components.frontend_ports : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           port = item.properties.port
         }
       }]
-      gatewayIPConfigurations = var.gateway_ip_configurations == null ? null : [for item in var.gateway_ip_configurations : item == null ? null : {
+      gatewayIPConfigurations = local.normalized_appgateway_components.gateway_ip_configurations == null ? null : [for item in local.normalized_appgateway_components.gateway_ip_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           subnet = item.properties.subnet == null ? null : {
@@ -137,7 +137,7 @@ locals {
         enableRequestBuffering  = var.global_configuration.enable_request_buffering
         enableResponseBuffering = var.global_configuration.enable_response_buffering
       }
-      httpListeners = var.http_listeners == null ? null : [for listener_index, item in var.http_listeners : item == null ? null : {
+      httpListeners = local.normalized_appgateway_components.http_listeners == null ? null : [for listener_index, item in local.normalized_appgateway_components.http_listeners : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           customErrorConfigurations = item.properties.custom_error_configurations == null ? null : [for item in item.properties.custom_error_configurations : item == null ? null : {
@@ -147,28 +147,28 @@ locals {
           firewallPolicy = item.properties.firewall_policy == null ? null : {
             id = item.properties.firewall_policy.id
           }
-          frontendIPConfiguration     = local.resolved_child_references["http_listeners[${listener_index}].properties.frontend_ip_configuration"]
-          frontendPort                = local.resolved_child_references["http_listeners[${listener_index}].properties.frontend_port"]
+          frontendIPConfiguration     = lookup(local.resolved_child_references, "http_listeners[${listener_index}].frontend_ip_configuration", null)
+          frontendPort                = lookup(local.resolved_child_references, "http_listeners[${listener_index}].frontend_port", null)
           hostName                    = item.properties.host_name
           hostNames                   = item.properties.host_names == null ? null : [for item in item.properties.host_names : item]
           protocol                    = item.properties.protocol
           requireServerNameIndication = item.properties.require_server_name_indication
-          sslCertificate              = local.resolved_child_references["http_listeners[${listener_index}].properties.ssl_certificate"]
-          sslProfile                  = local.resolved_child_references["http_listeners[${listener_index}].properties.ssl_profile"]
+          sslCertificate              = lookup(local.resolved_child_references, "http_listeners[${listener_index}].ssl_certificate", null)
+          sslProfile                  = lookup(local.resolved_child_references, "http_listeners[${listener_index}].ssl_profile", null)
         }
       }]
-      listeners = var.listeners == null ? null : [for listener_index, item in var.listeners : item == null ? null : {
+      listeners = local.normalized_appgateway_components.listeners == null ? null : [for listener_index, item in local.normalized_appgateway_components.listeners : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          frontendIPConfiguration = local.resolved_child_references["listeners[${listener_index}].properties.frontend_ip_configuration"]
-          frontendPort            = local.resolved_child_references["listeners[${listener_index}].properties.frontend_port"]
+          frontendIPConfiguration = lookup(local.resolved_child_references, "listeners[${listener_index}].frontend_ip_configuration", null)
+          frontendPort            = lookup(local.resolved_child_references, "listeners[${listener_index}].frontend_port", null)
           hostNames               = item.properties.host_names == null ? null : [for item in item.properties.host_names : item]
           protocol                = item.properties.protocol
-          sslCertificate          = local.resolved_child_references["listeners[${listener_index}].properties.ssl_certificate"]
-          sslProfile              = local.resolved_child_references["listeners[${listener_index}].properties.ssl_profile"]
+          sslCertificate          = lookup(local.resolved_child_references, "listeners[${listener_index}].ssl_certificate", null)
+          sslProfile              = lookup(local.resolved_child_references, "listeners[${listener_index}].ssl_profile", null)
         }
       }]
-      loadDistributionPolicies = var.load_distribution_policies == null ? null : [for policy_index, item in var.load_distribution_policies : item == null ? null : {
+      loadDistributionPolicies = local.normalized_appgateway_components.load_distribution_policies == null ? null : [for policy_index, item in local.normalized_appgateway_components.load_distribution_policies : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           loadDistributionAlgorithm = item.properties.load_distribution_algorithm
@@ -176,13 +176,13 @@ locals {
             id   = item.id
             name = item.name
             properties = item.properties == null ? null : {
-              backendAddressPool = local.resolved_child_references["load_distribution_policies[${policy_index}].properties.load_distribution_targets[${target_index}].properties.backend_address_pool"]
+              backendAddressPool = lookup(local.resolved_child_references, "load_distribution_policies[${policy_index}].load_distribution_targets[${target_index}].backend_address_pool", null)
               weightPerServer    = item.properties.weight_per_server
             }
           }]
         }
       }]
-      privateLinkConfigurations = var.private_link_configurations == null ? null : [for item in var.private_link_configurations : item == null ? null : {
+      privateLinkConfigurations = local.normalized_appgateway_components.private_link_configurations == null ? null : [for item in local.normalized_appgateway_components.private_link_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           ipConfigurations = item.properties.ip_configurations == null ? null : [for item in item.properties.ip_configurations : item == null ? null : {
@@ -199,7 +199,7 @@ locals {
           }]
         }
       }]
-      probes = var.probes == null ? null : [for item in var.probes : item == null ? null : {
+      probes = local.normalized_appgateway_components.probes == null ? null : [for item in local.normalized_appgateway_components.probes : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           enableProbeProxyProtocolHeader = item.properties.enable_probe_proxy_protocol_header
@@ -219,44 +219,44 @@ locals {
           unhealthyThreshold                  = item.properties.unhealthy_threshold
         }
       }]
-      redirectConfigurations = var.redirect_configurations == null ? null : [for redirect_index, item in var.redirect_configurations : item == null ? null : {
+      redirectConfigurations = local.normalized_appgateway_components.redirect_configurations == null ? null : [for redirect_index, item in local.normalized_appgateway_components.redirect_configurations : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           includePath        = item.properties.include_path
           includeQueryString = item.properties.include_query_string
           pathRules = item.properties.path_rules == null ? null : [
             for reference_index, _ in item.properties.path_rules :
-            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.path_rules[${reference_index}]"]
+            lookup(local.resolved_child_references, "redirect_configurations[${redirect_index}].path_rules[${reference_index}]", null)
           ]
           redirectType = item.properties.redirect_type
           requestRoutingRules = item.properties.request_routing_rules == null ? null : [
             for reference_index, _ in item.properties.request_routing_rules :
-            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.request_routing_rules[${reference_index}]"]
+            lookup(local.resolved_child_references, "redirect_configurations[${redirect_index}].request_routing_rules[${reference_index}]", null)
           ]
-          targetListener = local.resolved_child_references["redirect_configurations[${redirect_index}].properties.target_listener"]
+          targetListener = lookup(local.resolved_child_references, "redirect_configurations[${redirect_index}].target_listener", null)
           targetUrl      = item.properties.target_url
           urlPathMaps = item.properties.url_path_maps == null ? null : [
             for reference_index, _ in item.properties.url_path_maps :
-            local.resolved_child_references["redirect_configurations[${redirect_index}].properties.url_path_maps[${reference_index}]"]
+            lookup(local.resolved_child_references, "redirect_configurations[${redirect_index}].url_path_maps[${reference_index}]", null)
           ]
         }
       }]
-      requestRoutingRules = var.request_routing_rules == null ? null : [for rule_index, item in var.request_routing_rules : item == null ? null : {
+      requestRoutingRules = local.normalized_appgateway_components.request_routing_rules == null ? null : [for rule_index, item in local.normalized_appgateway_components.request_routing_rules : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          backendAddressPool       = local.resolved_child_references["request_routing_rules[${rule_index}].properties.backend_address_pool"]
-          backendHttpSettings      = local.resolved_child_references["request_routing_rules[${rule_index}].properties.backend_http_settings"]
-          entraJWTValidationConfig = local.resolved_child_references["request_routing_rules[${rule_index}].properties.entra_jwt_validation_config"]
-          httpListener             = local.resolved_child_references["request_routing_rules[${rule_index}].properties.http_listener"]
-          loadDistributionPolicy   = local.resolved_child_references["request_routing_rules[${rule_index}].properties.load_distribution_policy"]
+          backendAddressPool       = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].backend_address_pool", null)
+          backendHttpSettings      = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].backend_http_settings", null)
+          entraJWTValidationConfig = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].entra_jwt_validation_config", null)
+          httpListener             = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].http_listener", null)
+          loadDistributionPolicy   = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].load_distribution_policy", null)
           priority                 = item.properties.priority
-          redirectConfiguration    = local.resolved_child_references["request_routing_rules[${rule_index}].properties.redirect_configuration"]
-          rewriteRuleSet           = local.resolved_child_references["request_routing_rules[${rule_index}].properties.rewrite_rule_set"]
+          redirectConfiguration    = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].redirect_configuration", null)
+          rewriteRuleSet           = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].rewrite_rule_set", null)
           ruleType                 = item.properties.rule_type
-          urlPathMap               = local.resolved_child_references["request_routing_rules[${rule_index}].properties.url_path_map"]
+          urlPathMap               = lookup(local.resolved_child_references, "request_routing_rules[${rule_index}].url_path_map", null)
         }
       }]
-      rewriteRuleSets = var.rewrite_rule_sets == null ? null : [for item in var.rewrite_rule_sets : item == null ? null : {
+      rewriteRuleSets = local.normalized_appgateway_components.rewrite_rule_sets == null ? null : [for item in local.normalized_appgateway_components.rewrite_rule_sets : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           rewriteRules = item.properties.rewrite_rules == null ? null : [for item in item.properties.rewrite_rules : item == null ? null : {
@@ -296,12 +296,12 @@ locals {
           }]
         }
       }]
-      routingRules = var.routing_rules == null ? null : [for rule_index, item in var.routing_rules : item == null ? null : {
+      routingRules = local.normalized_appgateway_components.routing_rules == null ? null : [for rule_index, item in local.normalized_appgateway_components.routing_rules : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          backendAddressPool = local.resolved_child_references["routing_rules[${rule_index}].properties.backend_address_pool"]
-          backendSettings    = local.resolved_child_references["routing_rules[${rule_index}].properties.backend_settings"]
-          listener           = local.resolved_child_references["routing_rules[${rule_index}].properties.listener"]
+          backendAddressPool = lookup(local.resolved_child_references, "routing_rules[${rule_index}].backend_address_pool", null)
+          backendSettings    = lookup(local.resolved_child_references, "routing_rules[${rule_index}].backend_settings", null)
+          listener           = lookup(local.resolved_child_references, "routing_rules[${rule_index}].listener", null)
           priority           = item.properties.priority
           ruleType           = item.properties.rule_type
         }
@@ -312,7 +312,7 @@ locals {
         name     = var.sku.name
         tier     = var.sku.tier
       }
-      sslCertificates = var.ssl_certificates == null ? null : [for item in var.ssl_certificates : item == null ? null : {
+      sslCertificates = local.normalized_appgateway_components.ssl_certificates == null ? null : [for item in local.normalized_appgateway_components.ssl_certificates : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           data             = item.properties.data
@@ -327,7 +327,7 @@ locals {
         policyName           = var.ssl_policy.policy_name
         policyType           = var.ssl_policy.policy_type
       }
-      sslProfiles = var.ssl_profiles == null ? null : [for profile_index, item in var.ssl_profiles : item == null ? null : {
+      sslProfiles = local.normalized_appgateway_components.ssl_profiles == null ? null : [for profile_index, item in local.normalized_appgateway_components.ssl_profiles : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           clientAuthConfiguration = item.properties.client_auth_configuration == null ? null : {
@@ -344,44 +344,44 @@ locals {
           }
           trustedClientCertificates = item.properties.trusted_client_certificates == null ? null : [
             for certificate_index, _ in item.properties.trusted_client_certificates :
-            local.resolved_child_references["ssl_profiles[${profile_index}].properties.trusted_client_certificates[${certificate_index}]"]
+            lookup(local.resolved_child_references, "ssl_profiles[${profile_index}].trusted_client_certificates[${certificate_index}]", null)
           ]
         }
       }]
-      trustedClientCertificates = var.trusted_client_certificates == null ? null : [for item in var.trusted_client_certificates : item == null ? null : {
+      trustedClientCertificates = local.normalized_appgateway_components.trusted_client_certificates == null ? null : [for item in local.normalized_appgateway_components.trusted_client_certificates : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           data = item.properties.data
         }
       }]
-      trustedRootCertificates = var.trusted_root_certificates == null ? null : [for item in var.trusted_root_certificates : item == null ? null : {
+      trustedRootCertificates = local.normalized_appgateway_components.trusted_root_certificates == null ? null : [for item in local.normalized_appgateway_components.trusted_root_certificates : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
           data             = item.properties.data
           keyVaultSecretId = item.properties.key_vault_secret_id
         }
       }]
-      urlPathMaps = var.url_path_maps == null ? null : [for map_index, item in var.url_path_maps : item == null ? null : {
+      urlPathMaps = local.normalized_appgateway_components.url_path_maps == null ? null : [for map_index, item in local.normalized_appgateway_components.url_path_maps : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          defaultBackendAddressPool     = local.resolved_child_references["url_path_maps[${map_index}].properties.default_backend_address_pool"]
-          defaultBackendHttpSettings    = local.resolved_child_references["url_path_maps[${map_index}].properties.default_backend_http_settings"]
-          defaultLoadDistributionPolicy = local.resolved_child_references["url_path_maps[${map_index}].properties.default_load_distribution_policy"]
-          defaultRedirectConfiguration  = local.resolved_child_references["url_path_maps[${map_index}].properties.default_redirect_configuration"]
-          defaultRewriteRuleSet         = local.resolved_child_references["url_path_maps[${map_index}].properties.default_rewrite_rule_set"]
+          defaultBackendAddressPool     = lookup(local.resolved_child_references, "url_path_maps[${map_index}].default_backend_address_pool", null)
+          defaultBackendHttpSettings    = lookup(local.resolved_child_references, "url_path_maps[${map_index}].default_backend_http_settings", null)
+          defaultLoadDistributionPolicy = lookup(local.resolved_child_references, "url_path_maps[${map_index}].default_load_distribution_policy", null)
+          defaultRedirectConfiguration  = lookup(local.resolved_child_references, "url_path_maps[${map_index}].default_redirect_configuration", null)
+          defaultRewriteRuleSet         = lookup(local.resolved_child_references, "url_path_maps[${map_index}].default_rewrite_rule_set", null)
           pathRules = item.properties.path_rules == null ? null : [for rule_index, item in item.properties.path_rules : item == null ? null : {
             id   = item.id
             name = item.name
             properties = item.properties == null ? null : {
-              backendAddressPool  = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.backend_address_pool"]
-              backendHttpSettings = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.backend_http_settings"]
+              backendAddressPool  = lookup(local.resolved_child_references, "url_path_maps[${map_index}].path_rules[${rule_index}].backend_address_pool", null)
+              backendHttpSettings = lookup(local.resolved_child_references, "url_path_maps[${map_index}].path_rules[${rule_index}].backend_http_settings", null)
               firewallPolicy = item.properties.firewall_policy == null ? null : {
                 id = item.properties.firewall_policy.id
               }
-              loadDistributionPolicy = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.load_distribution_policy"]
+              loadDistributionPolicy = lookup(local.resolved_child_references, "url_path_maps[${map_index}].path_rules[${rule_index}].load_distribution_policy", null)
               paths                  = item.properties.paths == null ? null : [for item in item.properties.paths : item]
-              redirectConfiguration  = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.redirect_configuration"]
-              rewriteRuleSet         = local.resolved_child_references["url_path_maps[${map_index}].properties.path_rules[${rule_index}].properties.rewrite_rule_set"]
+              redirectConfiguration  = lookup(local.resolved_child_references, "url_path_maps[${map_index}].path_rules[${rule_index}].redirect_configuration", null)
+              rewriteRuleSet         = lookup(local.resolved_child_references, "url_path_maps[${map_index}].path_rules[${rule_index}].rewrite_rule_set", null)
             }
           }]
         }

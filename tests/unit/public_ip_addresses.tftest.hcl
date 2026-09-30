@@ -65,10 +65,8 @@ run "external_id_is_unchanged" {
   variables {
     frontend_ip_configurations = [{
       name = "external"
-      properties = {
-        public_ip_address = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing"
-        }
+      public_ip_address = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing"
       }
     }]
   }
@@ -100,13 +98,11 @@ run "private_frontend_is_unchanged" {
 
   variables {
     frontend_ip_configurations = [{
-      name = "private"
-      properties = {
-        private_ip_address           = "10.0.0.10"
-        private_ip_allocation_method = "Static"
-        subnet = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
-        }
+      name                         = "private"
+      private_ip_address           = "10.0.0.10"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
       }
     }]
   }
@@ -142,7 +138,7 @@ run "legacy_optional_null_elements_are_preserved" {
       {},
       { name = "no-properties" },
       { name = "null-properties", properties = null },
-      { properties = { public_ip_address = { id = "legacy-id-not-validated" } } },
+      { public_ip_address = { id = "legacy-id-not-validated" } },
     ]
   }
 
@@ -244,7 +240,7 @@ run "managed_ipv4_without_properties" {
   }
 }
 
-run "managed_frontend_with_empty_properties" {
+run "managed_frontend_without_properties" {
   command = apply
 
   variables {
@@ -255,7 +251,6 @@ run "managed_frontend_with_empty_properties" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties            = {}
     }]
   }
 
@@ -266,7 +261,7 @@ run "managed_frontend_with_empty_properties" {
       azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.subnet == null &&
       azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.location == "eastus2"
     )
-    error_message = "An empty properties object must accept the managed ID, and the location replacement trigger must normalize case and spaces."
+    error_message = "An omitted property bag must accept the managed ID, and the location replacement trigger must normalize case and spaces."
   }
 }
 
@@ -281,18 +276,14 @@ run "managed_and_external_frontends" {
       {
         name                  = "managed"
         public_ip_address_key = "edge"
-        properties = {
-          private_link_configuration = {
-            id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/applicationGateways/agw-unit/privateLinkConfigurations/link"
-          }
+        private_link_configuration = {
+          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/applicationGateways/agw-unit/privateLinkConfigurations/link"
         }
       },
       {
         name = "external"
-        properties = {
-          public_ip_address = {
-            id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing-v6"
-          }
+        public_ip_address = {
+          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing-v6"
         }
       },
       null,
@@ -303,8 +294,8 @@ run "managed_and_external_frontends" {
     condition = (
       toset(keys(output.public_ip_addresses)) == toset(["edge"]) &&
       azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.publicIPAddress.id == azapi_resource.public_ip_addresses["edge"].id &&
-      azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.privateLinkConfiguration.id == var.frontend_ip_configurations[0].properties.private_link_configuration.id &&
-      azapi_resource.this.body.properties.frontendIPConfigurations[1].properties.publicIPAddress.id == var.frontend_ip_configurations[1].properties.public_ip_address.id &&
+      azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.privateLinkConfiguration.id == var.frontend_ip_configurations[0].private_link_configuration.id &&
+      azapi_resource.this.body.properties.frontendIPConfigurations[1].properties.publicIPAddress.id == var.frontend_ip_configurations[1].public_ip_address.id &&
       azapi_resource.this.body.properties.frontendIPConfigurations[2] == null
     )
     error_message = "Managed attachment must preserve other frontend properties, external IDs, and null elements."
@@ -937,10 +928,8 @@ run "rejects_managed_key_with_external_id" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties = {
-        public_ip_address = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/publicIPAddresses/external"
-        }
+      public_ip_address = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/publicIPAddresses/external"
       }
     }]
   }
@@ -953,8 +942,8 @@ run "rejects_managed_key_with_private_address" {
     public_ip_addresses = { edge = { name = "pip-edge" } }
     frontend_ip_configurations = [{
       name                  = "public"
+      private_ip_address    = "10.0.0.10"
       public_ip_address_key = "edge"
-      properties            = { private_ip_address = "10.0.0.10" }
     }]
   }
   expect_failures = [var.frontend_ip_configurations]
@@ -965,9 +954,9 @@ run "rejects_managed_key_with_private_allocation" {
   variables {
     public_ip_addresses = { edge = { name = "pip-edge" } }
     frontend_ip_configurations = [{
-      name                  = "public"
-      public_ip_address_key = "edge"
-      properties            = { private_ip_allocation_method = "Dynamic" }
+      name                         = "public"
+      private_ip_allocation_method = "Dynamic"
+      public_ip_address_key        = "edge"
     }]
   }
   expect_failures = [var.frontend_ip_configurations]
@@ -980,10 +969,8 @@ run "rejects_managed_key_with_subnet" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties = {
-        subnet = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
-        }
+      subnet = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
       }
     }]
   }

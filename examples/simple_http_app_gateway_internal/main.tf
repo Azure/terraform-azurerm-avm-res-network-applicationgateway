@@ -59,41 +59,34 @@ module "application_gateway" {
   # Mandatory Input
   backend_address_pools = [
     {
-      name       = "Pool1"
-      properties = {}
+      name = "Pool1"
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "backend_http_settings-port-80"
-      properties = {
-        port                  = 80
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        request_timeout       = 30
-      }
+      name                  = "backend_http_settings-port-80"
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      request_timeout       = 30
     }
   ]
   enable_telemetry = var.enable_telemetry
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.pip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.pip.id
       }
     },
     {
-      name = "private-ip-frontend"
-      properties = {
-        private_ip_address           = "100.64.1.5"
-        private_ip_allocation_method = "Static"
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      name                         = "private-ip-frontend"
+      private_ip_address           = "100.64.1.5"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -102,18 +95,14 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-80"
-      properties = {
-        port = 80
-      }
+      port = 80
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -122,15 +111,13 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "http_listeners-for-80"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol = "Http"
     }
   ]
   lock = {
@@ -141,20 +128,18 @@ module "application_gateway" {
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "Rule1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "http_listeners-for-80"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "Pool1"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "backend_http_settings-port-80"
-        }
-        priority = 9
+      name      = "Rule1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "http_listeners-for-80"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "Pool1"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "backend_http_settings-port-80"
+      }
+      priority = 9
     }
   ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
