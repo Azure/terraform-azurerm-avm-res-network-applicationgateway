@@ -17,11 +17,9 @@ run "rejects_id_and_key_together" {
     frontend_ports = [{ name = "port" }]
     http_listeners = [{
       name = "listener"
-      properties = {
-        frontend_port = {
-          frontend_port_key = "port"
-          id                = "/opaque/legacy-id"
-        }
+      frontend_port = {
+        frontend_port_key = "port"
+        id                = "/opaque/legacy-id"
       }
     }]
   }
@@ -34,10 +32,8 @@ run "rejects_missing_keyed_target" {
 
   variables {
     http_listeners = [{
-      name = "listener"
-      properties = {
-        frontend_port = { frontend_port_key = "missing" }
-      }
+      name          = "listener"
+      frontend_port = { frontend_port_key = "missing" }
     }]
   }
 
@@ -53,10 +49,8 @@ run "rejects_case_insensitive_ambiguity_only_when_referenced" {
       { name = "PORT" },
     ]
     http_listeners = [{
-      name = "listener"
-      properties = {
-        frontend_port = { frontend_port_key = "port" }
-      }
+      name          = "listener"
+      frontend_port = { frontend_port_key = "port" }
     }]
   }
 
@@ -85,10 +79,8 @@ run "rejects_malformed_new_keys" {
   variables {
     frontend_ports = [{ name = "port" }]
     http_listeners = [{
-      name = "listener"
-      properties = {
-        frontend_port = { frontend_port_key = "child/name" }
-      }
+      name          = "listener"
+      frontend_port = { frontend_port_key = "child/name" }
     }]
   }
 
@@ -96,8 +88,8 @@ run "rejects_malformed_new_keys" {
 
   assert {
     condition = (
-      local.child_reference_resolution["http_listeners[0].properties.frontend_port"].status == "invalid_key" &&
-      contains(local.invalid_child_reference_key_paths, "http_listeners[0].properties.frontend_port")
+      local.child_reference_resolution["http_listeners[0].frontend_port"].status == "invalid_key" &&
+      contains(local.invalid_child_reference_key_paths, "http_listeners[0].frontend_port")
     )
     error_message = "Malformed selectors must be classified as invalid_key and reported through invalid_child_reference_key_paths."
   }
@@ -109,10 +101,8 @@ run "rejects_blank_new_keys" {
   variables {
     frontend_ports = [{ name = "port" }]
     http_listeners = [{
-      name = "listener"
-      properties = {
-        frontend_port = { frontend_port_key = "   " }
-      }
+      name          = "listener"
+      frontend_port = { frontend_port_key = "   " }
     }]
   }
 
@@ -124,10 +114,8 @@ run "rejects_path_rule_key_without_scope_key" {
 
   variables {
     redirect_configurations = [{
-      name = "redirect"
-      properties = {
-        path_rules = [{ path_rule_key = "rule" }]
-      }
+      name       = "redirect"
+      path_rules = [{ path_rule_key = "rule" }]
     }]
   }
 
@@ -139,10 +127,8 @@ run "rejects_orphan_path_rule_scope_key" {
 
   variables {
     redirect_configurations = [{
-      name = "redirect"
-      properties = {
-        path_rules = [{ url_path_map_key = "map" }]
-      }
+      name       = "redirect"
+      path_rules = [{ url_path_map_key = "map" }]
     }]
   }
 
@@ -155,13 +141,11 @@ run "rejects_path_rule_id_with_keys" {
   variables {
     redirect_configurations = [{
       name = "redirect"
-      properties = {
-        path_rules = [{
-          id               = "/opaque/legacy-id"
-          path_rule_key    = "rule"
-          url_path_map_key = "map"
-        }]
-      }
+      path_rules = [{
+        id               = "/opaque/legacy-id"
+        path_rule_key    = "rule"
+        url_path_map_key = "map"
+      }]
     }]
   }
 
@@ -174,21 +158,19 @@ run "rejects_ambiguous_path_map_scope_key" {
   variables {
     redirect_configurations = [{
       name = "redirect"
-      properties = {
-        path_rules = [{
-          path_rule_key    = "rule"
-          url_path_map_key = "map"
-        }]
-      }
+      path_rules = [{
+        path_rule_key    = "rule"
+        url_path_map_key = "map"
+      }]
     }]
     url_path_maps = [
       {
         name       = "Map"
-        properties = { path_rules = [{ name = "Rule" }] }
+        path_rules = [{ name = "Rule" }]
       },
       {
         name       = "MAP"
-        properties = { path_rules = [{ name = "OtherRule" }] }
+        path_rules = [{ name = "OtherRule" }]
       },
     ]
   }

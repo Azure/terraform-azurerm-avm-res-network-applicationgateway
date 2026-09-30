@@ -25,16 +25,14 @@ variables {
     public_ip_address_key = "edge"
   }]
   frontend_ports = [{
-    name       = "HttpPort"
-    properties = { port = 80 }
+    name = "HttpPort"
+    port = 80
   }]
   http_listeners = [{
-    name = "HttpListener"
-    properties = {
-      frontend_ip_configuration = { frontend_ip_configuration_key = "publicfrontend" }
-      frontend_port             = { frontend_port_key = "httpport" }
-      protocol                  = "Http"
-    }
+    name                      = "HttpListener"
+    frontend_ip_configuration = { frontend_ip_configuration_key = "publicfrontend" }
+    frontend_port             = { frontend_port_key = "httpport" }
+    protocol                  = "Http"
   }]
 }
 
@@ -68,11 +66,9 @@ run "keyed_private_link_and_managed_ip_share_a_frontend" {
       name = "FrontendLink"
     }]
     frontend_ip_configurations = [{
-      name                  = "PublicFrontend"
-      public_ip_address_key = "edge"
-      properties = {
-        private_link_configuration = { private_link_configuration_key = "frontendlink" }
-      }
+      name                       = "PublicFrontend"
+      public_ip_address_key      = "edge"
+      private_link_configuration = { private_link_configuration_key = "frontendlink" }
     }]
   }
 

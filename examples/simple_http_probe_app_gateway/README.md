@@ -77,44 +77,38 @@ module "application_gateway" {
   backend_address_pools = [
     {
       name = "app-Gateway-Backend-Pool"
-      properties = {
-        backend_addresses = [
-          { ip_address = "100.64.2.6" },
-          { ip_address = "100.64.2.5" },
-        ]
-      }
+      backend_addresses = [
+        { ip_address = "100.64.2.6" },
+        { ip_address = "100.64.2.5" },
+      ]
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "app-Gateway-Backend-Http-Settings"
-      properties = {
-        port                  = 80
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
-        probe = {
-          probe_key = "Probe1"
-        }
-        probe_enabled = true
+      name                  = "app-Gateway-Backend-Http-Settings"
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
+      probe = {
+        probe_key = "Probe1"
+      }
+      probe_enabled = true
     }
   ]
   enable_telemetry = var.enable_telemetry
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.public_ip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.public_ip.id
       }
     }
   ]
@@ -124,18 +118,14 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-80"
-      properties = {
-        port = 80
-      }
+      port = 80
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -144,15 +134,13 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "app-Gateway-Http-Listener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol = "Http"
     }
   ]
   # probe configurations for the application gateway
@@ -160,25 +148,23 @@ module "application_gateway" {
   # # Optional Input
   probes = [
     {
-      name = "Probe1"
-      properties = {
-        interval                                  = 30
-        timeout                                   = 10
-        unhealthy_threshold                       = 3
-        protocol                                  = "Http"
-        port                                      = 80
-        path                                      = "/health"
-        host                                      = "127.0.0.1"
-        pick_host_name_from_backend_http_settings = false
-        # Note on host : The Hostname used for this Probe. If the Application Gateway is configured for a single site,
-        # by default the Host name should be specified as 127.0.0.1,
-        # unless otherwise configured in custom probe.
-        # Cannot be set if pick_host_name_from_backend_http_settings is set to true.
-        # You must provide host value if pick_host_name_from_backend_http_settings is set to false.
-        match = {
-          body         = null
-          status_codes = ["200-399"]
-        }
+      name                                      = "Probe1"
+      interval                                  = 30
+      timeout                                   = 10
+      unhealthy_threshold                       = 3
+      protocol                                  = "Http"
+      port                                      = 80
+      path                                      = "/health"
+      host                                      = "127.0.0.1"
+      pick_host_name_from_backend_http_settings = false
+      # Note on host : The Hostname used for this Probe. If the Application Gateway is configured for a single site,
+      # by default the Host name should be specified as 127.0.0.1,
+      # unless otherwise configured in custom probe.
+      # Cannot be set if pick_host_name_from_backend_http_settings is set to true.
+      # You must provide host value if pick_host_name_from_backend_http_settings is set to false.
+      match = {
+        body         = null
+        status_codes = ["200-399"]
       }
     }
   ]
@@ -186,20 +172,18 @@ module "application_gateway" {
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "rule-1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "app-Gateway-Http-Listener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "app-Gateway-Backend-Pool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "app-Gateway-Backend-Http-Settings"
-        }
-        priority = 100
+      name      = "rule-1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "app-Gateway-Http-Listener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "app-Gateway-Backend-Pool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "app-Gateway-Backend-Http-Settings"
+      }
+      priority = 100
     }
   ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.
