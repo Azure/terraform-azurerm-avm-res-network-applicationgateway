@@ -43,6 +43,19 @@ resource "azapi_resource" "this" {
 
   lifecycle {
     ignore_changes = [body.properties.firewallPolicy]
+
+    precondition {
+      condition     = length(local.invalid_child_reference_shape_paths) == 0
+      error_message = "Internal child references must use either id or their nested *_key, not both. Redirect path rule references require path_rule_key together with url_path_map_key and cannot combine id with either key. Invalid references: ${join(", ", local.invalid_child_reference_shape_paths)}."
+    }
+    precondition {
+      condition     = length(local.invalid_child_reference_key_paths) == 0
+      error_message = "Internal child reference keys, including parent URL path map keys, must be nonblank single component names without '/'. Invalid references: ${join(", ", local.invalid_child_reference_key_paths)}."
+    }
+    precondition {
+      condition     = length(local.unresolved_child_reference_paths) == 0
+      error_message = "Each internal reference key must case-insensitively match exactly one corresponding component's configured name. Path rule keys must identify exactly one URL path map and one path rule within it. Missing or ambiguous references: ${join(", ", local.unresolved_child_reference_paths)}."
+    }
   }
 }
 

@@ -60,10 +60,6 @@ resource "random_integer" "region_index" {
   min = 0
 }
 
-locals {
-  agw_id = "${azurerm_resource_group.rg_group.id}/providers/Microsoft.Network/applicationGateways/${module.naming.application_gateway.name_unique}"
-}
-
 module "application_gateway" {
   source = "../../"
 
@@ -105,7 +101,7 @@ module "application_gateway" {
           drain_timeout_in_sec = 300
         }
         probe = {
-          id = "${local.agw_id}/probes/Probe1"
+          probe_key = "Probe1"
         }
         probe_enabled = true
       }
@@ -150,10 +146,10 @@ module "application_gateway" {
       name = "app-Gateway-Http-Listener"
       properties = {
         frontend_ip_configuration = {
-          id = "${local.agw_id}/frontendIPConfigurations/appGatewayFrontendPublicIP"
+          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
         }
         frontend_port = {
-          id = "${local.agw_id}/frontendPorts/frontend-port-80"
+          frontend_port_key = "frontend-port-80"
         }
         protocol = "Http"
       }
@@ -194,13 +190,13 @@ module "application_gateway" {
       properties = {
         rule_type = "Basic"
         http_listener = {
-          id = "${local.agw_id}/httpListeners/app-Gateway-Http-Listener"
+          http_listener_key = "app-Gateway-Http-Listener"
         }
         backend_address_pool = {
-          id = "${local.agw_id}/backendAddressPools/app-Gateway-Backend-Pool"
+          backend_address_pool_key = "app-Gateway-Backend-Pool"
         }
         backend_http_settings = {
-          id = "${local.agw_id}/backendHttpSettingsCollection/app-Gateway-Backend-Http-Settings"
+          backend_http_settings_key = "app-Gateway-Backend-Http-Settings"
         }
         priority = 100
       }
