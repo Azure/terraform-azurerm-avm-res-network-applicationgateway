@@ -490,27 +490,69 @@ did not yet support:
 This section applies only to the older AzureRM-to-AzAPI provider migration.
 Do not perform these state operations solely to flatten component inputs.
 
-Migrating an existing gateway requires removing the old resource from
-state and importing it into the new resource type. **Back up your state
-first.**
+### Application Gateway
 
-```bash
-# 1. Back up state
+The module includes a `moved` block that transfers an existing gateway from
+`azurerm_application_gateway.this` to `azapi_resource.this` during the first
+plan after you upgrade. You do not need to remove or import the gateway.
+
+Moving state between these resource types requires Terraform 1.8 or later and
+AzAPI 2.1 or later. The module's own version constraints (Terraform `>= 1.12`,
+AzAPI `~> 2.12`) already guarantee both.
+
+1. Back up state:
+
+   ```powershell
+   terraform state pull > terraform.tfstate.backup
+   ```
+
+2. Update the module version, convert your inputs, and run
+   `terraform init -upgrade`.
+3. If the module managed a public IP, complete the
+   [public IP ownership migration](#public-ip-ownership-migration) now, before
+   planning. The `moved` block covers only the gateway.
+4. Run `terraform plan`. Confirm that it reports
+   `module.appgw.azurerm_application_gateway.this` has moved to
+   `module.appgw.azapi_resource.this`, and that nothing is replaced or
+   destroyed. Expect an in-place update of the gateway: AzAPI reads the moved
+   gateway with a newer API version, and the update re-applies your
+   configuration with the module's API version. Review it as you would any
+   gateway change.
+5. Apply, then run `terraform plan` again and confirm it reports no changes.
+
+> [!WARNING]
+> Do not use `-refresh=false` for the migration plan. AzAPI's move does not
+> carry over the gateway's `location`; the refresh restores it. Without the
+> refresh, Terraform plans to replace the gateway.
+
+### Fallback: remove and import
+
+Use this path only when the `moved` block cannot be used:
+
+- **The plan fails to read the gateway**, for example with
+  `NoRegisteredProviderFound`. AzAPI's move reads the gateway with the newest
+  API version AzAPI knows, not the module's configured version, and some
+  regions or clouds do not serve it yet
+  ([Azure/terraform-provider-azapi#1227](https://github.com/Azure/terraform-provider-azapi/issues/1227)).
+  A failed plan does not change state.
+- **The `moved` block is gone.** It will be removed in a future release. If you
+  upgrade from an AzureRM-based release directly to such a release, migrate
+  manually.
+
+```powershell
 terraform state pull > terraform.tfstate.backup
-
-# 2. Remove the old azurerm resource from state
 terraform state rm 'module.appgw.azurerm_application_gateway.this'
-
-# 3. If the module managed a public IP, complete the ownership
-# migration below before applying. Do not just remove it from state.
-
-# 4. Import into the new azapi resource
-terraform import 'module.appgw.azapi_resource.this' \
-  '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Network/applicationGateways/my-appgw'
-
-# 5. Run plan to verify — expect no destructive changes
+terraform import 'module.appgw.azapi_resource.this' '/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-example/providers/Microsoft.Network/applicationGateways/my-appgw?api-version=2025-03-01'
 terraform plan
 ```
+
+The `?api-version=` suffix makes the import use the module's configured API
+version. If you override `resource_types.network_application_gateways`, use
+that version instead. Do not apply between these commands, and review the plan
+as in step 4.
+
+If you already migrated the gateway manually on an earlier release, the
+`moved` block finds nothing to move, and no further action is needed.
 
 Adjust the resource addresses above to match your module call. If you
 use `for_each` or `count`, include the key or index in the address
@@ -548,9 +590,10 @@ terraform plan
 
 Substitute the real module addresses, map key and Azure resource ID. The selected
 key is consumer-defined, so the module cannot supply one generic `moved` block
-for every old counted IP. Stop if the resulting plan proposes IP or gateway
-replacement or destruction. Reconcile the configuration with the existing
-resource before applying.
+for every old counted IP. In-place updates to the IP and the moved gateway are
+expected. Stop if the resulting plan proposes IP or gateway replacement or
+destruction. Reconcile the configuration with the existing resource before
+applying.
 
 The `terraform state mv` command is distinct from provider-supported declarative
 `moved` blocks. That alternative has not been validated for this public-IP upgrade
