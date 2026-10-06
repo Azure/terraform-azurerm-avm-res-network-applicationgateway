@@ -9,6 +9,10 @@ mock_provider "azapi" {
   }
 }
 
+mock_provider "azapi" {
+  alias = "without_exports"
+}
+
 # The module still declares AzureRM for its legacy support resources.
 mock_provider "azurerm" {}
 mock_provider "random" {}
@@ -191,11 +195,11 @@ run "managed_ipv4_without_properties" {
   }
 
   assert {
-    condition = alltrue([
-      for path in ["zones", "properties.publicIPAddressVersion", "properties.publicIPPrefix.id"] :
-      contains(azapi_resource.public_ip_addresses["edge"].replace_triggers_refs, path)
-    ])
-    error_message = "Immutable zones, IP version, and prefix changes must be registered as body-relative replacement triggers."
+    condition = (
+      toset(azapi_resource.public_ip_addresses["edge"].replace_triggers_refs) == toset(["properties.publicIPAddressVersion", "properties.publicIPPrefix.id"]) &&
+      azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.zones == null
+    )
+    error_message = "IP version and prefix must be body replacement triggers; zones must be a configured external trigger so an import in Azure's zone order cannot force replacement."
   }
 
   assert {
@@ -398,10 +402,21 @@ run "inherits_tags_and_gateway_zones" {
     )
     error_message = "Managed IPs must inherit location, resource-group parent, tags, and the gateway zone set."
   }
+
+  assert {
+    condition = (
+      jsonencode(azapi_resource.public_ip_addresses["edge"].body.zones) == jsonencode(["1", "2", "3"]) &&
+      jsonencode(azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.zones) == jsonencode(["1", "2", "3"])
+    )
+    error_message = "Zones must be sent and compared for replacement in sorted order, independent of input order."
+  }
 }
 
 run "explicit_empty_zones_override_gateway_zones" {
   command = apply
+
+  # Fresh state: zone changes replace real IPs, which mocked providers do not simulate.
+  state_key = "explicit_empty_zones"
 
   variables {
     zones = ["1", "2", "3"]
@@ -418,6 +433,9 @@ run "explicit_empty_zones_override_gateway_zones" {
 
 run "empty_gateway_zones_are_inherited" {
   command = apply
+
+  # Fresh state: zone changes replace real IPs, which mocked providers do not simulate.
+  state_key = "empty_gateway_zones"
 
   variables {
     zones = []
@@ -497,6 +515,38 @@ run "advanced_public_ip_mapping" {
       output.public_ip_addresses["edge"].resource_id == azapi_resource.public_ip_addresses["edge"].id
     )
     error_message = "Managed outputs must expose the Azure-generated address, FQDN, and actual resource ID."
+  }
+}
+
+run "outputs_tolerate_imported_state_without_exports" {
+  command = apply
+
+  # Fresh state with bare mocks: no configured export keys, as after terraform import.
+  state_key = "imported_public_ip"
+  providers = {
+    azapi   = azapi.without_exports
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
+  variables {
+    public_ip_addresses = {
+      edge = { name = "pip-edge" }
+    }
+    frontend_ip_configurations = [{
+      name                  = "public"
+      public_ip_address_key = "edge"
+    }]
+  }
+
+  assert {
+    condition = (
+      output.public_ip_addresses["edge"].resource_id == azapi_resource.public_ip_addresses["edge"].id &&
+      output.public_ip_addresses["edge"].ip_address == null &&
+      output.public_ip_addresses["edge"].fqdn == null
+    )
+    error_message = "Public IP outputs must not block an import whose state lacks configured response exports."
   }
 }
 

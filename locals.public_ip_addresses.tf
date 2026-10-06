@@ -8,4 +8,9 @@ locals {
     })
   ]
   public_ip_address_ids = { for key, ip in azapi_resource.public_ip_addresses : key => ip.id }
+  public_ip_address_zones = {
+    for key, ip in var.public_ip_addresses : key => ip == null ? null : (
+      ip.zones == null ? (var.zones == null ? null : sort(var.zones)) : sort(ip.zones)
+    )
+  }
 }
