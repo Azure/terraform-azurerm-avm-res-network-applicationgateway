@@ -67,52 +67,44 @@ module "application_gateway" {
   backend_address_pools = [
     {
       name = "app-Gateway-Backend-Pool-80"
-      properties = {
-        backend_addresses = [
-          { ip_address = "100.64.2.6" },
-          { ip_address = "100.64.2.5" },
-        ]
-      }
+      backend_addresses = [
+        { ip_address = "100.64.2.6" },
+        { ip_address = "100.64.2.5" },
+      ]
     },
     {
       name = "app-Gateway-Backend-Pool-81"
-      properties = {
-        backend_addresses = [
-          { fqdn = "example1.com" },
-          { fqdn = "example2.com" },
-        ]
-      }
+      backend_addresses = [
+        { fqdn = "example1.com" },
+        { fqdn = "example2.com" },
+      ]
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "app-Gateway-Backend-Http-Settings-80"
-      properties = {
-        port                  = 80
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      name                  = "app-Gateway-Backend-Http-Settings-80"
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     },
     {
-      name = "app-Gateway-Backend-Http-Settings-81"
-      properties = {
-        port                  = 81
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      name                  = "app-Gateway-Backend-Http-Settings-81"
+      port                  = 81
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     }
   ]
@@ -120,20 +112,16 @@ module "application_gateway" {
   frontend_ip_configurations = [
     {
       name = "public-ip-custom-name"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.public_ip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.public_ip.id
       }
     },
     {
-      name = "private-ip-custom-name"
-      properties = {
-        private_ip_address           = "100.64.1.5"
-        private_ip_allocation_method = "Static"
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      name                         = "private-ip-custom-name"
+      private_ip_address           = "100.64.1.5"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -143,24 +131,18 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "port_81"
-      properties = {
-        port = 81
-      }
+      port = 81
     },
     {
       name = "port_80"
-      properties = {
-        port = 80
-      }
+      port = 80
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -169,63 +151,55 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "app-Gateway-Http-Listener-80"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "public-ip-custom-name"
-        }
-        frontend_port = {
-          frontend_port_key = "port_80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "public-ip-custom-name"
       }
+      frontend_port = {
+        frontend_port_key = "port_80"
+      }
+      protocol = "Http"
     },
     {
       name = "app-Gateway-Http-Listener-81"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "private-ip-custom-name"
-        }
-        frontend_port = {
-          frontend_port_key = "port_81"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "private-ip-custom-name"
       }
+      frontend_port = {
+        frontend_port_key = "port_81"
+      }
+      protocol = "Http"
     }
   ]
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "rule-1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "app-Gateway-Http-Listener-80"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "app-Gateway-Backend-Pool-80"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "app-Gateway-Backend-Http-Settings-80"
-        }
-        priority = 100
+      name      = "rule-1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "app-Gateway-Http-Listener-80"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "app-Gateway-Backend-Pool-80"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "app-Gateway-Backend-Http-Settings-80"
+      }
+      priority = 100
     },
     {
-      name = "rule-2"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "app-Gateway-Http-Listener-81"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "app-Gateway-Backend-Pool-81"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "app-Gateway-Backend-Http-Settings-81"
-        }
-        priority = 101
+      name      = "rule-2"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "app-Gateway-Http-Listener-81"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "app-Gateway-Backend-Pool-81"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "app-Gateway-Backend-Http-Settings-81"
+      }
+      priority = 101
     }
   ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.

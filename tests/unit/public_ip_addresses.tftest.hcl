@@ -9,6 +9,10 @@ mock_provider "azapi" {
   }
 }
 
+mock_provider "azapi" {
+  alias = "without_exports"
+}
+
 # The module still declares AzureRM for its legacy support resources.
 mock_provider "azurerm" {}
 mock_provider "random" {}
@@ -65,10 +69,8 @@ run "external_id_is_unchanged" {
   variables {
     frontend_ip_configurations = [{
       name = "external"
-      properties = {
-        public_ip_address = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing"
-        }
+      public_ip_address = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing"
       }
     }]
   }
@@ -100,13 +102,11 @@ run "private_frontend_is_unchanged" {
 
   variables {
     frontend_ip_configurations = [{
-      name = "private"
-      properties = {
-        private_ip_address           = "10.0.0.10"
-        private_ip_allocation_method = "Static"
-        subnet = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
-        }
+      name                         = "private"
+      private_ip_address           = "10.0.0.10"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
       }
     }]
   }
@@ -142,7 +142,7 @@ run "legacy_optional_null_elements_are_preserved" {
       {},
       { name = "no-properties" },
       { name = "null-properties", properties = null },
-      { properties = { public_ip_address = { id = "legacy-id-not-validated" } } },
+      { public_ip_address = { id = "legacy-id-not-validated" } },
     ]
   }
 
@@ -195,11 +195,11 @@ run "managed_ipv4_without_properties" {
   }
 
   assert {
-    condition = alltrue([
-      for path in ["zones", "properties.publicIPAddressVersion", "properties.publicIPPrefix.id"] :
-      contains(azapi_resource.public_ip_addresses["edge"].replace_triggers_refs, path)
-    ])
-    error_message = "Immutable zones, IP version, and prefix changes must be registered as body-relative replacement triggers."
+    condition = (
+      toset(azapi_resource.public_ip_addresses["edge"].replace_triggers_refs) == toset(["properties.publicIPAddressVersion", "properties.publicIPPrefix.id"]) &&
+      azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.zones == null
+    )
+    error_message = "IP version and prefix must be body replacement triggers; zones must be a configured external trigger so an import in Azure's zone order cannot force replacement."
   }
 
   assert {
@@ -244,7 +244,7 @@ run "managed_ipv4_without_properties" {
   }
 }
 
-run "managed_frontend_with_empty_properties" {
+run "managed_frontend_without_properties" {
   command = apply
 
   variables {
@@ -255,7 +255,6 @@ run "managed_frontend_with_empty_properties" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties            = {}
     }]
   }
 
@@ -266,7 +265,7 @@ run "managed_frontend_with_empty_properties" {
       azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.subnet == null &&
       azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.location == "eastus2"
     )
-    error_message = "An empty properties object must accept the managed ID, and the location replacement trigger must normalize case and spaces."
+    error_message = "An omitted property bag must accept the managed ID, and the location replacement trigger must normalize case and spaces."
   }
 }
 
@@ -281,18 +280,14 @@ run "managed_and_external_frontends" {
       {
         name                  = "managed"
         public_ip_address_key = "edge"
-        properties = {
-          private_link_configuration = {
-            id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/applicationGateways/agw-unit/privateLinkConfigurations/link"
-          }
+        private_link_configuration = {
+          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/applicationGateways/agw-unit/privateLinkConfigurations/link"
         }
       },
       {
         name = "external"
-        properties = {
-          public_ip_address = {
-            id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing-v6"
-          }
+        public_ip_address = {
+          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-external/providers/Microsoft.Network/publicIPAddresses/pip-existing-v6"
         }
       },
       null,
@@ -303,8 +298,8 @@ run "managed_and_external_frontends" {
     condition = (
       toset(keys(output.public_ip_addresses)) == toset(["edge"]) &&
       azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.publicIPAddress.id == azapi_resource.public_ip_addresses["edge"].id &&
-      azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.privateLinkConfiguration.id == var.frontend_ip_configurations[0].properties.private_link_configuration.id &&
-      azapi_resource.this.body.properties.frontendIPConfigurations[1].properties.publicIPAddress.id == var.frontend_ip_configurations[1].properties.public_ip_address.id &&
+      azapi_resource.this.body.properties.frontendIPConfigurations[0].properties.privateLinkConfiguration.id == var.frontend_ip_configurations[0].private_link_configuration.id &&
+      azapi_resource.this.body.properties.frontendIPConfigurations[1].properties.publicIPAddress.id == var.frontend_ip_configurations[1].public_ip_address.id &&
       azapi_resource.this.body.properties.frontendIPConfigurations[2] == null
     )
     error_message = "Managed attachment must preserve other frontend properties, external IDs, and null elements."
@@ -407,10 +402,21 @@ run "inherits_tags_and_gateway_zones" {
     )
     error_message = "Managed IPs must inherit location, resource-group parent, tags, and the gateway zone set."
   }
+
+  assert {
+    condition = (
+      jsonencode(azapi_resource.public_ip_addresses["edge"].body.zones) == jsonencode(["1", "2", "3"]) &&
+      jsonencode(azapi_resource.public_ip_addresses["edge"].replace_triggers_external_values.zones) == jsonencode(["1", "2", "3"])
+    )
+    error_message = "Zones must be sent and compared for replacement in sorted order, independent of input order."
+  }
 }
 
 run "explicit_empty_zones_override_gateway_zones" {
   command = apply
+
+  # Fresh state: zone changes replace real IPs, which mocked providers do not simulate.
+  state_key = "explicit_empty_zones"
 
   variables {
     zones = ["1", "2", "3"]
@@ -427,6 +433,9 @@ run "explicit_empty_zones_override_gateway_zones" {
 
 run "empty_gateway_zones_are_inherited" {
   command = apply
+
+  # Fresh state: zone changes replace real IPs, which mocked providers do not simulate.
+  state_key = "empty_gateway_zones"
 
   variables {
     zones = []
@@ -506,6 +515,38 @@ run "advanced_public_ip_mapping" {
       output.public_ip_addresses["edge"].resource_id == azapi_resource.public_ip_addresses["edge"].id
     )
     error_message = "Managed outputs must expose the Azure-generated address, FQDN, and actual resource ID."
+  }
+}
+
+run "outputs_tolerate_imported_state_without_exports" {
+  command = apply
+
+  # Fresh state with bare mocks: no configured export keys, as after terraform import.
+  state_key = "imported_public_ip"
+  providers = {
+    azapi   = azapi.without_exports
+    azurerm = azurerm
+    modtm   = modtm
+    random  = random
+  }
+
+  variables {
+    public_ip_addresses = {
+      edge = { name = "pip-edge" }
+    }
+    frontend_ip_configurations = [{
+      name                  = "public"
+      public_ip_address_key = "edge"
+    }]
+  }
+
+  assert {
+    condition = (
+      output.public_ip_addresses["edge"].resource_id == azapi_resource.public_ip_addresses["edge"].id &&
+      output.public_ip_addresses["edge"].ip_address == null &&
+      output.public_ip_addresses["edge"].fqdn == null
+    )
+    error_message = "Public IP outputs must not block an import whose state lacks configured response exports."
   }
 }
 
@@ -937,10 +978,8 @@ run "rejects_managed_key_with_external_id" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties = {
-        public_ip_address = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/publicIPAddresses/external"
-        }
+      public_ip_address = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/publicIPAddresses/external"
       }
     }]
   }
@@ -953,8 +992,8 @@ run "rejects_managed_key_with_private_address" {
     public_ip_addresses = { edge = { name = "pip-edge" } }
     frontend_ip_configurations = [{
       name                  = "public"
+      private_ip_address    = "10.0.0.10"
       public_ip_address_key = "edge"
-      properties            = { private_ip_address = "10.0.0.10" }
     }]
   }
   expect_failures = [var.frontend_ip_configurations]
@@ -965,9 +1004,9 @@ run "rejects_managed_key_with_private_allocation" {
   variables {
     public_ip_addresses = { edge = { name = "pip-edge" } }
     frontend_ip_configurations = [{
-      name                  = "public"
-      public_ip_address_key = "edge"
-      properties            = { private_ip_allocation_method = "Dynamic" }
+      name                         = "public"
+      private_ip_allocation_method = "Dynamic"
+      public_ip_address_key        = "edge"
     }]
   }
   expect_failures = [var.frontend_ip_configurations]
@@ -980,10 +1019,8 @@ run "rejects_managed_key_with_subnet" {
     frontend_ip_configurations = [{
       name                  = "public"
       public_ip_address_key = "edge"
-      properties = {
-        subnet = {
-          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
-        }
+      subnet = {
+        id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg-unit/providers/Microsoft.Network/virtualNetworks/vnet-unit/subnets/gateway"
       }
     }]
   }

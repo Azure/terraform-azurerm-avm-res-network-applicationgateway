@@ -45,6 +45,10 @@ resource "azapi_resource" "this" {
     ignore_changes = [body.properties.firewallPolicy]
 
     precondition {
+      condition     = length(local.legacy_properties_wrapper_paths) == 0
+      error_message = "Legacy ARM-style properties wrappers are no longer accepted. Lift every field out of the wrapper and remove it. Invalid consumer paths: ${join(", ", local.legacy_properties_wrapper_paths)}."
+    }
+    precondition {
       condition     = length(local.invalid_child_reference_shape_paths) == 0
       error_message = "Internal child references must use either id or their nested *_key, not both. Redirect path rule references require path_rule_key together with url_path_map_key and cannot combine id with either key. Invalid references: ${join(", ", local.invalid_child_reference_shape_paths)}."
     }

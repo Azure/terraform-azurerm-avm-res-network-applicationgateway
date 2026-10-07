@@ -23,7 +23,7 @@ locals {
   }
   child_path_rule_targets = flatten([
     for path_map in local.normalized_child_collections.url_path_maps : [
-      for rule in coalesce(try(path_map.properties.path_rules, null), []) : {
+      for rule in coalesce(try(path_map.path_rules, null), []) : {
         key           = jsonencode([lower(path_map.name), lower(rule.name)])
         relative_path = "urlPathMaps/${path_map.name}/pathRules/${rule.name}"
       } if rule == null ? false : rule.name != null
