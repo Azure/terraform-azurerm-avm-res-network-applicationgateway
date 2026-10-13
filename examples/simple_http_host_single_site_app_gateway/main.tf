@@ -66,30 +66,26 @@ module "application_gateway" {
   backend_address_pools = [
     {
       name = "appGatewayBackendPool"
-      properties = {
-        backend_addresses = [
-          { ip_address = "100.64.2.6" },
-          { ip_address = "100.64.2.5" },
-        ]
-      }
+      backend_addresses = [
+        { ip_address = "100.64.2.6" },
+        { ip_address = "100.64.2.5" },
+      ]
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "appGatewayBackendHttpSettings"
-      properties = {
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        request_timeout       = 30
-        #Github issue #55 allow custom port for the backend
-        port = 8080
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      name                  = "appGatewayBackendHttpSettings"
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      #Github issue #55 allow custom port for the backend
+      port = 8080
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     }
   ]
@@ -97,10 +93,8 @@ module "application_gateway" {
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.pip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.pip.id
       }
     }
   ]
@@ -110,18 +104,14 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-80"
-      properties = {
-        port = 8080
-      }
+      port = 8080
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -130,35 +120,31 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "appGatewayHttpListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol = "Http"
     }
   ]
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "rule-1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "appGatewayHttpListener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "appGatewayBackendPool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "appGatewayBackendHttpSettings"
-        }
-        priority = 100
+      name      = "rule-1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "appGatewayHttpListener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "appGatewayBackendPool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "appGatewayBackendHttpSettings"
+      }
+      priority = 100
     }
   ]
   sku = {

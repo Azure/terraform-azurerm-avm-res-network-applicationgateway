@@ -93,64 +93,52 @@ module "gateway" {
     max_capacity = 3
   }
   backend_address_pools = [{
-    name       = local.component_names.backendAddressPools
-    properties = { backend_addresses = [] }
+    name              = local.component_names.backendAddressPools
+    backend_addresses = []
   }]
   backend_http_settings_collection = [{
-    name = local.component_names.backendHttpSettingsCollection
-    properties = {
-      cookie_based_affinity = "Disabled"
-      port                  = 80
-      probe                 = local.references.probes
-      protocol              = "Http"
-      request_timeout       = 20
-    }
+    name                  = local.component_names.backendHttpSettingsCollection
+    cookie_based_affinity = "Disabled"
+    port                  = 80
+    probe                 = local.references.probes
+    protocol              = "Http"
+    request_timeout       = 20
   }]
   enable_telemetry = var.enable_telemetry
   frontend_ip_configurations = [{
-    name = local.component_names.frontendIPConfigurations
-    properties = {
-      public_ip_address = { id = azapi_resource.public_ip.id }
-    }
+    name              = local.component_names.frontendIPConfigurations
+    public_ip_address = { id = azapi_resource.public_ip.id }
   }]
   frontend_ports = [{
-    name       = local.component_names.frontendPorts
-    properties = { port = 80 }
+    name = local.component_names.frontendPorts
+    port = 80
   }]
   gateway_ip_configurations = [{
-    name = "GatewaySubnet"
-    properties = {
-      subnet = { id = azapi_resource.subnet.id }
-    }
+    name   = "GatewaySubnet"
+    subnet = { id = azapi_resource.subnet.id }
   }]
   http_listeners = [{
-    name = local.component_names.httpListeners
-    properties = {
-      frontend_ip_configuration = local.references.frontendIPConfigurations
-      frontend_port             = local.references.frontendPorts
-      protocol                  = "Http"
-    }
+    name                      = local.component_names.httpListeners
+    frontend_ip_configuration = local.references.frontendIPConfigurations
+    frontend_port             = local.references.frontendPorts
+    protocol                  = "Http"
   }]
   probes = [{
-    name = local.component_names.probes
-    properties = {
-      host                = "127.0.0.1"
-      interval            = 30
-      path                = "/health"
-      protocol            = "Http"
-      timeout             = 10
-      unhealthy_threshold = 3
-    }
+    name                = local.component_names.probes
+    host                = "127.0.0.1"
+    interval            = 30
+    path                = "/health"
+    protocol            = "Http"
+    timeout             = 10
+    unhealthy_threshold = 3
   }]
   request_routing_rules = [{
-    name = "BasicRule"
-    properties = {
-      backend_address_pool  = local.references.backendAddressPools
-      backend_http_settings = local.references.backendHttpSettingsCollection
-      http_listener         = local.references.httpListeners
-      priority              = 100
-      rule_type             = "Basic"
-    }
+    name                  = "BasicRule"
+    backend_address_pool  = local.references.backendAddressPools
+    backend_http_settings = local.references.backendHttpSettingsCollection
+    http_listener         = local.references.httpListeners
+    priority              = 100
+    rule_type             = "Basic"
   }]
   sku = {
     name = "Standard_v2"

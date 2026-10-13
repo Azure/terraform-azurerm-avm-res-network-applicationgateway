@@ -1,0 +1,377 @@
+{
+  "properties": {
+    "authenticationCertificates": [
+      {
+        "name": "AuthCert",
+        "properties": null
+      }
+    ],
+    "autoscaleConfiguration": null,
+    "backendAddressPools": [
+      {
+        "name": "BackendPool",
+        "properties": null
+      }
+    ],
+    "backendHttpSettingsCollection": [
+      {
+        "name": "BackendHttp",
+        "properties": {
+          "affinityCookieName": null,
+          "authenticationCertificates": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/authenticationCertificates/AuthCert"
+            }
+          ],
+          "connectionDraining": null,
+          "cookieBasedAffinity": null,
+          "dedicatedBackendConnection": null,
+          "hostName": null,
+          "path": null,
+          "pickHostNameFromBackendAddress": null,
+          "port": null,
+          "probe": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/probes/Probe"
+          },
+          "probeEnabled": null,
+          "protocol": null,
+          "requestTimeout": null,
+          "sniName": null,
+          "trustedRootCertificates": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/trustedRootCertificates/RootCert"
+            }
+          ],
+          "validateCertChainAndExpiry": null,
+          "validateSNI": null
+        }
+      }
+    ],
+    "backendSettingsCollection": [
+      {
+        "name": "BackendSetting",
+        "properties": {
+          "enableL4ClientIpPreservation": null,
+          "hostName": null,
+          "pickHostNameFromBackendAddress": null,
+          "port": null,
+          "probe": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/probes/Probe"
+          },
+          "protocol": null,
+          "timeout": null,
+          "trustedRootCertificates": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/trustedRootCertificates/RootCert"
+            }
+          ]
+        }
+      }
+    ],
+    "customErrorConfigurations": null,
+    "enableFips": null,
+    "enableHttp2": null,
+    "entraJWTValidationConfigs": [
+      {
+        "name": "EntraConfig",
+        "properties": null
+      }
+    ],
+    "firewallPolicy": null,
+    "forceFirewallPolicyAssociation": null,
+    "frontendIPConfigurations": [
+      {
+        "name": "FrontendIp",
+        "properties": {
+          "privateIPAddress": null,
+          "privateIPAllocationMethod": null,
+          "privateLinkConfiguration": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/privateLinkConfigurations/PrivateLink"
+          },
+          "publicIPAddress": {
+            "id": "/opaque/public-ip"
+          },
+          "subnet": {
+            "id": "/opaque/frontend-subnet"
+          }
+        }
+      }
+    ],
+    "frontendPorts": [
+      {
+        "name": "FrontendPort",
+        "properties": {
+          "port": 443
+        }
+      }
+    ],
+    "gatewayIPConfigurations": null,
+    "globalConfiguration": null,
+    "httpListeners": [
+      {
+        "name": "HttpListener",
+        "properties": {
+          "customErrorConfigurations": null,
+          "firewallPolicy": {
+            "id": "/opaque/listener-policy"
+          },
+          "frontendIPConfiguration": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/frontendIPConfigurations/FrontendIp"
+          },
+          "frontendPort": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/frontendPorts/FrontendPort"
+          },
+          "hostName": null,
+          "hostNames": null,
+          "protocol": null,
+          "requireServerNameIndication": null,
+          "sslCertificate": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/sslCertificates/SslCert"
+          },
+          "sslProfile": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/sslProfiles/SslProfile"
+          }
+        }
+      }
+    ],
+    "listeners": [
+      {
+        "name": "Listener",
+        "properties": {
+          "frontendIPConfiguration": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/frontendIPConfigurations/FrontendIp"
+          },
+          "frontendPort": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/frontendPorts/FrontendPort"
+          },
+          "hostNames": null,
+          "protocol": null,
+          "sslCertificate": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/sslCertificates/SslCert"
+          },
+          "sslProfile": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/sslProfiles/SslProfile"
+          }
+        }
+      }
+    ],
+    "loadDistributionPolicies": [
+      {
+        "name": "LoadPolicy",
+        "properties": {
+          "loadDistributionAlgorithm": null,
+          "loadDistributionTargets": [
+            {
+              "id": "/opaque/load-target-definition",
+              "name": "LoadTarget",
+              "properties": {
+                "backendAddressPool": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendAddressPools/BackendPool"
+                },
+                "weightPerServer": null
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "privateLinkConfigurations": [
+      {
+        "name": "PrivateLink",
+        "properties": {
+          "ipConfigurations": [
+            {
+              "id": "/opaque/private-link-ip-definition",
+              "name": "PrivateIp",
+              "properties": {
+                "primary": null,
+                "privateIPAddress": null,
+                "privateIPAllocationMethod": null,
+                "subnet": {
+                  "id": "/opaque/private-link-subnet"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "probes": [
+      {
+        "name": "Probe",
+        "properties": null
+      }
+    ],
+    "redirectConfigurations": [
+      {
+        "name": "Redirect",
+        "properties": {
+          "includePath": null,
+          "includeQueryString": null,
+          "pathRules": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/urlPathMaps/PathMap/pathRules/PathRule"
+            }
+          ],
+          "redirectType": null,
+          "requestRoutingRules": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/requestRoutingRules/RouteRule"
+            }
+          ],
+          "targetListener": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/httpListeners/HttpListener"
+          },
+          "targetUrl": null,
+          "urlPathMaps": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/urlPathMaps/PathMap"
+            }
+          ]
+        }
+      }
+    ],
+    "requestRoutingRules": [
+      {
+        "name": "RouteRule",
+        "properties": {
+          "backendAddressPool": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendAddressPools/BackendPool"
+          },
+          "backendHttpSettings": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendHttpSettingsCollection/BackendHttp"
+          },
+          "entraJWTValidationConfig": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/entraJWTValidationConfigs/EntraConfig"
+          },
+          "httpListener": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/httpListeners/HttpListener"
+          },
+          "loadDistributionPolicy": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/loadDistributionPolicies/LoadPolicy"
+          },
+          "priority": null,
+          "redirectConfiguration": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/redirectConfigurations/Redirect"
+          },
+          "rewriteRuleSet": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/rewriteRuleSets/RewriteSet"
+          },
+          "ruleType": null,
+          "urlPathMap": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/urlPathMaps/PathMap"
+          }
+        }
+      }
+    ],
+    "rewriteRuleSets": [
+      {
+        "name": "RewriteSet",
+        "properties": null
+      }
+    ],
+    "routingRules": [
+      {
+        "name": "RoutingRule",
+        "properties": {
+          "backendAddressPool": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendAddressPools/BackendPool"
+          },
+          "backendSettings": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendSettingsCollection/BackendSetting"
+          },
+          "listener": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/listeners/Listener"
+          },
+          "priority": 1,
+          "ruleType": null
+        }
+      }
+    ],
+    "sku": null,
+    "sslCertificates": [
+      {
+        "name": "SslCert",
+        "properties": null
+      }
+    ],
+    "sslPolicy": null,
+    "sslProfiles": [
+      {
+        "name": "SslProfile",
+        "properties": {
+          "clientAuthConfiguration": null,
+          "sslPolicy": null,
+          "trustedClientCertificates": [
+            {
+              "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/trustedClientCertificates/ClientCert"
+            }
+          ]
+        }
+      }
+    ],
+    "trustedClientCertificates": [
+      {
+        "name": "ClientCert",
+        "properties": null
+      }
+    ],
+    "trustedRootCertificates": [
+      {
+        "name": "RootCert",
+        "properties": null
+      }
+    ],
+    "urlPathMaps": [
+      {
+        "name": "PathMap",
+        "properties": {
+          "defaultBackendAddressPool": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendAddressPools/BackendPool"
+          },
+          "defaultBackendHttpSettings": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendHttpSettingsCollection/BackendHttp"
+          },
+          "defaultLoadDistributionPolicy": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/loadDistributionPolicies/LoadPolicy"
+          },
+          "defaultRedirectConfiguration": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/redirectConfigurations/Redirect"
+          },
+          "defaultRewriteRuleSet": {
+            "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/rewriteRuleSets/RewriteSet"
+          },
+          "pathRules": [
+            {
+              "id": "/opaque/path-rule-definition",
+              "name": "PathRule",
+              "properties": {
+                "backendAddressPool": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendAddressPools/BackendPool"
+                },
+                "backendHttpSettings": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/backendHttpSettingsCollection/BackendHttp"
+                },
+                "firewallPolicy": {
+                  "id": "/opaque/path-rule-policy"
+                },
+                "loadDistributionPolicy": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/loadDistributionPolicies/LoadPolicy"
+                },
+                "paths": null,
+                "redirectConfiguration": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/redirectConfigurations/Redirect"
+                },
+                "rewriteRuleSet": {
+                  "id": "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/rewriteRuleSets/RewriteSet"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "webApplicationFirewallConfiguration": null
+  },
+  "zones": null
+}

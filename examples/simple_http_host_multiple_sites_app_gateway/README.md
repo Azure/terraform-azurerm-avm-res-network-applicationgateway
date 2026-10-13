@@ -74,29 +74,25 @@ module "application_gateway" {
   # Mandatory Input
   backend_address_pools = [
     {
-      name       = "contosoPool"
-      properties = {}
+      name = "contosoPool"
     },
     {
-      name       = "fabrikamPool"
-      properties = {}
+      name = "fabrikamPool"
     }
   ]
   # Backend http settings configuration for the application gateway
   # Mandatory Input
   backend_http_settings_collection = [
     {
-      name = "appGatewayBackendHttpSettings"
-      properties = {
-        port                  = 80
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        path                  = "/"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      name                  = "appGatewayBackendHttpSettings"
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      path                  = "/"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     }
   ]
@@ -113,10 +109,8 @@ module "application_gateway" {
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.pip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.pip.id
       }
     }
   ]
@@ -127,24 +121,18 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-80"
-      properties = {
-        port = 80
-      }
+      port = 80
     },
     {
       name = "port8080"
-      properties = {
-        port = 8080
-      }
+      port = 8080
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -153,77 +141,67 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "appGatewayHttpListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol = "Http"
     },
     {
       name = "contosoListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol  = "Http"
-        host_name = "www.contoso.com"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol  = "Http"
+      host_name = "www.contoso.com"
     },
     {
       name = "fabrikamListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol   = "Http"
-        host_names = ["www.fabrikam.com", "www.fabrikam.org"]
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol   = "Http"
+      host_names = ["www.fabrikam.com", "www.fabrikam.org"]
     }
   ]
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "contosoRule"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "contosoListener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "contosoPool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "appGatewayBackendHttpSettings"
-        }
-        priority = 100
+      name      = "contosoRule"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "contosoListener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "contosoPool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "appGatewayBackendHttpSettings"
+      }
+      priority = 100
     },
     {
-      name = "fabrikamRule"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "fabrikamListener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "fabrikamPool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "appGatewayBackendHttpSettings"
-        }
-        priority = 200
+      name      = "fabrikamRule"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "fabrikamListener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "fabrikamPool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "appGatewayBackendHttpSettings"
+      }
+      priority = 200
     }
   ]
   # WAF : Azure Application Gateways v2 are always deployed in a highly available fashion with multiple instances by default. Enabling autoscale ensures the service is not reliant on manual intervention for scaling.

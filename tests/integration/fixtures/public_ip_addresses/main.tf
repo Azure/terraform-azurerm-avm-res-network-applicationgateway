@@ -107,56 +107,48 @@ module "gateway" {
   }]
   gateway_ip_configurations = [{
     name = "gateway"
-    properties = {
-      subnet = {
-        id = azapi_resource.subnet.id
-      }
+    subnet = {
+      id = azapi_resource.subnet.id
     }
   }]
   frontend_ports = [{
-    name       = "http"
-    properties = { port = 80 }
+    name = "http"
+    port = 80
   }]
   backend_address_pools = [{
-    name       = "backend"
-    properties = { backend_addresses = [] }
+    backend_addresses = []
+    name              = "backend"
   }]
   backend_http_settings_collection = [{
-    name = "http"
-    properties = {
-      cookie_based_affinity = "Disabled"
-      port                  = 80
-      protocol              = "Http"
-      request_timeout       = 20
-    }
+    cookie_based_affinity = "Disabled"
+    name                  = "http"
+    port                  = 80
+    protocol              = "Http"
+    request_timeout       = 20
   }]
   http_listeners = [{
     name = "http"
-    properties = {
-      frontend_ip_configuration = {
-        id = "${local.gateway_resource_id}/frontendIPConfigurations/public"
-      }
-      frontend_port = {
-        id = "${local.gateway_resource_id}/frontendPorts/http"
-      }
-      protocol = "Http"
+    frontend_ip_configuration = {
+      id = "${local.gateway_resource_id}/frontendIPConfigurations/public"
     }
+    frontend_port = {
+      id = "${local.gateway_resource_id}/frontendPorts/http"
+    }
+    protocol = "Http"
   }]
   request_routing_rules = [{
     name = "http"
-    properties = {
-      backend_address_pool = {
-        id = "${local.gateway_resource_id}/backendAddressPools/backend"
-      }
-      backend_http_settings = {
-        id = "${local.gateway_resource_id}/backendHttpSettingsCollection/http"
-      }
-      http_listener = {
-        id = "${local.gateway_resource_id}/httpListeners/http"
-      }
-      priority  = 100
-      rule_type = "Basic"
+    backend_address_pool = {
+      id = "${local.gateway_resource_id}/backendAddressPools/backend"
     }
+    backend_http_settings = {
+      id = "${local.gateway_resource_id}/backendHttpSettingsCollection/http"
+    }
+    http_listener = {
+      id = "${local.gateway_resource_id}/httpListeners/http"
+    }
+    priority  = 100
+    rule_type = "Basic"
   }]
   sku = {
     capacity = 1

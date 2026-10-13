@@ -66,12 +66,10 @@ module "application_gateway" {
   backend_address_pools = [
     {
       name = "appGatewayBackendPool"
-      properties = {
-        backend_addresses = [
-          { ip_address = "100.64.2.6" },
-          { ip_address = "100.64.2.5" },
-        ]
-      }
+      backend_addresses = [
+        { ip_address = "100.64.2.6" },
+        { ip_address = "100.64.2.5" },
+      ]
     }
   ]
   # Backend http settings configuration for the application gateway
@@ -79,16 +77,14 @@ module "application_gateway" {
   backend_http_settings_collection = [
     {
       name = "appGatewayBackendHttpSettings"
-      properties = {
-        #Github issue #55 allow custom port for the backend
-        port                  = 80
-        protocol              = "Http"
-        cookie_based_affinity = "Disabled"
-        request_timeout       = 30
-        connection_draining = {
-          enabled              = true
-          drain_timeout_in_sec = 300
-        }
+      #Github issue #55 allow custom port for the backend
+      port                  = 80
+      protocol              = "Http"
+      cookie_based_affinity = "Disabled"
+      request_timeout       = 30
+      connection_draining = {
+        enabled              = true
+        drain_timeout_in_sec = 300
       }
     }
   ]
@@ -96,10 +92,8 @@ module "application_gateway" {
   frontend_ip_configurations = [
     {
       name = "appGatewayFrontendPublicIP"
-      properties = {
-        public_ip_address = {
-          id = azurerm_public_ip.pip.id
-        }
+      public_ip_address = {
+        id = azurerm_public_ip.pip.id
       }
     }
   ]
@@ -109,18 +103,14 @@ module "application_gateway" {
   frontend_ports = [
     {
       name = "frontend-port-80"
-      properties = {
-        port = 8080
-      }
+      port = 8080
     }
   ]
   gateway_ip_configurations = [
     {
       name = "appGatewayIpConfig"
-      properties = {
-        subnet = {
-          id = azurerm_subnet.backend.id
-        }
+      subnet = {
+        id = azurerm_subnet.backend.id
       }
     }
   ]
@@ -129,85 +119,79 @@ module "application_gateway" {
   http_listeners = [
     {
       name = "appGatewayHttpListener"
-      properties = {
-        frontend_ip_configuration = {
-          frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
-        }
-        frontend_port = {
-          frontend_port_key = "frontend-port-80"
-        }
-        protocol = "Http"
+      frontend_ip_configuration = {
+        frontend_ip_configuration_key = "appGatewayFrontendPublicIP"
       }
+      frontend_port = {
+        frontend_port_key = "frontend-port-80"
+      }
+      protocol = "Http"
     }
   ]
   # Routing rules configuration for the backend pool
   # Mandatory Input
   request_routing_rules = [
     {
-      name = "rule-1"
-      properties = {
-        rule_type = "Basic"
-        http_listener = {
-          http_listener_key = "appGatewayHttpListener"
-        }
-        backend_address_pool = {
-          backend_address_pool_key = "appGatewayBackendPool"
-        }
-        backend_http_settings = {
-          backend_http_settings_key = "appGatewayBackendHttpSettings"
-        }
-        rewrite_rule_set = {
-          rewrite_rule_set_key = "my-rewrite-rule-set"
-        }
-        priority = 100
+      name      = "rule-1"
+      rule_type = "Basic"
+      http_listener = {
+        http_listener_key = "appGatewayHttpListener"
       }
+      backend_address_pool = {
+        backend_address_pool_key = "appGatewayBackendPool"
+      }
+      backend_http_settings = {
+        backend_http_settings_key = "appGatewayBackendHttpSettings"
+      }
+      rewrite_rule_set = {
+        rewrite_rule_set_key = "my-rewrite-rule-set"
+      }
+      priority = 100
     }
   ]
   rewrite_rule_sets = [
     {
       name = "my-rewrite-rule-set"
-      properties = {
-        rewrite_rules = [
-          {
-            name          = "rr-x-forwarded-for"
-            rule_sequence = 102
-            action_set = {
-              request_header_configurations = [
-                {
-                  header_name  = "X-Forwarded-For"
-                  header_value = "{var_client_ip}"
-                }
-              ]
-            }
-          },
-          {
-            name          = "rr-blog-post-rewrite"
-            rule_sequence = 103
-            # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
-            conditions = [
+      rewrite_rules = [
+        {
+          name          = "rr-x-forwarded-for"
+          rule_sequence = 102
+          action_set = {
+            request_header_configurations = [
               {
-                variable    = "var_uri_path"
-                pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
-                ignore_case = false
-                negate      = false
+                header_name  = "X-Forwarded-For"
+                header_value = "{var_client_ip}"
               }
             ]
-            action_set = {
-              response_header_configurations = [
-                {
-                  # example frame embedding protection
-                  header_name  = "X-Frame-Options"
-                  header_value = "DENY"
-                }
-              ]
-              url_configuration = {
-                modified_path = "/blog/{var_uri_path_1}/{var_uri_path_2}"
-                reroute       = false
+          }
+        },
+        {
+          name          = "rr-blog-post-rewrite"
+          rule_sequence = 103
+          # this example will rewrite the URL path from blogpost.aspx?id=X&title=Y to /blog/{id}/{title}
+          conditions = [
+            {
+              variable    = "var_uri_path"
+              pattern     = ".*blogpost.aspx\\?id=(.*)&title=(.*)"
+              ignore_case = false
+              negate      = false
+            }
+          ]
+          action_set = {
+            response_header_configurations = [
+              {
+                # example frame embedding protection
+                header_name  = "X-Frame-Options"
+                header_value = "DENY"
               }
+            ]
+            url_configuration = {
+              modified_path = "/blog/{var_uri_path_1}/{var_uri_path_2}"
+              reroute       = false
             }
           }
-        ]
-      }
+        }
+      ]
     }
   ]
   sku = {

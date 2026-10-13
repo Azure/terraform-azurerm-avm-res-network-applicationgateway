@@ -17,136 +17,106 @@ run "resolves_all_internal_reference_families" {
     authentication_certificates = [{ name = "AuthCert" }]
     backend_address_pools       = [{ name = "BackendPool" }]
     backend_http_settings_collection = [{
-      name = "BackendHttp"
-      properties = {
-        authentication_certificates = [{ authentication_certificate_key = "authcert" }]
-        probe                       = { probe_key = "PROBE" }
-        trusted_root_certificates   = [{ trusted_root_certificate_key = "rootcert" }]
-      }
+      name                        = "BackendHttp"
+      authentication_certificates = [{ authentication_certificate_key = "authcert" }]
+      probe                       = { probe_key = "PROBE" }
+      trusted_root_certificates   = [{ trusted_root_certificate_key = "rootcert" }]
     }]
     backend_settings_collection = [{
-      name = "BackendSetting"
-      properties = {
-        probe                     = { probe_key = "probe" }
-        trusted_root_certificates = [{ trusted_root_certificate_key = "ROOTCERT" }]
-      }
+      name                      = "BackendSetting"
+      probe                     = { probe_key = "probe" }
+      trusted_root_certificates = [{ trusted_root_certificate_key = "ROOTCERT" }]
     }]
     entra_jwt_validation_configs = [{ name = "EntraConfig" }]
     frontend_ip_configurations = [{
-      name = "FrontendIp"
-      properties = {
-        private_link_configuration = { private_link_configuration_key = "privatelink" }
-        public_ip_address          = { id = "/opaque/public-ip" }
-        subnet                     = { id = "/opaque/frontend-subnet" }
-      }
+      name                       = "FrontendIp"
+      private_link_configuration = { private_link_configuration_key = "privatelink" }
+      public_ip_address          = { id = "/opaque/public-ip" }
+      subnet                     = { id = "/opaque/frontend-subnet" }
     }]
-    frontend_ports = [{ name = "FrontendPort", properties = { port = 443 } }]
+    frontend_ports = [{ name = "FrontendPort", port = 443 }]
     http_listeners = [{
-      name = "HttpListener"
-      properties = {
-        firewall_policy           = { id = "/opaque/listener-policy" }
-        frontend_ip_configuration = { frontend_ip_configuration_key = "frontendip" }
-        frontend_port             = { frontend_port_key = "FRONTENDPORT" }
-        ssl_certificate           = { ssl_certificate_key = "sslcert" }
-        ssl_profile               = { ssl_profile_key = "SSLPROFILE" }
-      }
+      name                      = "HttpListener"
+      firewall_policy           = { id = "/opaque/listener-policy" }
+      frontend_ip_configuration = { frontend_ip_configuration_key = "frontendip" }
+      frontend_port             = { frontend_port_key = "FRONTENDPORT" }
+      ssl_certificate           = { ssl_certificate_key = "sslcert" }
+      ssl_profile               = { ssl_profile_key = "SSLPROFILE" }
     }]
     listeners = [{
-      name = "Listener"
-      properties = {
-        frontend_ip_configuration = { frontend_ip_configuration_key = "FRONTENDIP" }
-        frontend_port             = { frontend_port_key = "frontendport" }
-        ssl_certificate           = { ssl_certificate_key = "SSLCERT" }
-        ssl_profile               = { ssl_profile_key = "sslprofile" }
-      }
+      name                      = "Listener"
+      frontend_ip_configuration = { frontend_ip_configuration_key = "FRONTENDIP" }
+      frontend_port             = { frontend_port_key = "frontendport" }
+      ssl_certificate           = { ssl_certificate_key = "SSLCERT" }
+      ssl_profile               = { ssl_profile_key = "sslprofile" }
     }]
     load_distribution_policies = [{
       name = "LoadPolicy"
-      properties = {
-        load_distribution_targets = [{
-          id   = "/opaque/load-target-definition"
-          name = "LoadTarget"
-          properties = {
-            backend_address_pool = { backend_address_pool_key = "backendpool" }
-          }
-        }]
-      }
+      load_distribution_targets = [{
+        backend_address_pool = { backend_address_pool_key = "backendpool" }
+        id                   = "/opaque/load-target-definition"
+        name                 = "LoadTarget"
+      }]
     }]
     private_link_configurations = [{
       name = "PrivateLink"
-      properties = {
-        ip_configurations = [{
-          id   = "/opaque/private-link-ip-definition"
-          name = "PrivateIp"
-          properties = {
-            subnet = { id = "/opaque/private-link-subnet" }
-          }
-        }]
-      }
+      ip_configurations = [{
+        id     = "/opaque/private-link-ip-definition"
+        name   = "PrivateIp"
+        subnet = { id = "/opaque/private-link-subnet" }
+      }]
     }]
     probes = [{ name = "Probe" }]
     redirect_configurations = [{
-      name = "Redirect"
-      properties = {
-        path_rules            = [{ path_rule_key = "PATHRULE", url_path_map_key = "pathmap" }]
-        request_routing_rules = [{ request_routing_rule_key = "ROUTERULE" }]
-        target_listener       = { http_listener_key = "httplistener" }
-        url_path_maps         = [{ url_path_map_key = "PATHMAP" }]
-      }
+      name                  = "Redirect"
+      path_rules            = [{ path_rule_key = "PATHRULE", url_path_map_key = "pathmap" }]
+      request_routing_rules = [{ request_routing_rule_key = "ROUTERULE" }]
+      target_listener       = { http_listener_key = "httplistener" }
+      url_path_maps         = [{ url_path_map_key = "PATHMAP" }]
     }]
     request_routing_rules = [{
-      name = "RouteRule"
-      properties = {
-        backend_address_pool        = { backend_address_pool_key = "BACKENDPOOL" }
-        backend_http_settings       = { backend_http_settings_key = "backendhttp" }
-        entra_jwt_validation_config = { entra_jwt_validation_config_key = "ENTRACONFIG" }
-        http_listener               = { http_listener_key = "HTTPListener" }
-        load_distribution_policy    = { load_distribution_policy_key = "loadpolicy" }
-        redirect_configuration      = { redirect_configuration_key = "REDIRECT" }
-        rewrite_rule_set            = { rewrite_rule_set_key = "rewriteset" }
-        url_path_map                = { url_path_map_key = "pathmap" }
-      }
+      name                        = "RouteRule"
+      backend_address_pool        = { backend_address_pool_key = "BACKENDPOOL" }
+      backend_http_settings       = { backend_http_settings_key = "backendhttp" }
+      entra_jwt_validation_config = { entra_jwt_validation_config_key = "ENTRACONFIG" }
+      http_listener               = { http_listener_key = "HTTPListener" }
+      load_distribution_policy    = { load_distribution_policy_key = "loadpolicy" }
+      redirect_configuration      = { redirect_configuration_key = "REDIRECT" }
+      rewrite_rule_set            = { rewrite_rule_set_key = "rewriteset" }
+      url_path_map                = { url_path_map_key = "pathmap" }
     }]
     rewrite_rule_sets = [{ name = "RewriteSet" }]
     routing_rules = [{
-      name = "RoutingRule"
-      properties = {
-        backend_address_pool = { backend_address_pool_key = "backendpool" }
-        backend_settings     = { backend_settings_key = "BACKENDSETTING" }
-        listener             = { listener_key = "listener" }
-        priority             = 1
-      }
+      name                 = "RoutingRule"
+      backend_address_pool = { backend_address_pool_key = "backendpool" }
+      backend_settings     = { backend_settings_key = "BACKENDSETTING" }
+      listener             = { listener_key = "listener" }
+      priority             = 1
     }]
     ssl_certificates = [{ name = "SslCert" }]
     ssl_profiles = [{
-      name = "SslProfile"
-      properties = {
-        trusted_client_certificates = [{ trusted_client_certificate_key = "clientcert" }]
-      }
+      name                        = "SslProfile"
+      trusted_client_certificates = [{ trusted_client_certificate_key = "clientcert" }]
     }]
     trusted_client_certificates = [{ name = "ClientCert" }]
     trusted_root_certificates   = [{ name = "RootCert" }]
     url_path_maps = [{
-      name = "PathMap"
-      properties = {
-        default_backend_address_pool     = { backend_address_pool_key = "backendpool" }
-        default_backend_http_settings    = { backend_http_settings_key = "BACKENDHTTP" }
-        default_load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
-        default_redirect_configuration   = { redirect_configuration_key = "redirect" }
-        default_rewrite_rule_set         = { rewrite_rule_set_key = "REWRITESET" }
-        path_rules = [{
-          id   = "/opaque/path-rule-definition"
-          name = "PathRule"
-          properties = {
-            backend_address_pool     = { backend_address_pool_key = "backendpool" }
-            backend_http_settings    = { backend_http_settings_key = "backendhttp" }
-            firewall_policy          = { id = "/opaque/path-rule-policy" }
-            load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
-            redirect_configuration   = { redirect_configuration_key = "redirect" }
-            rewrite_rule_set         = { rewrite_rule_set_key = "rewriteset" }
-          }
-        }]
-      }
+      name                             = "PathMap"
+      default_backend_address_pool     = { backend_address_pool_key = "backendpool" }
+      default_backend_http_settings    = { backend_http_settings_key = "BACKENDHTTP" }
+      default_load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
+      default_redirect_configuration   = { redirect_configuration_key = "redirect" }
+      default_rewrite_rule_set         = { rewrite_rule_set_key = "REWRITESET" }
+      path_rules = [{
+        backend_address_pool     = { backend_address_pool_key = "backendpool" }
+        backend_http_settings    = { backend_http_settings_key = "backendhttp" }
+        firewall_policy          = { id = "/opaque/path-rule-policy" }
+        id                       = "/opaque/path-rule-definition"
+        load_distribution_policy = { load_distribution_policy_key = "loadpolicy" }
+        name                     = "PathRule"
+        redirect_configuration   = { redirect_configuration_key = "redirect" }
+        rewrite_rule_set         = { rewrite_rule_set_key = "rewriteset" }
+      }]
     }]
   }
 
@@ -195,6 +165,11 @@ run "resolves_all_internal_reference_families" {
       azapi_resource.this.body.properties.urlPathMaps[0].properties.pathRules[0].properties.rewriteRuleSet.id == "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/Gateway/rewriteRuleSets/RewriteSet",
     ])
     error_message = "Every internal reference family should resolve case-insensitively to the canonical declared child name."
+  }
+
+  assert {
+    condition     = jsonencode(azapi_resource.this.body) == jsonencode(jsondecode(file("${path.module}/tests/unit/fixtures/named_references_arm_body.json")))
+    error_message = "The migrated flat named-reference configuration must render exactly the same complete ARM body as the merged pre-flattening baseline."
   }
 
   assert {

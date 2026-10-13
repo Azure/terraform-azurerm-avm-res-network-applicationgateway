@@ -32,18 +32,19 @@ resource "azapi_resource" "public_ip_addresses" {
       name = "Standard"
       tier = "Regional"
     }
-    zones = each.value.zones == null ? (var.zones == null ? null : sort(var.zones)) : sort(each.value.zones)
+    zones = local.public_ip_address_zones[each.key]
   }
   ignore_body_changes  = length(var.ignore_body_changes.network_public_ip_addresses) > 0 ? var.ignore_body_changes.network_public_ip_addresses : null
   ignore_null_property = true
   # AzAPI does not otherwise require replacement when an immutable location changes.
+  # Immutable zones are compared as their sorted configured value; see lifecycle below.
   replace_triggers_external_values = {
     location = lower(replace(var.location, " ", ""))
+    zones    = local.public_ip_address_zones[each.key]
   }
   replace_triggers_refs = [
     "properties.publicIPAddressVersion",
     "properties.publicIPPrefix.id",
-    "zones",
   ]
   response_export_values = {
     fqdn       = "properties.dnsSettings.fqdn"
@@ -65,5 +66,11 @@ resource "azapi_resource" "public_ip_addresses" {
       update = timeouts.value.update
       delete = timeouts.value.delete
     }
+  }
+
+  lifecycle {
+    # Zone changes replace the IP through replace_triggers_external_values; Azure keeps the
+    # stored order of an imported IP's zones, so comparing the body would never converge.
+    ignore_changes = [body.zones]
   }
 }

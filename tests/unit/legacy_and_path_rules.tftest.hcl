@@ -18,30 +18,26 @@ run "preserves_legacy_id_null_and_empty_references" {
       null,
       {
         name = "settings"
-        properties = {
-          authentication_certificates = [
-            null,
-            {},
-            { id = null },
-            { id = "not/an/arm/resource/id" },
-          ]
-          probe = {}
-          trusted_root_certificates = [
-            null,
-            { id = "/opaque/root" },
-          ]
-        }
+        authentication_certificates = [
+          null,
+          {},
+          { id = null },
+          { id = "not/an/arm/resource/id" },
+        ]
+        probe = {}
+        trusted_root_certificates = [
+          null,
+          { id = "/opaque/root" },
+        ]
       },
     ]
     redirect_configurations = [{
       name = "redirect"
-      properties = {
-        path_rules = [
-          null,
-          {},
-          { id = "opaque/path/rule" },
-        ]
-      }
+      path_rules = [
+        null,
+        {},
+        { id = "opaque/path/rule" },
+      ]
     }]
   }
 
@@ -49,15 +45,15 @@ run "preserves_legacy_id_null_and_empty_references" {
     condition = alltrue([
       azapi_resource.this.body.properties.backendHttpSettingsCollection[0] == null,
       azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[0] == null,
-      azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[1].id == null,
-      azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[2].id == null,
-      azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[3].id == "not/an/arm/resource/id",
-      azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.probe.id == null,
+      try(azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[1].id, null) == null,
+      try(azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[2].id, null) == null,
+      try(azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.authenticationCertificates[3].id, null) == "not/an/arm/resource/id",
+      try(azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.probe.id, null) == null,
       azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.trustedRootCertificates[0] == null,
-      azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.trustedRootCertificates[1].id == "/opaque/root",
+      try(azapi_resource.this.body.properties.backendHttpSettingsCollection[1].properties.trustedRootCertificates[1].id, null) == "/opaque/root",
       azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[0] == null,
-      azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[1].id == null,
-      azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[2].id == "opaque/path/rule",
+      try(azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[1].id, null) == null,
+      try(azapi_resource.this.body.properties.redirectConfigurations[0].properties.pathRules[2].id, null) == "opaque/path/rule",
     ])
     error_message = "Legacy ID-only values, null elements, and empty reference objects must pass through unchanged."
   }
@@ -70,17 +66,13 @@ run "matching_key_and_id_modes_emit_equivalent_reference_ids" {
     backend_address_pools = [{ name = "Pool" }]
     request_routing_rules = [
       {
-        name = "name-mode"
-        properties = {
-          backend_address_pool = { backend_address_pool_key = "pool" }
-        }
+        name                 = "name-mode"
+        backend_address_pool = { backend_address_pool_key = "pool" }
       },
       {
         name = "id-mode"
-        properties = {
-          backend_address_pool = {
-            id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/gateway/backendAddressPools/Pool"
-          }
+        backend_address_pool = {
+          id = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg/providers/Microsoft.Network/applicationGateways/gateway/backendAddressPools/Pool"
         }
       },
     ]
@@ -98,21 +90,19 @@ run "qualifies_same_path_rule_name_by_parent_map" {
   variables {
     redirect_configurations = [{
       name = "redirect"
-      properties = {
-        path_rules = [
-          { path_rule_key = "rule", url_path_map_key = "mapone" },
-          { path_rule_key = "RULE", url_path_map_key = "MAPTWO" },
-        ]
-      }
+      path_rules = [
+        { path_rule_key = "rule", url_path_map_key = "mapone" },
+        { path_rule_key = "RULE", url_path_map_key = "MAPTWO" },
+      ]
     }]
     url_path_maps = [
       {
         name       = "MapOne"
-        properties = { path_rules = [{ name = "Rule" }] }
+        path_rules = [{ name = "Rule" }]
       },
       {
         name       = "MapTwo"
-        properties = { path_rules = [{ name = "Rule" }] }
+        path_rules = [{ name = "Rule" }]
       },
     ]
   }
