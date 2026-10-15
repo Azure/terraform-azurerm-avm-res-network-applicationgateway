@@ -7,16 +7,26 @@ mock_provider "azapi" {
       }
     }
   }
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 
 mock_provider "azapi" {
   alias = "without_exports"
+  mock_data "azapi_client_config" {
+    defaults = {
+      subscription_resource_id = "/subscriptions/00000000-0000-0000-0000-000000000000"
+    }
+  }
 }
 
 # The module still declares AzureRM for its legacy support resources.
 mock_provider "azurerm" {}
+
 mock_provider "random" {}
-mock_provider "modtm" {}
 
 variables {
   enable_telemetry = false
@@ -526,8 +536,8 @@ run "outputs_tolerate_imported_state_without_exports" {
   providers = {
     azapi   = azapi.without_exports
     azurerm = azurerm
-    modtm   = modtm
-    random  = random
+
+
   }
 
   variables {
