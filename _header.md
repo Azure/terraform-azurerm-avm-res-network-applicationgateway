@@ -154,6 +154,13 @@ retained identity, not a complete zero-change plan. Real upgrade/state-transfer
 and dual-stack deployment coverage are still required before claiming those
 paths are production-proven.
 
+The integration fixture creates and attaches a network security group when
+creating its gateway subnet, including where Azure Policy requires an NSG.
+It permits HTTP client traffic and Application Gateway v2 management traffic,
+while preserving Azure's default load-balancer probe and outbound rules.
+Provider-mocked unit coverage verifies this network configuration without
+deploying Azure resources.
+
 ## Reference gateway components by key or ID
 
 Nested reference objects for components defined in the same module can use a
