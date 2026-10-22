@@ -2,10 +2,12 @@ terraform {
   required_version = ">= 1.12, < 2.0"
 
   required_providers {
+    # tflint-ignore: terraform_unused_required_providers
     azapi = {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
+    # tflint-ignore: terraform_unused_required_providers
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.117, < 5.0"
@@ -24,12 +26,10 @@ resource "random_id" "reference" {
 module "sut" {
   source = "../../../.."
 
-  enable_telemetry            = false
   location                    = "westus2"
   name                        = "gateway"
   parent_id                   = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg"
   authentication_certificates = [{ name = "KnownCertificate" }]
-  probes                      = [{ name = "KnownProbe" }]
   backend_http_settings_collection = [{
     name = "settings"
     authentication_certificates = [{
@@ -37,6 +37,8 @@ module "sut" {
     }]
     probe = { probe_key = "knownprobe" }
   }]
+  enable_telemetry = false
+  probes           = [{ name = "KnownProbe" }]
 }
 
 output "gateway_name" {

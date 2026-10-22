@@ -6,6 +6,7 @@ terraform {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
+    # tflint-ignore: terraform_unused_required_providers
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.117, < 5.0"
@@ -30,19 +31,19 @@ locals {
 }
 
 resource "azapi_resource" "resource_group" {
-  type                   = "Microsoft.Resources/resourceGroups@2024-03-01"
+  location               = var.location
   name                   = "rg-avm-pip-${random_id.suffix.hex}"
   parent_id              = "/subscriptions/${data.azapi_client_config.current.subscription_id}"
-  location               = var.location
+  type                   = "Microsoft.Resources/resourceGroups@2024-03-01"
   body                   = {}
   response_export_values = []
 }
 
 resource "azapi_resource" "virtual_network" {
-  type      = "Microsoft.Network/virtualNetworks@2025-03-01"
+  location  = var.location
   name      = "vnet-${random_id.suffix.hex}"
   parent_id = azapi_resource.resource_group.id
-  location  = var.location
+  type      = "Microsoft.Network/virtualNetworks@2025-03-01"
   body = {
     properties = {
       addressSpace = {
@@ -54,9 +55,9 @@ resource "azapi_resource" "virtual_network" {
 }
 
 resource "azapi_resource" "subnet" {
-  type      = "Microsoft.Network/virtualNetworks/subnets@2025-03-01"
   name      = "application-gateway"
   parent_id = azapi_resource.virtual_network.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2025-03-01"
   body = {
     properties = {
       addressPrefix = "10.87.0.0/24"
@@ -76,34 +77,9 @@ resource "azapi_resource" "subnet" {
 module "gateway" {
   source = "../../../.."
 
-  enable_telemetry = false
-  location         = var.location
-  name             = local.gateway_name
-  parent_id        = azapi_resource.resource_group.id
-  zones            = ["1"]
-  tags = {
-    purpose = "managed-public-ip-integration"
-  }
-  public_ip_addresses = {
-    edge = {
-      name              = local.public_ip_name
-      domain_name_label = "avm-pip-${random_id.suffix.hex}"
-    }
-  }
-  frontend_ip_configurations = [{
-    name                  = "public"
-    public_ip_address_key = "edge"
-  }]
-  gateway_ip_configurations = [{
-    name = "gateway"
-    subnet = {
-      id = azapi_resource.subnet.id
-    }
-  }]
-  frontend_ports = [{
-    name = "http"
-    port = 80
-  }]
+  location  = var.location
+  name      = local.gateway_name
+  parent_id = azapi_resource.resource_group.id
   backend_address_pools = [{
     backend_addresses = []
     name              = "backend"
@@ -115,6 +91,21 @@ module "gateway" {
     protocol              = "Http"
     request_timeout       = 20
   }]
+  enable_telemetry = false
+  frontend_ip_configurations = [{
+    name                  = "public"
+    public_ip_address_key = "edge"
+  }]
+  frontend_ports = [{
+    name = "http"
+    port = 80
+  }]
+  gateway_ip_configurations = [{
+    name = "gateway"
+    subnet = {
+      id = azapi_resource.subnet.id
+    }
+  }]
   http_listeners = [{
     name = "http"
     frontend_ip_configuration = {
@@ -125,6 +116,12 @@ module "gateway" {
     }
     protocol = "Http"
   }]
+  public_ip_addresses = {
+    edge = {
+      name              = local.public_ip_name
+      domain_name_label = "avm-pip-${random_id.suffix.hex}"
+    }
+  }
   request_routing_rules = [{
     name = "http"
     backend_address_pool = {
@@ -144,11 +141,15 @@ module "gateway" {
     name     = "Standard_v2"
     tier     = "Standard_v2"
   }
+  tags = {
+    purpose = "managed-public-ip-integration"
+  }
+  zones = ["1"]
 }
 
 data "azapi_resource" "gateway" {
-  type        = "Microsoft.Network/applicationGateways@2025-03-01"
   resource_id = module.gateway.resource_id
+  type        = "Microsoft.Network/applicationGateways@2025-03-01"
   response_export_values = {
     frontend_ip_configurations = "properties.frontendIPConfigurations"
     provisioning_state         = "properties.provisioningState"
@@ -156,8 +157,8 @@ data "azapi_resource" "gateway" {
 }
 
 data "azapi_resource" "public_ip" {
-  type        = "Microsoft.Network/publicIPAddresses@2025-03-01"
   resource_id = module.gateway.public_ip_addresses["edge"].resource_id
+  type        = "Microsoft.Network/publicIPAddresses@2025-03-01"
   response_export_values = {
     fqdn       = "properties.dnsSettings.fqdn"
     ip_address = "properties.ipAddress"
