@@ -2,10 +2,12 @@ terraform {
   required_version = ">= 1.12, < 2.0"
 
   required_providers {
+    # tflint-ignore: terraform_unused_required_providers
     azapi = {
       source  = "Azure/azapi"
       version = "~> 2.12"
     }
+    # tflint-ignore: terraform_unused_required_providers
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">= 3.117, < 5.0"
@@ -28,6 +30,9 @@ resource "terraform_data" "parent" {
 module "sut" {
   source = "../../../.."
 
+  location         = "westus2"
+  name             = random_pet.gateway.id
+  parent_id        = terraform_data.parent.output
   enable_telemetry = false
   frontend_ports = [{
     name = "port-${random_pet.gateway.id}"
@@ -36,7 +41,4 @@ module "sut" {
     name          = "listener"
     frontend_port = { frontend_port_key = "port-${random_pet.gateway.id}" }
   }]
-  location  = "westus2"
-  name      = random_pet.gateway.id
-  parent_id = terraform_data.parent.output
 }
