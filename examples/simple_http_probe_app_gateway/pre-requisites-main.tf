@@ -64,6 +64,12 @@ resource "azurerm_public_ip" "public_ip" {
   resource_group_name = azurerm_resource_group.rg_group.name
   sku                 = "Standard"
   zones               = [1, 2, 3]
+
+  lifecycle {
+    # Azure auto-populates ip_tags (e.g. FirstPartyUsage) server-side after creation,
+    # which otherwise shows as drift that forces replacement on the next plan.
+    ignore_changes = [ip_tags]
+  }
 }
 
 #-----------------------------------------------------------------
