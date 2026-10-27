@@ -8,7 +8,7 @@ provider "azurerm" {
 }
 
 provider "random" {}
-provider "modtm" {}
+
 
 run "deploy_managed_public_ipv4" {
   command = apply

@@ -54,6 +54,46 @@ resource "azapi_resource" "virtual_network" {
   response_export_values = []
 }
 
+resource "azapi_resource" "network_security_group" {
+  location  = var.location
+  name      = "nsg-${random_id.suffix.hex}"
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Network/networkSecurityGroups@2025-03-01"
+  body = {
+    properties = {
+      securityRules = [
+        {
+          name = "AllowHttpInbound"
+          properties = {
+            access                   = "Allow"
+            destinationAddressPrefix = "10.87.0.0/24"
+            destinationPortRange     = "80"
+            direction                = "Inbound"
+            priority                 = 100
+            protocol                 = "Tcp"
+            sourceAddressPrefix      = "Internet"
+            sourcePortRange          = "*"
+          }
+        },
+        {
+          name = "AllowGatewayManagerInbound"
+          properties = {
+            access                   = "Allow"
+            destinationAddressPrefix = "*"
+            destinationPortRange     = "65200-65535"
+            direction                = "Inbound"
+            priority                 = 110
+            protocol                 = "Tcp"
+            sourceAddressPrefix      = "GatewayManager"
+            sourcePortRange          = "*"
+          }
+        }
+      ]
+    }
+  }
+  response_export_values = []
+}
+
 resource "azapi_resource" "subnet" {
   name      = "application-gateway"
   parent_id = azapi_resource.virtual_network.id
@@ -67,13 +107,16 @@ resource "azapi_resource" "subnet" {
           serviceName = "Microsoft.Network/applicationGateways"
         }
       }]
+      networkSecurityGroup = {
+        id = azapi_resource.network_security_group.id
+      }
     }
   }
   response_export_values = []
 }
 
 # A single fixture state preserves dependencies during Terraform test teardown:
-# gateway and managed IP -> subnet/VNet -> resource group.
+# gateway and managed IP -> subnet -> VNet/NSG -> resource group.
 module "gateway" {
   source = "../../../.."
 

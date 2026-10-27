@@ -78,6 +78,7 @@ resource "azapi_resource" "public_ip" {
     }
     zones = ["1", "2", "3"]
   }
+  ignore_body_changes    = ["properties.ipTags"]
   response_export_values = ["properties.ipAddress"]
   tags                   = var.tags
 }
