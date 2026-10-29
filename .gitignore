@@ -8,6 +8,7 @@
 .tflint.hcl
 *.hcl
 !tests/**/*.tftest.hcl
+!modules/**/*.tftest.hcl
 # Crash log files
 crash.log
 crash.*.log

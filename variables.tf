@@ -128,8 +128,6 @@ DESCRIPTION
   nullable    = false
 }
 
-# Compatibility-only interface; implementation is tracked in issue #284.
-# tflint-ignore: terraform_unused_declarations
 variable "private_endpoints" {
   type = map(object({
     name = optional(string, null)
@@ -167,37 +165,147 @@ variable "private_endpoints" {
   }))
   default     = {}
   description = <<DESCRIPTION
-Private endpoint configuration schema retained for compatibility. **Private endpoint creation is not implemented: entries currently have no deployment effect.** Implementation is tracked in [issue #284](https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284). The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time. The fields below describe the standard interface, not implemented resource behavior.
+A map of private endpoints to create for the Application Gateway. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time. Each endpoint connects to the Application Gateway `appGateway` private-link subresource. Configure a gateway-side private link configuration and attach it to a frontend before creating endpoints. The gateway must have at least one public frontend; private-only gateways are unsupported.
+
+The private endpoint subnet must differ from the Application Gateway subnet and have private endpoint network policies disabled. When multiple frontends are linked to private link configurations, set `ip_configurations` to identify the frontend member.
 
 - `name` - (Optional) The name of the private endpoint. One will be generated if not set.
 - `role_assignments` - (Optional) A map of role assignments to create on the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time. See `var.role_assignments` for more information.
-  - `name` - (Optional) The role assignment name.
-- `lock` - (Optional) The lock level to apply to the private endpoint. Default is `None`. Possible values are `None`, `CanNotDelete`, and `ReadOnly`.
-  - `notes` - (Optional) Notes for the lock.
+  - `name` - (Optional) The name of the role assignment. If not set, a UUID is generated.
+- `lock` - (Optional) The lock to apply to the private endpoint. Possible values are `CanNotDelete` and `ReadOnly`.
+  - `notes` - (Optional) Notes about the lock.
 - `tags` - (Optional) A mapping of tags to assign to the private endpoint.
 - `subnet_resource_id` - The resource ID of the subnet to deploy the private endpoint in.
-- `subresource_name` - (Optional) The private endpoint subresource name.
-- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. One will be generated if not set.
+- `subresource_name` - (Optional) The private endpoint subresource name. Application Gateway supports only `appGateway`; this is the default.
+- `private_dns_zone_group_name` - (Optional) The name of the private DNS zone group. Defaults to `default`.
 - `private_dns_zone_resource_ids` - (Optional) A set of resource IDs of private DNS zones to associate with the private endpoint. If not set, no zone groups will be created and the private endpoint will not be associated with any private DNS zones. DNS records must be managed external to this module.
-- `application_security_group_resource_ids` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
-- `private_service_connection_name` - (Optional) The name of the private service connection. One will be generated if not set.
-- `network_interface_name` - (Optional) The name of the network interface. One will be generated if not set.
-- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the location of the resource group.
-- `resource_group_name` - (Optional) The resource group where the resources will be deployed. Defaults to the resource group of this resource.
+- `application_security_group_associations` - (Optional) A map of resource IDs of application security groups to associate with the private endpoint. The map key is deliberately arbitrary to avoid issues where map keys may be unknown at plan time.
+- `private_service_connection_name` - (Optional) The name of the private service connection. Defaults to a generated name.
+- `network_interface_name` - (Optional) The name of the network interface. Defaults to a generated name.
+- `location` - (Optional) The Azure location where the resources will be deployed. Defaults to the Application Gateway location.
+- `resource_group_name` - Not supported; private endpoints are created in the Application Gateway resource group.
 - `ip_configurations` - (Optional) A map of IP configurations to create on the private endpoint. If not specified the platform will create one. The map key is deliberately arbitrary to avoid issues where map keys maybe unknown at plan time.
   - `name` - The name of the IP configuration.
   - `private_ip_address` - The private IP address of the IP configuration.
-  - `member_name` - (Optional) The private IP configuration member name.
+  - `member_name` - The name of a frontend associated with the gateway-side private link configuration.
 DESCRIPTION
   nullable    = false
+
+  validation {
+    condition = alltrue([
+      for endpoint in values(var.private_endpoints) :
+      endpoint != null && can(provider::azapi::parse_resource_id("Microsoft.Network/virtualNetworks/subnets", endpoint.subnet_resource_id))
+    ])
+    error_message = "Each private_endpoints[*].subnet_resource_id must be a valid subnet resource ID."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in values(var.private_endpoints) : endpoint == null ? [] : [
+        for id in endpoint.private_dns_zone_resource_ids :
+        can(provider::azapi::parse_resource_id("Microsoft.Network/privateDnsZones", id))
+      ]
+    ]))
+    error_message = "Each private_endpoints[*].private_dns_zone_resource_ids entry must be a valid private DNS zone resource ID."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in values(var.private_endpoints) : endpoint == null ? [] : [
+        for id in values(endpoint.application_security_group_associations) :
+        can(provider::azapi::parse_resource_id("Microsoft.Network/applicationSecurityGroups", id))
+      ]
+    ]))
+    error_message = "Each private_endpoints[*].application_security_group_associations value must be a valid application security group resource ID."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in values(var.private_endpoints) : endpoint == null ? [] : [
+        for assignment in values(endpoint.role_assignments) :
+        assignment == null ? false : assignment.delegated_managed_identity_resource_id == null || can(provider::azapi::parse_resource_id("Microsoft.ManagedIdentity/userAssignedIdentities", assignment.delegated_managed_identity_resource_id))
+      ]
+    ]))
+    error_message = "Each private_endpoints[*].role_assignments[*].delegated_managed_identity_resource_id must be a valid user-assigned managed identity resource ID, or null."
+  }
+  validation {
+    condition = alltrue([
+      for endpoint in values(var.private_endpoints) :
+      endpoint == null ? true : endpoint.subresource_name == null || endpoint.subresource_name == "appGateway"
+    ])
+    error_message = "Application Gateway private endpoints support only the appGateway subresource."
+  }
+  validation {
+    condition = alltrue([
+      for endpoint in values(var.private_endpoints) :
+      endpoint == null ? true : endpoint.resource_group_name == null
+    ])
+    error_message = "Private endpoints must be deployed in the Application Gateway resource group; resource_group_name overrides are not supported."
+  }
+  validation {
+    condition = alltrue([
+      for endpoint in values(var.private_endpoints) :
+      endpoint == null ? true : endpoint.lock == null || contains(["CanNotDelete", "ReadOnly"], endpoint.lock.kind)
+    ])
+    error_message = "Each private endpoint lock kind must be CanNotDelete or ReadOnly."
+  }
+  validation {
+    condition = length(var.private_endpoints) == 0 || (
+      var.sku != null &&
+      contains(["Standard_v2", "WAF_v2"], var.sku.name) &&
+      length(coalesce(var.private_link_configurations, [])) > 0 &&
+      anytrue([
+        for frontend in coalesce(var.frontend_ip_configurations, []) :
+        frontend != null &&
+        frontend.private_link_configuration != null
+      ]) &&
+      anytrue([
+        for frontend in coalesce(var.frontend_ip_configurations, []) :
+        frontend != null &&
+        (try(frontend.public_ip_address.id, null) != null || frontend.public_ip_address_key != null)
+      ])
+    )
+    error_message = "Private endpoints require a Standard_v2 or WAF_v2 gateway with a gateway-side private link configuration and at least one public frontend. Private-only gateways are not supported."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in values(var.private_endpoints) : endpoint == null ? [] : [
+        for ip_configuration in values(endpoint.ip_configurations) :
+        ip_configuration != null && ip_configuration.member_name != null && anytrue([
+          for frontend in coalesce(var.frontend_ip_configurations, []) :
+          frontend != null &&
+          frontend.name != null &&
+          lower(frontend.name) == try(lower(ip_configuration.member_name), "") &&
+          frontend.private_link_configuration != null
+        ])
+      ]
+    ]))
+    error_message = "Each private endpoint IP configuration must specify a member_name matching a frontend attached to a gateway-side private link configuration."
+  }
+  validation {
+    condition = length(var.private_endpoints) == 0 || alltrue([
+      for endpoint in values(var.private_endpoints) :
+      endpoint == null ? false : length([
+        for frontend in coalesce(var.frontend_ip_configurations, []) :
+        frontend
+        if frontend != null &&
+        frontend.private_link_configuration != null
+      ]) <= 1 || length(endpoint.ip_configurations) > 0
+    ])
+    error_message = "When multiple frontends are attached to gateway-side private link configurations, each private endpoint must specify ip_configurations to identify its frontend member."
+  }
+  validation {
+    condition = alltrue(flatten([
+      for endpoint in values(var.private_endpoints) : endpoint == null ? [] : [
+        for gateway_ip_configuration in coalesce(var.gateway_ip_configurations, []) :
+        try(lower(gateway_ip_configuration.subnet.id), "") != try(lower(endpoint.subnet_resource_id), "")
+      ]
+    ]))
+    error_message = "A private endpoint subnet must be different from every Application Gateway subnet."
+  }
 }
 
-# Compatibility-only interface; implementation is tracked in issue #284.
-# tflint-ignore: terraform_unused_declarations
 variable "private_endpoints_manage_dns_zone_group" {
   type        = bool
   default     = true
-  description = "Standard private-endpoint DNS-zone-group control. Currently schema-only: private endpoint creation and DNS-zone-group management are not implemented, so this value has no deployment effect. See https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284."
+  description = "Whether to manage private DNS zone groups with this module. If false, DNS zone groups must be managed externally."
   nullable    = false
 }
 
