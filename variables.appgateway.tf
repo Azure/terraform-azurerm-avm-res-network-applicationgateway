@@ -377,7 +377,7 @@ DESCRIPTION
 
 variable "probes" {
   type = list(object({
-    enable_probe_proxy_protocol_header = optional(bool)
+    enable_probe_proxy_protocol_header = optional(bool, false)
     host                               = optional(string)
     id                                 = optional(string)
     interval                           = optional(number)
@@ -398,7 +398,7 @@ variable "probes" {
   }))
   default     = null
   description = <<DESCRIPTION
-Probes of the application gateway resource.
+Probes of the application gateway resource. `enable_probe_proxy_protocol_header` controls whether the Proxy Protocol V2 header is forwarded to the backend server and defaults to `false`.
 DESCRIPTION
 }
 
