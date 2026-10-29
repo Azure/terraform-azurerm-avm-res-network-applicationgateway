@@ -20,7 +20,7 @@ resource "azapi_resource" "this" {
   retry                     = var.retry
   schema_validation_enabled = true
   sensitive_body            = local.resource_sensitive_body
-  sensitive_body_version = {
+  sensitive_body_version    = {
     "properties.sslCertificates" = nonsensitive(sha256(jsonencode(local.resource_sensitive_body.properties.sslCertificates)))
   }
   tags                      = var.tags
