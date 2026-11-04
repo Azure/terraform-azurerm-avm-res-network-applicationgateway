@@ -270,14 +270,20 @@ Application Gateway V2 supports the following combinations:
 
 ## Private endpoint creation
 
-The `private_endpoints` and `private_endpoints_manage_dns_zone_group` inputs are
-currently schema-only compatibility declarations. They do not create private
-endpoints or manage DNS zone groups, locks or role assignments. Functional
-implementation is tracked in [issue #284](https://github.com/Azure/terraform-azurerm-avm-res-network-applicationgateway/issues/284).
+The `private_endpoints` input creates consumer-side private endpoints connected
+to the Application Gateway's `appGateway` subresource. Configure
+`private_link_configurations` on the gateway and attach the configuration to a
+frontend with `frontend_ip_configurations` before creating endpoints. The
+gateway must have at least one public frontend; private-link tunneling is
+unsupported for private-only gateways.
 
-The gateway-side `private_link_configurations` input is separate and remains
-supported. Until private endpoint creation is implemented, manage the endpoint
-resources outside this module.
+Each endpoint is placed in the Application Gateway's resource group and must
+use a different subnet with private endpoint network policies disabled.
+Optional per-endpoint IP configurations must identify a frontend linked to a
+gateway-side private link configuration. The module creates endpoint role
+assignments and locks when configured. DNS zone groups are created only when
+DNS zone IDs are set and `private_endpoints_manage_dns_zone_group` is `true`;
+otherwise, manage DNS associations externally.
 
 ## Supported Scenarios
 
