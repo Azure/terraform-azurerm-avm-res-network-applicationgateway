@@ -315,9 +315,7 @@ locals {
       sslCertificates = local.normalized_appgateway_components.ssl_certificates == null ? null : [for item in local.normalized_appgateway_components.ssl_certificates : item == null ? null : {
         name = item.name
         properties = item.properties == null ? null : {
-          data             = item.properties.data
           keyVaultSecretId = item.properties.key_vault_secret_id
-          password         = item.properties.password
         }
       }]
       sslPolicy = var.ssl_policy == null ? null : {
@@ -407,6 +405,17 @@ locals {
       }
     }
     zones = var.zones == null ? null : [for item in var.zones : item]
+  }
+  resource_sensitive_body = {
+    properties = {
+      sslCertificates = local.normalized_appgateway_components.ssl_certificates == null ? null : [for item in local.normalized_appgateway_components.ssl_certificates : item == null ? null : {
+        name = item.name
+        properties = item.properties == null ? null : {
+          data     = item.properties.data
+          password = item.properties.password
+        }
+      }]
+    }
   }
   role_definition_resource_substring = "/providers/Microsoft.Authorization/roleDefinitions"
 }
