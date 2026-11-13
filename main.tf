@@ -11,6 +11,7 @@ resource "azapi_resource" "this" {
     "properties.backendAddressPools"                             = "name"
     "properties.backendHttpSettingsCollection"                   = "name"
     "properties.frontendPorts"                                   = "name"
+    "properties.requestRoutingRules"                             = "name"
     "properties.backendAddressPools.properties.backendAddresses" = "ipAddress"
   }
   response_export_values = [
