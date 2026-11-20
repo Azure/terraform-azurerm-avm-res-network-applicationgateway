@@ -15,6 +15,29 @@ variables {
   parent_id        = "/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/rg"
 }
 
+run "renders_probe_proxy_protocol_header_defaults_and_overrides" {
+  command = apply
+
+  variables {
+    probes = [
+      { name = "default", protocol = "Http", path = "/" },
+      { name = "null", protocol = "Http", path = "/", enable_probe_proxy_protocol_header = null },
+      { name = "disabled", protocol = "Http", path = "/", enable_probe_proxy_protocol_header = false },
+      { name = "enabled", protocol = "Http", path = "/", enable_probe_proxy_protocol_header = true },
+    ]
+  }
+
+  assert {
+    condition = (
+      azapi_resource.this.body.properties.probes[0].properties.enableProbeProxyProtocolHeader == false &&
+      azapi_resource.this.body.properties.probes[1].properties.enableProbeProxyProtocolHeader == false &&
+      azapi_resource.this.body.properties.probes[2].properties.enableProbeProxyProtocolHeader == false &&
+      azapi_resource.this.body.properties.probes[3].properties.enableProbeProxyProtocolHeader == true
+    )
+    error_message = "Probe proxy protocol headers must default to false for omitted or null values and preserve explicit false and true values in the ARM body."
+  }
+}
+
 run "renders_flat_fields_into_arm_properties" {
   command = apply
 
