@@ -309,4 +309,9 @@ run "renders_flat_fields_into_arm_properties" {
     ])
     error_message = "Flat top-level and nested definitions must preserve explicit false, zero, and empty collection values without leaking the sentinel."
   }
+
+  assert {
+    condition     = azapi_resource.this.list_unique_id_property["properties.requestRoutingRules"] == "name"
+    error_message = "Request routing rules must be compared by name so API reordering does not create perpetual diffs."
+  }
 }
