@@ -115,8 +115,42 @@ resource "azapi_resource" "subnet" {
   response_export_values = []
 }
 
+resource "azapi_resource" "private_link_subnet" {
+  name      = "application-gateway-private-link"
+  parent_id = azapi_resource.virtual_network.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2025-03-01"
+  body = {
+    properties = {
+      addressPrefix = "10.87.1.0/24"
+    }
+  }
+  response_export_values = []
+}
+
+resource "azapi_resource" "private_endpoint_subnet" {
+  name      = "private-endpoints"
+  parent_id = azapi_resource.virtual_network.id
+  type      = "Microsoft.Network/virtualNetworks/subnets@2025-03-01"
+  body = {
+    properties = {
+      addressPrefix                  = "10.87.2.0/24"
+      privateEndpointNetworkPolicies = "Disabled"
+    }
+  }
+  response_export_values = []
+}
+
+resource "azapi_resource" "private_dns_zone" {
+  location  = "global"
+  name      = "privatelink.appgw.example.test"
+  parent_id = azapi_resource.resource_group.id
+  type      = "Microsoft.Network/privateDnsZones@2024-06-01"
+  body      = {}
+  response_export_values = []
+}
+
 # A single fixture state preserves dependencies during Terraform test teardown:
-# gateway and managed IP -> subnet -> VNet/NSG -> resource group.
+# endpoint and gateway -> subnets, VNet/NSG, and DNS zone -> resource group.
 module "gateway" {
   source = "../../../.."
 
@@ -138,6 +172,9 @@ module "gateway" {
   frontend_ip_configurations = [{
     name                  = "public"
     public_ip_address_key = "edge"
+    private_link_configuration = {
+      private_link_configuration_key = "gateway-link"
+    }
   }]
   frontend_ports = [{
     name = "http"
@@ -165,6 +202,27 @@ module "gateway" {
       domain_name_label = "avm-pip-${random_id.suffix.hex}"
     }
   }
+  private_endpoints = {
+    endpoint = {
+      name               = "pe-${random_id.suffix.hex}"
+      subnet_resource_id = azapi_resource.private_endpoint_subnet.id
+      private_dns_zone_resource_ids = [
+        azapi_resource.private_dns_zone.id
+      ]
+    }
+  }
+  private_link_configurations = [{
+    name = "gateway-link"
+    ip_configurations = [{
+      name                         = "gateway-link-ip"
+      primary                      = true
+      private_ip_address           = "10.87.1.10"
+      private_ip_allocation_method = "Static"
+      subnet = {
+        id = azapi_resource.private_link_subnet.id
+      }
+    }]
+  }]
   request_routing_rules = [{
     name = "http"
     backend_address_pool = {
@@ -194,8 +252,9 @@ data "azapi_resource" "gateway" {
   resource_id = module.gateway.resource_id
   type        = "Microsoft.Network/applicationGateways@2025-03-01"
   response_export_values = {
-    frontend_ip_configurations = "properties.frontendIPConfigurations"
-    provisioning_state         = "properties.provisioningState"
+    frontend_ip_configurations   = "properties.frontendIPConfigurations"
+    private_endpoint_connections = "properties.privateEndpointConnections"
+    provisioning_state           = "properties.provisioningState"
   }
 }
 
@@ -205,6 +264,14 @@ data "azapi_resource" "public_ip" {
   response_export_values = {
     fqdn       = "properties.dnsSettings.fqdn"
     ip_address = "properties.ipAddress"
+  }
+}
+
+data "azapi_resource" "private_dns_zone_group" {
+  resource_id = module.gateway.private_endpoint_dns_zone_group_ids["endpoint"]
+  type        = "Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2025-03-01"
+  response_export_values = {
+    private_dns_zone_configs = "properties.privateDnsZoneConfigs"
   }
 }
 
@@ -235,6 +302,32 @@ output "observed_public_ip_fqdn" {
   value = data.azapi_resource.public_ip.output.fqdn
 }
 
+output "private_endpoint_connection_target_ids" {
+  value = [
+    for connection in data.azapi_resource.gateway.output.private_endpoint_connections :
+    connection.properties.privateEndpoint.id
+  ]
+}
+
+output "private_dns_zone_ids" {
+  value = [
+    for zone_config in data.azapi_resource.private_dns_zone_group.output.private_dns_zone_configs :
+    zone_config.properties.privateDnsZoneId
+  ]
+}
+
+output "expected_private_dns_zone_id" {
+  value = azapi_resource.private_dns_zone.id
+}
+
 output "public_ip_addresses" {
   value = module.gateway.public_ip_addresses
+}
+
+output "private_endpoint_resource_id" {
+  value = module.gateway.private_endpoint_ids["endpoint"]
+}
+
+output "private_dns_zone_group_resource_id" {
+  value = module.gateway.private_endpoint_dns_zone_group_ids["endpoint"]
 }
